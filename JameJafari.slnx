@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/JameJafari.Api/JameJafari.Api.csproj" />
+    <Project Path="src/JameJafari.Core/JameJafari.Core.csproj" />
+    <Project Path="src/JameJafari.Infrastructure/JameJafari.Infrastructure.csproj" />
+  </Folder>
+</Solution>

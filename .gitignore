@@ -1,0 +1,27 @@
+# Build
+bin/
+obj/
+publish/
+dist/
+
+# IDE
+.idea/
+.vs/
+.vscode
+*.user
+*.suo
+
+# Dependencies
+node_modules/
+
+# Uploads & secrets
+uploads/
+appsettings.*.local.json
+*.db
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
