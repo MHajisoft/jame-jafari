@@ -35,9 +35,9 @@ onMounted(load)
   <div>
     <div class="page-header">
       <h1 class="page-title">گزارشات</h1>
-      <div style="display:flex;gap:0.5rem">
-        <input v-model="from" type="date" class="form-control" style="width:auto" />
-        <input v-model="to" type="date" class="form-control" style="width:auto" />
+      <div class="page-toolbar">
+        <input v-model="from" type="date" class="form-control" />
+        <input v-model="to" type="date" class="form-control" />
         <button class="btn" @click="load">اعمال</button>
       </div>
     </div>
@@ -59,14 +59,14 @@ onMounted(load)
 
     <div class="card" style="margin-bottom:1.5rem">
       <h3 style="margin-bottom:1rem">موجودی حساب‌ها</h3>
-      <table>
+      <table class="mobile-table">
         <thead><tr><th>حساب</th><th>درآمد</th><th>هزینه</th><th>مانده</th></tr></thead>
         <tbody>
           <tr v-for="b in balances" :key="b.accountId">
-            <td>{{ b.accountName }}</td>
-            <td class="text-success">{{ formatMoney(b.totalIncome) }}</td>
-            <td class="text-danger">{{ formatMoney(b.totalCost) }}</td>
-            <td><strong>{{ formatMoney(b.balance) }}</strong></td>
+            <td data-label="حساب">{{ b.accountName }}</td>
+            <td class="text-success" data-label="درآمد">{{ formatMoney(b.totalIncome) }}</td>
+            <td class="text-danger" data-label="هزینه">{{ formatMoney(b.totalCost) }}</td>
+            <td data-label="مانده"><strong>{{ formatMoney(b.balance) }}</strong></td>
           </tr>
         </tbody>
       </table>
@@ -74,14 +74,14 @@ onMounted(load)
 
     <div class="card" style="margin-bottom:1.5rem">
       <h3 style="margin-bottom:1rem">تحلیل بر اساس نوع هزینه</h3>
-      <table>
+      <table class="mobile-table">
         <thead><tr><th>نوع</th><th>درآمد</th><th>هزینه</th><th>خالص</th></tr></thead>
         <tbody>
           <tr v-for="c in costTypes" :key="c.costTypeId">
-            <td>{{ c.costTypeName }}</td>
-            <td class="text-success">{{ formatMoney(c.totalIncome) }}</td>
-            <td class="text-danger">{{ formatMoney(c.totalCost) }}</td>
-            <td>{{ formatMoney(c.net) }}</td>
+            <td data-label="نوع">{{ c.costTypeName }}</td>
+            <td class="text-success" data-label="درآمد">{{ formatMoney(c.totalIncome) }}</td>
+            <td class="text-danger" data-label="هزینه">{{ formatMoney(c.totalCost) }}</td>
+            <td data-label="خالص">{{ formatMoney(c.net) }}</td>
           </tr>
         </tbody>
       </table>
@@ -89,13 +89,13 @@ onMounted(load)
 
     <div class="card" style="margin-bottom:1.5rem">
       <h3 style="margin-bottom:1rem">درآمد اشخاص</h3>
-      <table>
+      <table class="mobile-table">
         <thead><tr><th>شخص</th><th>تعداد</th><th>مجموع</th></tr></thead>
         <tbody>
           <tr v-for="p in personIncome" :key="p.personId">
-            <td>{{ p.personName }}</td>
-            <td>{{ p.transactionCount }}</td>
-            <td class="text-success">{{ formatMoney(p.totalAmount) }}</td>
+            <td data-label="شخص">{{ p.personName }}</td>
+            <td data-label="تعداد">{{ p.transactionCount }}</td>
+            <td class="text-success" data-label="مجموع">{{ formatMoney(p.totalAmount) }}</td>
           </tr>
         </tbody>
       </table>
@@ -103,15 +103,15 @@ onMounted(load)
 
     <div class="card">
       <h3 style="margin-bottom:1rem">هزینه تهیه غذا</h3>
-      <table>
+      <table class="mobile-table">
         <thead><tr><th>غذا</th><th>تاریخ</th><th>تعداد</th><th>هزینه واحد</th><th>کل</th></tr></thead>
         <tbody>
           <tr v-for="f in foodCosts" :key="f.foodId">
-            <td>{{ f.foodName }}</td>
-            <td><DateDisplay :value="f.cookDate" /></td>
-            <td>{{ f.totalCount }}</td>
-            <td>{{ formatMoney(f.costPerUnit) }}</td>
-            <td class="text-danger">{{ formatMoney(f.totalCost) }}</td>
+            <td data-label="غذا">{{ f.foodName }}</td>
+            <td data-label="تاریخ"><DateDisplay :value="f.cookDate" /></td>
+            <td data-label="تعداد">{{ f.totalCount }}</td>
+            <td data-label="هزینه واحد">{{ formatMoney(f.costPerUnit) }}</td>
+            <td class="text-danger" data-label="کل">{{ formatMoney(f.totalCost) }}</td>
           </tr>
         </tbody>
       </table>

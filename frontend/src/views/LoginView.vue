@@ -27,7 +27,7 @@ async function submit() {
 <template>
   <div class="login-page">
     <div class="login-card card">
-      <h1>جامع جعفری</h1>
+      <h1>موسسه جامعه جعفری</h1>
       <p class="subtitle">سامانه مدیریت مالی</p>
       <form @submit.prevent="submit">
         <div class="form-group">
@@ -50,11 +50,14 @@ async function submit() {
 <style scoped>
 .login-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--primary), var(--sidebar));
   padding: 1rem;
+  padding-top: calc(1rem + env(safe-area-inset-top, 0));
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0));
 }
 .login-card {
   width: 100%;

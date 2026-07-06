@@ -61,20 +61,23 @@ onMounted(load)
   <div>
     <div class="page-header">
       <h1 class="page-title">انواع هزینه</h1>
-      <button v-if="auth.hasPermission('costtypes.manage')" class="btn" @click="openCreate">+ نوع جدید</button>
+      <button v-if="auth.hasPermission('costtypes.manage')" class="btn btn-fab-mobile" @click="openCreate">
+        <span aria-hidden="true">+</span>
+        <span class="btn-fab-label">نوع جدید</span>
+      </button>
     </div>
 
     <div class="card">
-      <table>
+      <table class="mobile-table">
         <thead>
           <tr><th>نام</th><th>مواد اولیه</th><th>واحد</th><th>وضعیت</th><th v-if="auth.hasPermission('costtypes.manage')"></th></tr>
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
-            <td><strong>{{ item.name }}</strong></td>
-            <td>{{ item.isIngredient ? '✓' : '—' }}</td>
-            <td>{{ item.unitName || '—' }}</td>
-            <td>
+            <td data-label="نام"><strong>{{ item.name }}</strong></td>
+            <td data-label="مواد اولیه">{{ item.isIngredient ? '✓' : '—' }}</td>
+            <td data-label="واحد">{{ item.unitName || '—' }}</td>
+            <td data-label="وضعیت">
               <span :class="item.isActive ? 'badge badge-success' : 'badge badge-danger'">
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>

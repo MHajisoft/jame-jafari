@@ -67,11 +67,14 @@ onMounted(load)
   <div>
     <div class="page-header">
       <h1 class="page-title">تراکنش‌های درآمد</h1>
-      <button v-if="auth.hasPermission('income.create')" class="btn" @click="showModal = true">+ ثبت درآمد</button>
+      <button v-if="auth.hasPermission('income.create')" class="btn btn-fab-mobile" @click="showModal = true">
+        <span aria-hidden="true">+</span>
+        <span class="btn-fab-label">ثبت درآمد</span>
+      </button>
     </div>
 
     <div class="card">
-      <table>
+      <table class="mobile-table">
         <thead>
           <tr>
             <th>تاریخ</th>
@@ -86,13 +89,13 @@ onMounted(load)
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
-            <td><DateDisplay :value="item.transactionDate" /></td>
-            <td>{{ item.personName }}</td>
-            <td>{{ item.accountName }}</td>
-            <td class="text-success">{{ formatMoney(item.amount) }}</td>
-            <td>{{ paymentLabel(item.paymentType) }}</td>
-            <td>{{ item.costTypeName }}</td>
-            <td>{{ item.description }}</td>
+            <td data-label="تاریخ"><DateDisplay :value="item.transactionDate" /></td>
+            <td data-label="شخص">{{ item.personName }}</td>
+            <td data-label="حساب">{{ item.accountName }}</td>
+            <td class="text-success" data-label="مبلغ">{{ formatMoney(item.amount) }}</td>
+            <td data-label="نوع پرداخت">{{ paymentLabel(item.paymentType) }}</td>
+            <td data-label="نوع هزینه">{{ item.costTypeName }}</td>
+            <td data-label="توضیحات">{{ item.description }}</td>
             <td v-if="auth.hasPermission('income.delete')">
               <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
             </td>

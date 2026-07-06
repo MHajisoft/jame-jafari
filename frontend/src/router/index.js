@@ -17,7 +17,8 @@ const routes = [
       { path: 'food', name: 'food', component: () => import('../views/FoodView.vue'), meta: { permission: 'food.view' } },
       { path: 'users', name: 'users', component: () => import('../views/UsersView.vue'), meta: { permission: 'users.view' } },
       { path: 'reports', name: 'reports', component: () => import('../views/ReportsView.vue'), meta: { permission: 'reports.view' } },
-      { path: 'settings', name: 'settings', component: () => import('../views/SettingsView.vue') }
+      { path: 'settings', name: 'settings', component: () => import('../views/SettingsView.vue') },
+      { path: 'more', name: 'more', component: () => import('../views/MoreView.vue') }
     ]
   }
 ]

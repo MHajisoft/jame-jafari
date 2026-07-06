@@ -9,16 +9,21 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'جامع جعفری',
-        short_name: 'جامع جعفری',
-        description: 'سامانه مدیریت مالی جامع جعفری',
+        name: 'موسسه جامعه جعفری',
+        short_name: 'جامعه جعفری',
+        description: 'سامانه مدیریت مالی موسسه جامعه جعفری',
         theme_color: '#1a5f4a',
-        background_color: '#f5f5f5',
+        background_color: '#f4f6f8',
         display: 'standalone',
+        orientation: 'portrait',
+        start_url: '/',
+        scope: '/',
         lang: 'fa',
         dir: 'rtl',
+        categories: ['finance', 'business'],
         icons: [
-          { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }
+          { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: 'favicon.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'maskable' }
         ]
       },
       workbox: {

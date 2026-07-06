@@ -91,7 +91,7 @@ public static class DbSeeder
 
         if (!await db.Accounts.AnyAsync())
         {
-            db.Accounts.Add(new Account { Name = "صندوق اصلی", Description = "صندوق مرکزی جامع جعفری", IsActive = true });
+            db.Accounts.Add(new Account { Name = "صندوق اصلی", Description = "صندوق مرکزی موسسه", IsActive = true });
             await db.SaveChangesAsync();
         }
     }

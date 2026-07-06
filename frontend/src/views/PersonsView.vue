@@ -77,7 +77,10 @@ onMounted(load)
   <div>
     <div class="page-header">
       <h1 class="page-title">اشخاص</h1>
-      <button v-if="auth.hasPermission('persons.manage')" class="btn" @click="openCreate">+ شخص جدید</button>
+      <button v-if="auth.hasPermission('persons.manage')" class="btn btn-fab-mobile" @click="openCreate">
+        <span aria-hidden="true">+</span>
+        <span class="btn-fab-label">شخص جدید</span>
+      </button>
     </div>
 
     <div class="card" style="margin-bottom:1rem">
@@ -85,7 +88,7 @@ onMounted(load)
     </div>
 
     <div class="card">
-      <table>
+      <table class="mobile-table">
         <thead>
           <tr>
             <th>نام</th>
@@ -99,12 +102,12 @@ onMounted(load)
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
-            <td><strong>{{ item.displayName }}</strong></td>
-            <td>{{ genderLabel(item.gender) }}</td>
-            <td>{{ item.mobile }}</td>
-            <td>{{ item.fatherName }}</td>
-            <td>{{ item.motherName }}</td>
-            <td>
+            <td data-label="نام"><strong>{{ item.displayName }}</strong></td>
+            <td data-label="جنسیت">{{ genderLabel(item.gender) }}</td>
+            <td data-label="موبایل">{{ item.mobile }}</td>
+            <td data-label="پدر">{{ item.fatherName }}</td>
+            <td data-label="مادر">{{ item.motherName }}</td>
+            <td data-label="وضعیت">
               <span v-if="item.isDead" class="badge badge-danger">فوت شده</span>
               <span v-else class="badge badge-success">فعال</span>
             </td>

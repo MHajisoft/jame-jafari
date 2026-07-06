@@ -2,23 +2,13 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { navItems, filterNavItems } from '../config/navigation'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
-const navItems = computed(() => [
-  { to: '/', label: 'داشبورد', icon: '🏠' },
-  { to: '/income', label: 'درآمد', permission: 'income.view', icon: '💰' },
-  { to: '/cost', label: 'هزینه', permission: 'cost.view', icon: '💸' },
-  { to: '/persons', label: 'اشخاص', permission: 'persons.view', icon: '👥' },
-  { to: '/accounts', label: 'حساب‌ها', permission: 'accounts.manage', icon: '🏦' },
-  { to: '/cost-types', label: 'انواع هزینه', permission: 'costtypes.view', icon: '📋' },
-  { to: '/food', label: 'تهیه غذا', permission: 'food.view', icon: '🍲' },
-  { to: '/reports', label: 'گزارشات', permission: 'reports.view', icon: '📊' },
-  { to: '/users', label: 'کاربران', permission: 'users.view', icon: '👤' },
-  { to: '/settings', label: 'تنظیمات', icon: '⚙️' }
-].filter(item => !item.permission || auth.hasPermission(item.permission)))
+const items = computed(() => filterNavItems(navItems, auth.hasPermission))
 
 function logout() {
   auth.logout()
@@ -29,12 +19,12 @@ function logout() {
 <template>
   <aside class="sidebar">
     <div class="brand">
-      <h1>جامع جعفری</h1>
+      <h1>موسسه جامعه جعفری</h1>
       <p class="user">{{ auth.username }}</p>
     </div>
     <nav>
       <router-link
-        v-for="item in navItems"
+        v-for="item in items"
         :key="item.to"
         :to="item.to"
         :class="{ active: route.path === item.to }"
@@ -88,12 +78,5 @@ nav a:hover, nav a.active {
   border-radius: 8px;
   color: var(--sidebar-text);
   cursor: pointer;
-}
-@media (max-width: 768px) {
-  .sidebar {
-    width: 100%;
-    min-height: auto;
-    position: relative;
-  }
 }
 </style>

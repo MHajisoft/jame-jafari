@@ -71,9 +71,12 @@ onMounted(load)
   <div>
     <div class="page-header">
       <h1 class="page-title">تهیه غذا</h1>
-      <div style="display:flex;gap:0.5rem;align-items:center">
-        <input v-model="cookDate" type="date" class="form-control" style="width:auto" @change="load" />
-        <button v-if="auth.hasPermission('food.manage')" class="btn" @click="openCreate">+ غذای جدید</button>
+      <div class="page-toolbar">
+        <input v-model="cookDate" type="date" class="form-control" @change="load" />
+        <button v-if="auth.hasPermission('food.manage')" class="btn btn-fab-mobile" @click="openCreate">
+          <span aria-hidden="true">+</span>
+          <span class="btn-fab-label">غذای جدید</span>
+        </button>
       </div>
     </div>
 
@@ -89,16 +92,16 @@ onMounted(load)
           <div>هزینه کل: <strong class="text-danger">{{ formatMoney(food.totalCost) }}</strong></div>
         </div>
       </div>
-      <table>
+      <table class="mobile-table">
         <thead>
           <tr><th>ماده اولیه</th><th>مقدار</th><th>قیمت</th><th>قیمت پیشنهادی</th></tr>
         </thead>
         <tbody>
           <tr v-for="ing in food.ingredients" :key="ing.id">
-            <td>{{ ing.costTypeName }} ({{ ing.unitName }})</td>
-            <td>{{ ing.units }}</td>
-            <td>{{ formatMoney(ing.price) }}</td>
-            <td class="text-muted">{{ ing.recommendedPrice ? formatMoney(ing.recommendedPrice) : '—' }}</td>
+            <td data-label="ماده اولیه">{{ ing.costTypeName }} ({{ ing.unitName }})</td>
+            <td data-label="مقدار">{{ ing.units }}</td>
+            <td data-label="قیمت">{{ formatMoney(ing.price) }}</td>
+            <td class="text-muted" data-label="قیمت پیشنهادی">{{ ing.recommendedPrice ? formatMoney(ing.recommendedPrice) : '—' }}</td>
           </tr>
         </tbody>
       </table>

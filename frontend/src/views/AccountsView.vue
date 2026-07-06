@@ -49,19 +49,22 @@ onMounted(load)
   <div>
     <div class="page-header">
       <h1 class="page-title">حساب‌های مالی</h1>
-      <button v-if="auth.hasPermission('accounts.manage')" class="btn" @click="openCreate">+ حساب جدید</button>
+      <button v-if="auth.hasPermission('accounts.manage')" class="btn btn-fab-mobile" @click="openCreate">
+        <span aria-hidden="true">+</span>
+        <span class="btn-fab-label">حساب جدید</span>
+      </button>
     </div>
 
     <div class="card">
-      <table>
+      <table class="mobile-table">
         <thead>
           <tr><th>نام</th><th>توضیحات</th><th>وضعیت</th><th></th></tr>
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
-            <td><strong>{{ item.name }}</strong></td>
-            <td>{{ item.description }}</td>
-            <td>
+            <td data-label="نام"><strong>{{ item.name }}</strong></td>
+            <td data-label="توضیحات">{{ item.description }}</td>
+            <td data-label="وضعیت">
               <span :class="item.isActive ? 'badge badge-success' : 'badge badge-danger'">
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>

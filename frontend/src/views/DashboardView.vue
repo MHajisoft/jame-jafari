@@ -47,7 +47,7 @@ onMounted(async () => {
 
     <div v-if="balances.length" class="card">
       <h3 style="margin-bottom:1rem">موجودی حساب‌ها</h3>
-      <table>
+      <table class="mobile-table">
         <thead>
           <tr>
             <th>حساب</th>
@@ -58,10 +58,10 @@ onMounted(async () => {
         </thead>
         <tbody>
           <tr v-for="b in balances" :key="b.accountId">
-            <td>{{ b.accountName }}</td>
-            <td class="text-success">{{ formatMoney(b.totalIncome) }}</td>
-            <td class="text-danger">{{ formatMoney(b.totalCost) }}</td>
-            <td><strong>{{ formatMoney(b.balance) }}</strong></td>
+            <td data-label="حساب">{{ b.accountName }}</td>
+            <td class="text-success" data-label="درآمد">{{ formatMoney(b.totalIncome) }}</td>
+            <td class="text-danger" data-label="هزینه">{{ formatMoney(b.totalCost) }}</td>
+            <td data-label="مانده"><strong>{{ formatMoney(b.balance) }}</strong></td>
           </tr>
         </tbody>
       </table>

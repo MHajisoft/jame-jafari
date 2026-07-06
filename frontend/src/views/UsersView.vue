@@ -64,21 +64,24 @@ onMounted(load)
   <div>
     <div class="page-header">
       <h1 class="page-title">مدیریت کاربران</h1>
-      <button v-if="auth.hasPermission('users.manage')" class="btn" @click="openCreate">+ کاربر جدید</button>
+      <button v-if="auth.hasPermission('users.manage')" class="btn btn-fab-mobile" @click="openCreate">
+        <span aria-hidden="true">+</span>
+        <span class="btn-fab-label">کاربر جدید</span>
+      </button>
     </div>
 
     <div class="card">
-      <table>
+      <table class="mobile-table">
         <thead>
           <tr><th>نام کاربری</th><th>ایمیل</th><th>موبایل</th><th>نقش</th><th>وضعیت</th><th v-if="auth.hasPermission('users.manage')"></th></tr>
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
-            <td><strong>{{ item.username }}</strong></td>
-            <td>{{ item.email }}</td>
-            <td>{{ item.mobile }}</td>
-            <td>{{ item.roles.join('، ') }}</td>
-            <td>
+            <td data-label="نام کاربری"><strong>{{ item.username }}</strong></td>
+            <td data-label="ایمیل">{{ item.email }}</td>
+            <td data-label="موبایل">{{ item.mobile }}</td>
+            <td data-label="نقش">{{ item.roles.join('، ') }}</td>
+            <td data-label="وضعیت">
               <span :class="item.isActive ? 'badge badge-success' : 'badge badge-danger'">
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>
