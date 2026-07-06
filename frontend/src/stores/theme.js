@@ -4,8 +4,7 @@ export const THEMES = ['light', 'dark', 'forest', 'lemon', 'shirazi', 'gold', 'o
 
 export const useThemeStore = defineStore('theme', {
   state: () => ({
-    theme: localStorage.getItem('theme') || 'light',
-    dateCulture: localStorage.getItem('dateCulture') || 'jalali'
+    theme: localStorage.getItem('theme') || 'light'
   }),
   actions: {
     setTheme(theme) {
@@ -13,10 +12,6 @@ export const useThemeStore = defineStore('theme', {
       this.theme = theme
       localStorage.setItem('theme', theme)
       document.documentElement.setAttribute('data-theme', theme)
-    },
-    setDateCulture(culture) {
-      this.dateCulture = culture
-      localStorage.setItem('dateCulture', culture)
     },
     init() {
       document.documentElement.setAttribute('data-theme', this.theme)

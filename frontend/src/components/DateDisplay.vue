@@ -1,6 +1,5 @@
 <script setup>
 import { computed } from 'vue'
-import { useThemeStore } from '../stores/theme'
 import { formatDate, formatDateTime } from '../utils/format'
 
 const props = defineProps({
@@ -8,11 +7,8 @@ const props = defineProps({
   showTime: { type: Boolean, default: false }
 })
 
-const theme = useThemeStore()
 const formatted = computed(() =>
-  props.showTime
-    ? formatDateTime(props.value, theme.dateCulture)
-    : formatDate(props.value, theme.dateCulture)
+  props.showTime ? formatDateTime(props.value) : formatDate(props.value)
 )
 </script>
 

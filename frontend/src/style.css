@@ -205,6 +205,13 @@ tr:hover td { background: rgba(0,0,0,0.02); }
   align-items: center;
   flex-wrap: wrap;
 }
+.date-toolbar {
+  width: 100%;
+}
+.date-toolbar .persian-date-picker {
+  flex: 1;
+  min-width: 0;
+}
 
 .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
 .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
@@ -384,6 +391,8 @@ tr:hover td { background: rgba(0,0,0,0.02); }
   }
   .page-toolbar .form-control { width: 100%; }
   .page-toolbar .btn:not(.btn-fab-mobile) { width: 100%; justify-content: center; }
+  .date-toolbar { flex-direction: column; align-items: stretch; }
+  .date-toolbar .btn { width: 100%; }
 
   .empty-state { padding: 2rem 1rem; }
 }

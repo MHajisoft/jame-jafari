@@ -1,27 +1,19 @@
 import dayjs from 'dayjs'
 import jalaliday from 'jalaliday'
+import { formatJalali } from './jalali'
 
 dayjs.extend(jalaliday)
 
-export function formatDate(date, culture = 'jalali', format = 'YYYY/MM/DD') {
+export function formatDate(date) {
   if (!date) return ''
-  const d = dayjs(date)
-  if (culture === 'jalali') {
-    return d.calendar('jalali').locale('fa').format(format)
-  }
-  if (culture === 'hijri') {
-    return d.format('YYYY/MM/DD')
-  }
-  return d.format('YYYY-MM-DD')
+  return formatJalali(date, 'YYYY/MM/DD')
 }
 
-export function formatDateTime(date, culture = 'jalali') {
+export function formatDateTime(date) {
   if (!date) return ''
-  const d = dayjs(date)
-  if (culture === 'jalali') {
-    return d.calendar('jalali').format('YYYY/MM/DD HH:mm')
-  }
-  return d.format('YYYY-MM-DD HH:mm')
+  const jalali = dayjs(date).calendar('jalali').locale('fa').format('YYYY/MM/DD')
+  const time = dayjs(date).format('HH:mm')
+  return `${jalali} ${time}`
 }
 
 export function toInputDate(date) {

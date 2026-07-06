@@ -1,11 +1,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '../api/client'
-import { formatMoney, toInputDate } from '../utils/format'
+import { formatMoney } from '../utils/format'
+import { todayGregorian, startOfJalaliMonthGregorian } from '../utils/jalali'
 import DateDisplay from '../components/DateDisplay.vue'
+import PersianDatePicker from '../components/PersianDatePicker.vue'
 
-const from = ref(toInputDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)))
-const to = ref(toInputDate(new Date()))
+const from = ref(startOfJalaliMonthGregorian())
+const to = ref(todayGregorian())
 const summary = ref(null)
 const balances = ref([])
 const costTypes = ref([])
@@ -35,9 +37,9 @@ onMounted(load)
   <div>
     <div class="page-header">
       <h1 class="page-title">گزارشات</h1>
-      <div class="page-toolbar">
-        <input v-model="from" type="date" class="form-control" />
-        <input v-model="to" type="date" class="form-control" />
+      <div class="page-toolbar date-toolbar">
+        <PersianDatePicker v-model="from" variant="bar" label="از" />
+        <PersianDatePicker v-model="to" variant="bar" label="تا" />
         <button class="btn" @click="load">اعمال</button>
       </div>
     </div>

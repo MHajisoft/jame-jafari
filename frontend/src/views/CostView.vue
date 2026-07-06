@@ -4,6 +4,7 @@ import api from '../api/client'
 import { formatMoney, toInputDate } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
 import DateDisplay from '../components/DateDisplay.vue'
+import PersianDatePicker from '../components/PersianDatePicker.vue'
 import FileUpload from '../components/FileUpload.vue'
 
 const auth = useAuthStore()
@@ -114,7 +115,7 @@ onMounted(load)
         </div>
         <div class="form-group">
           <label>تاریخ</label>
-          <input v-model="form.transactionDate" type="date" class="form-control" />
+          <PersianDatePicker v-model="form.transactionDate" />
         </div>
         <div class="form-group">
           <label>توضیحات</label>

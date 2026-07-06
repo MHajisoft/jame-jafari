@@ -2,14 +2,16 @@
 import { ref, onMounted } from 'vue'
 import api from '../api/client'
 import { formatMoney, toInputDate } from '../utils/format'
+import { todayGregorian } from '../utils/jalali'
 import { useAuthStore } from '../stores/auth'
 import DateDisplay from '../components/DateDisplay.vue'
+import PersianDatePicker from '../components/PersianDatePicker.vue'
 
 const auth = useAuthStore()
 const items = ref([])
 const ingredients = ref([])
 const recommendations = ref([])
-const cookDate = ref(toInputDate(new Date()))
+const cookDate = ref(todayGregorian())
 const showModal = ref(false)
 const form = ref({
   name: '', cookDate: toInputDate(new Date()), totalCount: '', description: '',
@@ -71,8 +73,8 @@ onMounted(load)
   <div>
     <div class="page-header">
       <h1 class="page-title">تهیه غذا</h1>
-      <div class="page-toolbar">
-        <input v-model="cookDate" type="date" class="form-control" @change="load" />
+      <div class="page-toolbar date-toolbar">
+        <PersianDatePicker v-model="cookDate" variant="bar" placeholder="تاریخ پخت" @change="load" />
         <button v-if="auth.hasPermission('food.manage')" class="btn btn-fab-mobile" @click="openCreate">
           <span aria-hidden="true">+</span>
           <span class="btn-fab-label">غذای جدید</span>
@@ -118,7 +120,7 @@ onMounted(load)
           </div>
           <div class="form-group">
             <label>تاریخ</label>
-            <input v-model="form.cookDate" type="date" class="form-control" />
+            <PersianDatePicker v-model="form.cookDate" />
           </div>
         </div>
         <div class="form-group">
