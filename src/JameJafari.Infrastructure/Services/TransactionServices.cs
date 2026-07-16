@@ -33,6 +33,7 @@ public class TransactionService(AppDbContext db)
             Amount = request.Amount,
             PaymentType = request.PaymentType,
             CostTypeId = request.CostTypeId,
+            TrackingCode = string.IsNullOrWhiteSpace(request.TrackingCode) ? null : request.TrackingCode.Trim(),
             Description = request.Description,
             TransactionDate = request.TransactionDate,
             DocumentPath = documentPath,
@@ -78,6 +79,7 @@ public class TransactionService(AppDbContext db)
             AccountId = request.AccountId,
             Amount = request.Amount,
             CostTypeId = request.CostTypeId,
+            TrackingCode = string.IsNullOrWhiteSpace(request.TrackingCode) ? null : request.TrackingCode.Trim(),
             Description = request.Description,
             TransactionDate = request.TransactionDate,
             DocumentPath = documentPath,
@@ -120,11 +122,11 @@ public class TransactionService(AppDbContext db)
     private static IncomeTransactionDto MapIncome(IncomeTransaction t) => new(
         t.Id, t.PersonId, PersonService.GetDisplayName(t.Person), t.AccountId, t.Account.Name,
         t.Amount, t.PaymentType, t.CostTypeId, t.CostType.Name,
-        t.DocumentPath, t.Description, t.TransactionDate, AuditHelper.ToDto(t));
+        t.DocumentPath, t.TrackingCode, t.Description, t.TransactionDate, AuditHelper.ToDto(t));
 
     private static CostTransactionDto MapCost(CostTransaction t) => new(
         t.Id, t.AccountId, t.Account.Name, t.Amount, t.CostTypeId, t.CostType.Name,
-        t.DocumentPath, t.Description, t.TransactionDate, AuditHelper.ToDto(t));
+        t.DocumentPath, t.TrackingCode, t.Description, t.TransactionDate, AuditHelper.ToDto(t));
 }
 
 public class FoodService(AppDbContext db)

@@ -112,6 +112,10 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<string>("TrackingCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<DateTime>("TransactionDate")
                         .HasColumnType("datetime2");
 
@@ -394,6 +398,10 @@ namespace JameJafari.Infrastructure.Data.Migrations
 
                     b.Property<int>("PersonId")
                         .HasColumnType("int");
+
+                    b.Property<string>("TrackingCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("TransactionDate")
                         .HasColumnType("datetime2");

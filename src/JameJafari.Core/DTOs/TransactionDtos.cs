@@ -13,6 +13,7 @@ public record IncomeTransactionDto(
     int CostTypeId,
     string CostTypeName,
     string? DocumentPath,
+    string? TrackingCode,
     string? Description,
     DateTime TransactionDate,
     AuditInfoDto Audit);
@@ -23,6 +24,7 @@ public record CreateIncomeTransactionRequest(
     decimal Amount,
     PaymentType PaymentType,
     int CostTypeId,
+    string? TrackingCode,
     string? Description,
     DateTime TransactionDate);
 
@@ -34,6 +36,7 @@ public record CostTransactionDto(
     int CostTypeId,
     string CostTypeName,
     string? DocumentPath,
+    string? TrackingCode,
     string? Description,
     DateTime TransactionDate,
     AuditInfoDto Audit);
@@ -42,5 +45,6 @@ public record CreateCostTransactionRequest(
     int AccountId,
     decimal Amount,
     int CostTypeId,
+    string? TrackingCode,
     string? Description,
     DateTime TransactionDate);

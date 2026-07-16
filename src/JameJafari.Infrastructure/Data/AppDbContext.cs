@@ -89,6 +89,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<IncomeTransaction>(e =>
         {
             e.Property(x => x.Amount).HasPrecision(18, 2);
+            e.Property(x => x.TrackingCode).HasMaxLength(100);
             e.HasOne(x => x.Person).WithMany(x => x.IncomeTransactions).HasForeignKey(x => x.PersonId);
             e.HasOne(x => x.Account).WithMany(x => x.IncomeTransactions).HasForeignKey(x => x.AccountId);
             e.HasOne(x => x.CostType).WithMany(x => x.IncomeTransactions).HasForeignKey(x => x.CostTypeId);
@@ -97,6 +98,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<CostTransaction>(e =>
         {
             e.Property(x => x.Amount).HasPrecision(18, 2);
+            e.Property(x => x.TrackingCode).HasMaxLength(100);
             e.HasOne(x => x.Account).WithMany(x => x.CostTransactions).HasForeignKey(x => x.AccountId);
             e.HasOne(x => x.CostType).WithMany(x => x.CostTransactions).HasForeignKey(x => x.CostTypeId);
         });

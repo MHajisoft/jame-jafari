@@ -16,7 +16,7 @@ const showModal = ref(false)
 const document = ref(null)
 const form = ref({
   personId: '', accountId: '', amount: '', paymentType: 1,
-  costTypeId: '', description: '', transactionDate: toInputDate(new Date())
+  costTypeId: '', trackingCode: '', description: '', transactionDate: toInputDate(new Date())
 })
 
 async function load() {
@@ -84,6 +84,7 @@ onMounted(load)
             <th>مبلغ</th>
             <th>نوع پرداخت</th>
             <th>نوع هزینه</th>
+            <th>کد رهگیری</th>
             <th>توضیحات</th>
             <th v-if="auth.hasPermission('income.delete')"></th>
           </tr>
@@ -96,6 +97,7 @@ onMounted(load)
             <td class="text-success" data-label="مبلغ">{{ formatMoney(item.amount) }}</td>
             <td data-label="نوع پرداخت">{{ paymentLabel(item.paymentType) }}</td>
             <td data-label="نوع هزینه">{{ item.costTypeName }}</td>
+            <td data-label="کد رهگیری">{{ item.trackingCode || '—' }}</td>
             <td data-label="توضیحات">{{ item.description }}</td>
             <td v-if="auth.hasPermission('income.delete')">
               <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
@@ -145,6 +147,16 @@ onMounted(load)
         <div class="form-group">
           <label>تاریخ</label>
           <PersianDatePicker v-model="form.transactionDate" />
+        </div>
+        <div class="form-group">
+          <label>کد رهگیری <span class="optional">(اختیاری)</span></label>
+          <input
+            v-model="form.trackingCode"
+            type="text"
+            class="form-control"
+            placeholder="شماره فاکتور / سریال POS / ..."
+            maxlength="100"
+          />
         </div>
         <div class="form-group">
           <label>توضیحات</label>

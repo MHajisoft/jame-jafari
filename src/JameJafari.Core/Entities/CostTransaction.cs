@@ -8,6 +8,7 @@ public class CostTransaction : AuditableEntity
     public int CostTypeId { get; set; }
     public CostType CostType { get; set; } = null!;
     public string? DocumentPath { get; set; }
+    public string? TrackingCode { get; set; }
     public string? Description { get; set; }
     public DateTime TransactionDate { get; set; } = DateTime.UtcNow;
 }

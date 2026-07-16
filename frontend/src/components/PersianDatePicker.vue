@@ -127,7 +127,14 @@ watch(() => props.modelValue, () => {
         :placeholder="placeholder"
         class="form-control date-input"
       />
-      <button type="button" class="picker-trigger" @click.stop="open">انتخاب</button>
+      <span class="calendar-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+      </span>
     </div>
 
     <Teleport to="body">
@@ -206,43 +213,39 @@ watch(() => props.modelValue, () => {
   font-size: 0.9rem;
 }
 .date-field {
+  position: relative;
   display: flex;
-  align-items: stretch;
-  gap: 0.5rem;
+  align-items: center;
 }
 .date-input {
   flex: 1;
+  width: 100%;
   cursor: pointer;
   background: var(--surface);
+  padding-inline-end: 2.75rem;
 }
-.picker-trigger {
-  flex-shrink: 0;
-  padding: 0 1rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--bg);
-  color: var(--text);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
+.calendar-icon {
+  position: absolute;
+  inset-inline-end: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  pointer-events: none;
 }
 .variant-bar .date-field {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 0.25rem 0.25rem 0.25rem 0.5rem;
 }
 .variant-bar .date-input {
   border: none;
-  min-height: 40px;
-  padding: 0.5rem;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  padding-inline-end: 2.75rem;
 }
-.variant-bar .picker-trigger {
-  border: none;
-  background: var(--primary);
-  color: white;
-  min-height: 40px;
+.variant-bar .calendar-icon {
+  color: var(--primary);
 }
 
 .picker-overlay {
