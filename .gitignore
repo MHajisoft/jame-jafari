@@ -10,6 +10,7 @@ dist/
 .vscode
 *.user
 *.suo
+.zcode
 
 # Dependencies
 node_modules/

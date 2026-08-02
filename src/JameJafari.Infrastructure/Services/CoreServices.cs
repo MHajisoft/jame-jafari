@@ -18,29 +18,26 @@ public class AuthService(AppDbContext db, IConfiguration config)
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
         var user = await db.Users
-            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ThenInclude(r => r.RolePermissions).ThenInclude(rp => rp.Permission)
+            .Include(u => u.UserPermissions).ThenInclude(up => up.Permission)
             .FirstOrDefaultAsync(u => u.Username == request.Username && !u.IsDeleted && u.IsActive);
 
         if (user is null || !VerifyPassword(request.Password, user.PasswordHash))
             return null;
 
-        var roles = user.UserRoles.Select(ur => ur.Role.Name).Distinct().ToList();
-        var permissions = user.UserRoles
-            .SelectMany(ur => ur.Role.RolePermissions)
-            .Select(rp => rp.Permission.Code)
+        var permissions = user.UserPermissions
+            .Select(up => up.Permission.Code)
             .Distinct()
             .ToList();
 
-        var token = GenerateToken(user, roles, permissions);
-        return new LoginResponse(token, user.Username, permissions, roles);
+        var token = GenerateToken(user, permissions);
+        return new LoginResponse(token, user.Username, permissions);
     }
 
     public async Task<IReadOnlyList<string>> GetUserPermissionsAsync(int userId)
     {
-        return await db.UserRoles
-            .Where(ur => ur.UserId == userId)
-            .SelectMany(ur => ur.Role.RolePermissions)
-            .Select(rp => rp.Permission.Code)
+        return await db.UserPermissions
+            .Where(up => up.UserId == userId)
+            .Select(up => up.Permission.Code)
             .Distinct()
             .ToListAsync();
     }
@@ -55,7 +52,7 @@ public class AuthService(AppDbContext db, IConfiguration config)
     private static bool VerifyPassword(string password, string hash) =>
         HashPassword(password) == hash;
 
-    private string GenerateToken(User user, IReadOnlyList<string> roles, IReadOnlyList<string> permissions)
+    private string GenerateToken(User user, IReadOnlyList<string> permissions)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -64,7 +61,6 @@ public class AuthService(AppDbContext db, IConfiguration config)
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.Username)
         };
-        claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
         claims.AddRange(permissions.Select(p => new Claim("permission", p)));
 
         var token = new JwtSecurityToken(

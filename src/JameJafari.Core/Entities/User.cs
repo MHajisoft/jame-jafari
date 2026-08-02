@@ -9,5 +9,5 @@ public class User : AuditableEntity
     public string? AvatarPath { get; set; }
     public bool IsActive { get; set; } = true;
 
-    public ICollection<UserRole> UserRoles { get; set; } = [];
+    public ICollection<UserPermission> UserPermissions { get; set; } = [];
 }

@@ -31,35 +31,9 @@ public static class DbSeeder
             await db.SaveChangesAsync();
         }
 
-        if (!await db.Roles.AnyAsync())
-        {
-            var adminRole = new Role { Name = RoleNames.Admin, Description = "مدیر سیستم" };
-            var userRole = new Role { Name = RoleNames.User, Description = "کاربر عادی" };
-            db.Roles.AddRange(adminRole, userRole);
-            await db.SaveChangesAsync();
-
-            var allPerms = await db.Permissions.ToListAsync();
-            var adminPerms = allPerms.Select(p => new RolePermission { RoleId = adminRole.Id, PermissionId = p.Id });
-            db.RolePermissions.AddRange(adminPerms);
-
-            var userPermCodes = new[]
-            {
-                PermissionCodes.AccountsView,
-                PermissionCodes.IncomeView, PermissionCodes.IncomeCreate, PermissionCodes.IncomeDelete,
-                PermissionCodes.CostView, PermissionCodes.CostCreate, PermissionCodes.CostDelete,
-                PermissionCodes.PersonsView, PermissionCodes.PersonsManage,
-                PermissionCodes.CostTypesView,
-                PermissionCodes.FoodView, PermissionCodes.FoodManage
-            };
-            var userPerms = allPerms.Where(p => userPermCodes.Contains(p.Code))
-                .Select(p => new RolePermission { RoleId = userRole.Id, PermissionId = p.Id });
-            db.RolePermissions.AddRange(userPerms);
-            await db.SaveChangesAsync();
-        }
-
         if (!await db.Users.AnyAsync())
         {
-            var adminRole = await db.Roles.FirstAsync(r => r.Name == RoleNames.Admin);
+            var allPerms = await db.Permissions.ToListAsync();
             var admin = new User
             {
                 Username = "admin",
@@ -69,9 +43,10 @@ public static class DbSeeder
             };
             db.Users.Add(admin);
             await db.SaveChangesAsync();
-            db.UserRoles.Add(new UserRole { UserId = admin.Id, RoleId = adminRole.Id });
+
+            db.UserPermissions.AddRange(allPerms.Select(p => new UserPermission { UserId = admin.Id, PermissionId = p.Id }));
             await db.SaveChangesAsync();
-            logger.LogInformation("Default admin user created: admin / admin123");
+            logger.LogInformation("Default admin user created: admin / admin123 (all permissions)");
         }
 
         if (!await db.GeneralTypes.AnyAsync())

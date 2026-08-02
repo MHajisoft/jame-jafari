@@ -7,7 +7,7 @@ public record UserDto(
     string? Mobile,
     string? AvatarPath,
     bool IsActive,
-    IReadOnlyList<string> Roles,
+    IReadOnlyList<string> Permissions,
     AuditInfoDto Audit);
 
 public record CreateUserRequest(
@@ -16,11 +16,11 @@ public record CreateUserRequest(
     string? Email,
     string? Mobile,
     bool IsActive,
-    IReadOnlyList<int> RoleIds);
+    IReadOnlyList<int> PermissionIds);
 
 public record UpdateUserRequest(
     string? Email,
     string? Mobile,
     bool IsActive,
-    IReadOnlyList<int> RoleIds,
+    IReadOnlyList<int> PermissionIds,
     string? NewPassword);

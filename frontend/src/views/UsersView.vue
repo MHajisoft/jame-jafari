@@ -1,22 +1,46 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
 const items = ref([])
-const roles = ref([])
+const permissions = ref([])
 const showModal = ref(false)
 const editing = ref(null)
-const form = ref({ username: '', password: '', email: '', mobile: '', isActive: true, roleIds: [] })
+const form = ref({ username: '', password: '', email: '', mobile: '', isActive: true, permissionIds: [] })
+
+const moduleLabels = {
+  accounts: 'حساب‌ها',
+  income: 'درآمد',
+  cost: 'هزینه',
+  users: 'کاربران',
+  persons: 'اشخاص',
+  costtypes: 'انواع هزینه',
+  food: 'تهیه غذا',
+  reports: 'گزارشات',
+  generaltypes: 'انواع عمومی'
+}
+
+const groupedPermissions = computed(() => {
+  const groups = {}
+  for (const p of permissions.value) {
+    (groups[p.module] ??= []).push(p)
+  }
+  return Object.entries(groups).map(([module, perms]) => ({
+    module,
+    label: moduleLabels[module] || module,
+    perms
+  }))
+})
 
 async function load() {
-  const [u, r] = await Promise.all([
+  const [u, p] = await Promise.all([
     api.get('/users'),
-    api.get('/roles')
+    api.get('/permissions')
   ])
   items.value = u.data.items
-  roles.value = r.data
+  permissions.value = p.data
 }
 
 async function submit() {
@@ -25,7 +49,7 @@ async function submit() {
       email: form.value.email,
       mobile: form.value.mobile,
       isActive: form.value.isActive,
-      roleIds: form.value.roleIds,
+      permissionIds: form.value.permissionIds,
       newPassword: form.value.password || null
     })
   } else {
@@ -37,7 +61,7 @@ async function submit() {
 
 function openCreate() {
   editing.value = null
-  form.value = { username: '', password: '', email: '', mobile: '', isActive: true, roleIds: [] }
+  form.value = { username: '', password: '', email: '', mobile: '', isActive: true, permissionIds: [] }
   showModal.value = true
 }
 
@@ -46,9 +70,32 @@ function openEdit(item) {
   form.value = {
     username: item.username, password: '', email: item.email || '',
     mobile: item.mobile || '', isActive: item.isActive,
-    roleIds: roles.value.filter(r => item.roles.includes(r.name)).map(r => r.id)
+    permissionIds: permissions.value.filter(p => item.permissions.includes(p.code)).map(p => p.id)
   }
   showModal.value = true
+}
+
+function toggleGroup(group, on) {
+  const ids = group.perms.map(p => p.id)
+  if (on) {
+    form.value.permissionIds = [...new Set([...form.value.permissionIds, ...ids])]
+  } else {
+    form.value.permissionIds = form.value.permissionIds.filter(id => !ids.includes(id))
+  }
+}
+
+function groupState(group) {
+  const ids = group.perms.map(p => p.id)
+  const selected = form.value.permissionIds.filter(id => ids.includes(id)).length
+  if (selected === 0) return 'none'
+  if (selected === ids.length) return 'all'
+  return 'some'
+}
+
+function permLabel(code) {
+  const map = { view: 'مشاهده', manage: 'مدیریت', create: 'ایجاد', delete: 'حذف' }
+  const action = code.split('.')[1]
+  return map[action] || action
 }
 
 async function remove(id) {
@@ -73,14 +120,19 @@ onMounted(load)
     <div class="card">
       <table class="mobile-table">
         <thead>
-          <tr><th>نام کاربری</th><th>ایمیل</th><th>موبایل</th><th>نقش</th><th>وضعیت</th><th v-if="auth.hasPermission('users.manage')"></th></tr>
+          <tr><th>نام کاربری</th><th>ایمیل</th><th>موبایل</th><th>دسترسی‌ها</th><th>وضعیت</th><th v-if="auth.hasPermission('users.manage')"></th></tr>
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
             <td data-label="نام کاربری"><strong>{{ item.username }}</strong></td>
             <td data-label="ایمیل">{{ item.email }}</td>
             <td data-label="موبایل">{{ item.mobile }}</td>
-            <td data-label="نقش">{{ item.roles.join('، ') }}</td>
+            <td data-label="دسترسی‌ها">
+              <div class="perm-badges">
+                <span v-for="p in item.permissions" :key="p" class="badge badge-perm">{{ p }}</span>
+                <span v-if="!item.permissions.length" class="text-muted">—</span>
+              </div>
+            </td>
             <td data-label="وضعیت">
               <span :class="item.isActive ? 'badge badge-success' : 'badge badge-danger'">
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
@@ -117,12 +169,25 @@ onMounted(load)
           </div>
         </div>
         <div class="form-group">
-          <label>نقش‌ها</label>
-          <div v-for="role in roles" :key="role.id">
-            <label>
-              <input v-model="form.roleIds" type="checkbox" :value="role.id" />
-              {{ role.name }} - {{ role.description }}
-            </label>
+          <label>دسترسی‌ها (هر مورد به‌صورت جداگانه)</label>
+          <div v-for="group in groupedPermissions" :key="group.module" class="perm-group">
+            <div class="perm-group-head">
+              <label>
+                <input
+                  type="checkbox"
+                  :checked="groupState(group) === 'all'"
+                  :indeterminate.prop="groupState(group) === 'some'"
+                  @change="toggleGroup(group, $event.target.checked)"
+                />
+                <strong>{{ group.label }}</strong>
+              </label>
+            </div>
+            <div class="perm-group-items">
+              <label v-for="p in group.perms" :key="p.id">
+                <input v-model="form.permissionIds" type="checkbox" :value="p.id" />
+                {{ permLabel(p.code) }}
+              </label>
+            </div>
           </div>
         </div>
         <div class="form-group">
@@ -136,3 +201,43 @@ onMounted(load)
     </div>
   </div>
 </template>
+
+<style scoped>
+.perm-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.badge-perm {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.perm-group {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.perm-group-head {
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+.perm-group-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  padding-right: 1.4rem;
+}
+.perm-group-items label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+</style>

@@ -1,9 +1,10 @@
 namespace JameJafari.Core.Entities;
 
-public class RolePermission
+public class UserPermission
 {
-    public int RoleId { get; set; }
-    public Role Role { get; set; } = null!;
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
+
     public int PermissionId { get; set; }
     public Permission Permission { get; set; } = null!;
 }

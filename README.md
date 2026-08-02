@@ -74,19 +74,25 @@ Frontend روی `http://localhost:5173` اجرا می‌شود.
 - تم‌ها: روشن، تاریک، جنگلی، لیمویی، شیرازی، طلایی، اقیانوس
 - فونت IRANSans FaNum
 - تاریخ شمسی/میلادی
-- نقش Admin و User با دسترسی‌های مجزا
+- دسترسی‌های موردبه‌مورد برای هر کاربر (بدون نقش ثابت)
 
 ## دسترسی‌ها (Permissions)
 
-| Permission | Admin | User |
-|---|---|---|
-| accounts.view | ✓ | ✓ (فقط در تراکنش) |
-| accounts.manage | ✓ | ✗ |
-| income/cost CRUD | ✓ | ✓ |
-| persons | ✓ | ✓ |
-| users | ✓ | ✗ |
-| reports | ✓ | ✗ |
-| food | ✓ | ✓ |
+دسترسی‌ها به‌صورت **هر کاربر و هر مورد جداگانه** تعریف می‌شوند (مدل نقش Admin/User حذف شده است). هر کاربر صرفاً مجموعه‌ای از کدهای دسترسی را دارد که در صفحه «کاربران» به‌صورت موردبه‌مورد تنظیم می‌شود.
+
+| Permission | توضیح |
+|---|---|
+| accounts.view / accounts.manage | مشاهده / مدیریت حساب‌ها |
+| income.view / income.create / income.delete | درآمد |
+| cost.view / cost.create / cost.delete | هزینه |
+| users.view / users.manage | کاربران |
+| persons.view / persons.manage | اشخاص |
+| costtypes.view / costtypes.manage | انواع هزینه |
+| food.view / food.manage | تهیه غذا |
+| reports.view | گزارشات |
+| generaltypes.manage | انواع عمومی |
+
+کاربر پیش‌فرض `admin` با **همه** دسترسی‌ها ایجاد می‌شود.
 
 ## Build Production
 

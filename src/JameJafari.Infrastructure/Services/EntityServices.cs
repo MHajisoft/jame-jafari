@@ -10,7 +10,7 @@ public class UserService(AppDbContext db)
 {
     public async Task<PagedResult<UserDto>> GetPagedAsync(int page, int pageSize)
     {
-        var query = db.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+        var query = db.Users.Include(u => u.UserPermissions).ThenInclude(up => up.Permission)
             .Include(u => u.CreatedBy).Include(u => u.UpdatedBy)
             .Where(u => !u.IsDeleted);
 
@@ -21,7 +21,7 @@ public class UserService(AppDbContext db)
 
     public async Task<UserDto?> GetByIdAsync(int id)
     {
-        var u = await db.Users.Include(x => x.UserRoles).ThenInclude(ur => ur.Role)
+        var u = await db.Users.Include(x => x.UserPermissions).ThenInclude(up => up.Permission)
             .Include(x => x.CreatedBy).Include(x => x.UpdatedBy)
             .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
         return u is null ? null : Map(u);
@@ -43,13 +43,13 @@ public class UserService(AppDbContext db)
         };
         db.Users.Add(entity);
         await db.SaveChangesAsync();
-        await SetRolesAsync(entity.Id, request.RoleIds);
+        await SetPermissionsAsync(entity.Id, request.PermissionIds);
         return (await GetByIdAsync(entity.Id))!;
     }
 
     public async Task<UserDto?> UpdateAsync(int id, UpdateUserRequest request, int userId)
     {
-        var entity = await db.Users.Include(u => u.UserRoles).FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+        var entity = await db.Users.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
         if (entity is null) return null;
 
         entity.Email = request.Email;
@@ -59,7 +59,7 @@ public class UserService(AppDbContext db)
         if (!string.IsNullOrWhiteSpace(request.NewPassword))
             entity.PasswordHash = AuthService.HashPassword(request.NewPassword);
 
-        await SetRolesAsync(id, request.RoleIds);
+        await SetPermissionsAsync(id, request.PermissionIds);
         await db.SaveChangesAsync();
         return await GetByIdAsync(id);
     }
@@ -85,18 +85,18 @@ public class UserService(AppDbContext db)
         return await GetByIdAsync(id);
     }
 
-    private async Task SetRolesAsync(int userId, IReadOnlyList<int> roleIds)
+    private async Task SetPermissionsAsync(int userId, IReadOnlyList<int> permissionIds)
     {
-        var existing = await db.UserRoles.Where(ur => ur.UserId == userId).ToListAsync();
-        db.UserRoles.RemoveRange(existing);
-        foreach (var roleId in roleIds.Distinct())
-            db.UserRoles.Add(new UserRole { UserId = userId, RoleId = roleId });
+        var existing = await db.UserPermissions.Where(up => up.UserId == userId).ToListAsync();
+        db.UserPermissions.RemoveRange(existing);
+        foreach (var permissionId in permissionIds.Distinct())
+            db.UserPermissions.Add(new UserPermission { UserId = userId, PermissionId = permissionId });
         await db.SaveChangesAsync();
     }
 
     private static UserDto Map(User u) => new(
         u.Id, u.Username, u.Email, u.Mobile, u.AvatarPath, u.IsActive,
-        u.UserRoles.Select(ur => ur.Role.Name).ToList(),
+        u.UserPermissions.Select(up => up.Permission.Code).ToList(),
         AuditHelper.ToDto(u));
 }
 

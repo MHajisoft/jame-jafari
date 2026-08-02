@@ -6,10 +6,8 @@ namespace JameJafari.Infrastructure.Data;
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
-    public DbSet<Role> Roles => Set<Role>();
     public DbSet<Permission> Permissions => Set<Permission>();
-    public DbSet<UserRole> UserRoles => Set<UserRole>();
-    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<UserPermission> UserPermissions => Set<UserPermission>();
     public DbSet<GeneralType> GeneralTypes => Set<GeneralType>();
     public DbSet<Person> Persons => Set<Person>();
     public DbSet<Account> Accounts => Set<Account>();
@@ -31,12 +29,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Mobile).HasMaxLength(20);
         });
 
-        modelBuilder.Entity<Role>(e =>
-        {
-            e.HasIndex(x => x.Name).IsUnique();
-            e.Property(x => x.Name).HasMaxLength(100);
-        });
-
         modelBuilder.Entity<Permission>(e =>
         {
             e.HasIndex(x => x.Code).IsUnique();
@@ -44,18 +36,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Name).HasMaxLength(200);
         });
 
-        modelBuilder.Entity<UserRole>(e =>
+        modelBuilder.Entity<UserPermission>(e =>
         {
-            e.HasKey(x => new { x.UserId, x.RoleId });
-            e.HasOne(x => x.User).WithMany(x => x.UserRoles).HasForeignKey(x => x.UserId);
-            e.HasOne(x => x.Role).WithMany(x => x.UserRoles).HasForeignKey(x => x.RoleId);
-        });
-
-        modelBuilder.Entity<RolePermission>(e =>
-        {
-            e.HasKey(x => new { x.RoleId, x.PermissionId });
-            e.HasOne(x => x.Role).WithMany(x => x.RolePermissions).HasForeignKey(x => x.RoleId);
-            e.HasOne(x => x.Permission).WithMany(x => x.RolePermissions).HasForeignKey(x => x.PermissionId);
+            e.HasKey(x => new { x.UserId, x.PermissionId });
+            e.HasOne(x => x.User).WithMany(x => x.UserPermissions).HasForeignKey(x => x.UserId);
+            e.HasOne(x => x.Permission).WithMany(x => x.UserPermissions).HasForeignKey(x => x.PermissionId);
         });
 
         modelBuilder.Entity<GeneralType>(e =>
@@ -120,7 +105,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         });
 
         ConfigureAuditRelations<User>(modelBuilder);
-        ConfigureAuditRelations<Role>(modelBuilder);
         ConfigureAuditRelations<GeneralType>(modelBuilder);
         ConfigureAuditRelations<Person>(modelBuilder);
         ConfigureAuditRelations<Account>(modelBuilder);

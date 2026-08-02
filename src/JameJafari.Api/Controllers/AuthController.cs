@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using JameJafari.Core.DTOs;
 using JameJafari.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -22,12 +21,10 @@ public class AuthController(AuthService authService) : ApiControllerBase
     public ActionResult<object> Me()
     {
         var permissions = User.FindAll("permission").Select(c => c.Value).ToList();
-        var roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
         return Ok(new
         {
             Username = User.Identity?.Name,
-            Permissions = permissions,
-            Roles = roles
+            Permissions = permissions
         });
     }
 }
