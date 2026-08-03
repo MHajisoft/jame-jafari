@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using JameJafari.Api.Authorization;
 using JameJafari.Core.Constants;
@@ -17,14 +18,20 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
     [RequirePermission(PermissionCodes.IncomeView)]
     public async Task<ActionResult<PagedResult<IncomeTransactionDto>>> GetAll(
         [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int? accountId,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        [FromQuery, Range(1, 100)] int page = 1, [FromQuery, Range(1, 200)] int pageSize = 20)
         => Ok(await service.GetIncomePagedAsync(from, to, accountId, page, pageSize));
 
     [HttpPost]
     [RequirePermission(PermissionCodes.IncomeCreate)]
     public async Task<ActionResult<IncomeTransactionDto>> Create([FromForm] string data, [FromForm] IFormFile? document)
     {
-        var request = JsonSerializer.Deserialize<CreateIncomeTransactionRequest>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+        if (string.IsNullOrWhiteSpace(data))
+            return BadRequest("داده ارسالی نامعتبر است");
+
+        var request = JsonSerializer.Deserialize<CreateIncomeTransactionRequest>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        if (request is null)
+            return BadRequest("داده ارسالی نامعتبر است");
+
         string? path = document is not null ? await storage.SaveAsync(document, "transactions") : null;
         return Ok(await service.CreateIncomeAsync(request, CurrentUserId, path));
     }
@@ -43,14 +50,20 @@ public class CostTransactionsController(TransactionService service, FileStorageS
     [RequirePermission(PermissionCodes.CostView)]
     public async Task<ActionResult<PagedResult<CostTransactionDto>>> GetAll(
         [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int? accountId,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        [FromQuery, Range(1, 100)] int page = 1, [FromQuery, Range(1, 200)] int pageSize = 20)
         => Ok(await service.GetCostPagedAsync(from, to, accountId, page, pageSize));
 
     [HttpPost]
     [RequirePermission(PermissionCodes.CostCreate)]
     public async Task<ActionResult<CostTransactionDto>> Create([FromForm] string data, [FromForm] IFormFile? document)
     {
-        var request = JsonSerializer.Deserialize<CreateCostTransactionRequest>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+        if (string.IsNullOrWhiteSpace(data))
+            return BadRequest("داده ارسالی نامعتبر است");
+
+        var request = JsonSerializer.Deserialize<CreateCostTransactionRequest>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        if (request is null)
+            return BadRequest("داده ارسالی نامعتبر است");
+
         string? path = document is not null ? await storage.SaveAsync(document, "transactions") : null;
         return Ok(await service.CreateCostAsync(request, CurrentUserId, path));
     }

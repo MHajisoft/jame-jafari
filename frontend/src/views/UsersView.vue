@@ -2,8 +2,10 @@
 import { ref, computed, onMounted } from 'vue'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
+import { useFormValidation } from '../composables/useFormValidation'
 
 const auth = useAuthStore()
+const { error, errors, validate, trySubmit, clearErrors } = useFormValidation()
 const items = ref([])
 const permissions = ref([])
 const showModal = ref(false)
@@ -20,6 +22,29 @@ const moduleLabels = {
   food: 'تهیه غذا',
   reports: 'گزارشات',
   generaltypes: 'انواع عمومی'
+}
+
+function getRules() {
+  const r = {
+    username: [
+      { type: 'required', msg: 'نام کاربری الزامی است' },
+      { type: 'minLength', param: 3, msg: 'نام کاربری حداقل ۳ کاراکتر' }
+    ]
+  }
+  if (!editing.value) {
+    r.password = [
+      { type: 'required', msg: 'رمز عبور الزامی است' },
+      { type: 'minLength', param: 4, msg: 'رمز عبور حداقل ۴ کاراکتر' }
+    ]
+  } else if (form.value.password) {
+    r.password = [
+      { type: 'minLength', param: 4, msg: 'رمز عبور حداقل ۴ کاراکتر' }
+    ]
+  }
+  if (form.value.email) {
+    r.email = [{ type: 'email' }]
+  }
+  return r
 }
 
 const groupedPermissions = computed(() => {
@@ -44,17 +69,42 @@ async function load() {
 }
 
 async function submit() {
-  if (editing.value) {
-    await api.put(`/users/${editing.value}`, {
-      email: form.value.email,
-      mobile: form.value.mobile,
-      isActive: form.value.isActive,
-      permissionIds: form.value.permissionIds,
-      newPassword: form.value.password || null
-    })
-  } else {
-    await api.post('/users', form.value)
+  if (!validate(getRules(), form.value)) return
+  const normalized = {
+    username: form.value.username,
+    email: form.value.email?.trim() || null,
+    mobile: form.value.mobile?.trim() || null,
+    isActive: form.value.isActive,
+    permissionIds: form.value.permissionIds
   }
+  if (form.value.password) normalized.password = form.value.password
+  if (form.value.password) normalized.newPassword = form.value.password
+
+  const payload = editing.value
+    ? {
+        email: normalized.email,
+        mobile: normalized.mobile,
+        isActive: normalized.isActive,
+        permissionIds: normalized.permissionIds,
+        newPassword: normalized.password || null
+      }
+    : {
+        username: normalized.username,
+        password: normalized.password,
+        email: normalized.email,
+        mobile: normalized.mobile,
+        isActive: normalized.isActive,
+        permissionIds: normalized.permissionIds
+      }
+
+  const ok = await trySubmit(async () => {
+    if (editing.value) {
+      await api.put(`/users/${editing.value}`, payload)
+    } else {
+      await api.post('/users', payload)
+    }
+  })
+  if (!ok) return
   showModal.value = false
   await load()
 }
@@ -62,6 +112,7 @@ async function submit() {
 function openCreate() {
   editing.value = null
   form.value = { username: '', password: '', email: '', mobile: '', isActive: true, permissionIds: [] }
+  clearErrors()
   showModal.value = true
 }
 
@@ -72,6 +123,7 @@ function openEdit(item) {
     mobile: item.mobile || '', isActive: item.isActive,
     permissionIds: permissions.value.filter(p => item.permissions.includes(p.code)).map(p => p.id)
   }
+  clearErrors()
   showModal.value = true
 }
 
@@ -148,75 +200,67 @@ onMounted(load)
     </div>
 
     <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
-      <div class="modal">
+      <div class="modal" style="max-width:560px">
         <h2 class="modal-title">{{ editing ? 'ویرایش کاربر' : 'کاربر جدید' }}</h2>
-        <div v-if="!editing" class="form-group">
-          <label>نام کاربری *</label>
-          <input v-model="form.username" class="form-control" required />
-        </div>
-        <div class="form-group">
-          <label>{{ editing ? 'رمز عبور جدید (اختیاری)' : 'رمز عبور *' }}</label>
-          <input v-model="form.password" type="password" class="form-control" :required="!editing" />
-        </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label>ایمیل</label>
-            <input v-model="form.email" type="email" class="form-control" />
+        <div v-if="error" class="form-error">{{ error }}</div>
+        <form @submit.prevent="submit">
+          <div v-if="!editing" class="form-group">
+            <label>نام کاربری *</label>
+            <input v-model="form.username" class="form-control" :class="{ 'field-invalid': errors.username }" required />
+            <div v-if="errors.username" class="field-error">{{ errors.username }}</div>
           </div>
           <div class="form-group">
-            <label>موبایل</label>
-            <input v-model="form.mobile" class="form-control" />
+            <label>{{ editing ? 'رمز عبور جدید (اختیاری)' : 'رمز عبور *' }}</label>
+            <input v-model="form.password" type="password" class="form-control" :class="{ 'field-invalid': errors.password }" :required="!editing" />
+            <div v-if="errors.password" class="field-error">{{ errors.password }}</div>
           </div>
-        </div>
-        <div class="form-group">
-          <label>دسترسی‌ها (هر مورد به‌صورت جداگانه)</label>
-          <div v-for="group in groupedPermissions" :key="group.module" class="perm-group">
-            <div class="perm-group-head">
-              <label>
-                <input
-                  type="checkbox"
-                  :checked="groupState(group) === 'all'"
-                  :indeterminate.prop="groupState(group) === 'some'"
-                  @change="toggleGroup(group, $event.target.checked)"
-                />
-                <strong>{{ group.label }}</strong>
-              </label>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>ایمیل</label>
+              <input v-model="form.email" type="email" class="form-control" :class="{ 'field-invalid': errors.email }" />
+              <div v-if="errors.email" class="field-error">{{ errors.email }}</div>
             </div>
-            <div class="perm-group-items">
-              <label v-for="p in group.perms" :key="p.id">
-                <input v-model="form.permissionIds" type="checkbox" :value="p.id" />
-                {{ permLabel(p.code) }}
-              </label>
+            <div class="form-group">
+              <label>موبایل</label>
+              <input v-model="form.mobile" class="form-control" />
             </div>
           </div>
-        </div>
-        <div class="form-group">
-          <label><input v-model="form.isActive" type="checkbox" /> فعال</label>
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-outline" @click="showModal = false">انصراف</button>
-          <button class="btn" @click="submit">ذخیره</button>
-        </div>
+          <div class="form-group">
+            <label>دسترسی‌ها (هر مورد به‌صورت جداگانه)</label>
+            <div v-for="group in groupedPermissions" :key="group.module" class="perm-group">
+              <div class="perm-group-head">
+                <label>
+                  <input
+                    type="checkbox"
+                    :checked="groupState(group) === 'all'"
+                    :indeterminate.prop="groupState(group) === 'some'"
+                    @change="toggleGroup(group, $event.target.checked)"
+                  />
+                  <strong>{{ group.label }}</strong>
+                </label>
+              </div>
+              <div class="perm-group-items">
+                <label v-for="p in group.perms" :key="p.id">
+                  <input v-model="form.permissionIds" type="checkbox" :value="p.id" />
+                  {{ permLabel(p.code) }}
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label><input v-model="form.isActive" type="checkbox" /> فعال</label>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" @click="showModal = false">انصراف</button>
+            <button type="submit" class="btn">ذخیره</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.perm-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-.badge-perm {
-  font-size: 0.65rem;
-  padding: 0.15rem 0.4rem;
-  border-radius: 6px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  white-space: nowrap;
-}
 .perm-group {
   border: 1px solid var(--border);
   border-radius: 8px;

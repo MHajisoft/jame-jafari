@@ -3,8 +3,10 @@ import { ref, onMounted } from 'vue'
 import api from '../api/client'
 import { genders } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
+import { useFormValidation } from '../composables/useFormValidation'
 
 const auth = useAuthStore()
+const { error, errors, validate, trySubmit, clearErrors } = useFormValidation()
 const items = ref([])
 const travelPrefixes = ref([])
 const allPersons = ref([])
@@ -15,6 +17,11 @@ const form = ref({
   firstName: '', lastName: '', nickName: '', gender: 1,
   fatherId: '', motherId: '', mobile: '', address: '', travelPrefixId: '', isDead: false
 })
+
+const rules = {
+  firstName: [{ type: 'required', msg: 'نام الزامی است' }],
+  mobile: [{ type: 'maxLength', param: 20, msg: 'موبایل حداکثر ۲۰ کاراکتر' }]
+}
 
 async function load() {
   const [p, t] = await Promise.all([
@@ -27,17 +34,27 @@ async function load() {
 }
 
 async function submit() {
+  if (!validate(rules, form.value)) return
   const payload = {
-    ...form.value,
+    firstName: form.value.firstName.trim(),
+    lastName: form.value.lastName?.trim() || null,
+    nickName: form.value.nickName?.trim() || null,
+    gender: form.value.gender,
     fatherId: form.value.fatherId ? +form.value.fatherId : null,
     motherId: form.value.motherId ? +form.value.motherId : null,
-    travelPrefixId: form.value.travelPrefixId ? +form.value.travelPrefixId : null
+    mobile: form.value.mobile?.trim() || null,
+    address: form.value.address?.trim() || null,
+    travelPrefixId: form.value.travelPrefixId ? +form.value.travelPrefixId : null,
+    isDead: form.value.isDead
   }
-  if (editing.value) {
-    await api.put(`/persons/${editing.value}`, payload)
-  } else {
-    await api.post('/persons', payload)
-  }
+  const ok = await trySubmit(async () => {
+    if (editing.value) {
+      await api.put(`/persons/${editing.value}`, payload)
+    } else {
+      await api.post('/persons', payload)
+    }
+  })
+  if (!ok) return
   showModal.value = false
   editing.value = null
   await load()
@@ -46,6 +63,7 @@ async function submit() {
 function openCreate() {
   editing.value = null
   form.value = { firstName: '', lastName: '', nickName: '', gender: 1, fatherId: '', motherId: '', mobile: '', address: '', travelPrefixId: '', isDead: false }
+  clearErrors()
   showModal.value = true
 }
 
@@ -57,6 +75,7 @@ function openEdit(item) {
     mobile: item.mobile || '', address: item.address || '', travelPrefixId: item.travelPrefixId || '',
     isDead: item.isDead
   }
+  clearErrors()
   showModal.value = true
 }
 
@@ -91,12 +110,7 @@ onMounted(load)
       <table class="mobile-table">
         <thead>
           <tr>
-            <th>نام</th>
-            <th>جنسیت</th>
-            <th>موبایل</th>
-            <th>پدر</th>
-            <th>مادر</th>
-            <th>وضعیت</th>
+            <th>نام</th><th>جنسیت</th><th>موبایل</th><th>پدر</th><th>مادر</th><th>وضعیت</th>
             <th v-if="auth.hasPermission('persons.manage')"></th>
           </tr>
         </thead>
@@ -123,66 +137,71 @@ onMounted(load)
     <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
       <div class="modal">
         <h2 class="modal-title">{{ editing ? 'ویرایش شخص' : 'شخص جدید' }}</h2>
-        <div class="grid-2">
-          <div class="form-group">
-            <label>نام *</label>
-            <input v-model="form.firstName" class="form-control" required />
+        <div v-if="error" class="form-error">{{ error }}</div>
+        <form @submit.prevent="submit">
+          <div class="grid-2">
+            <div class="form-group">
+              <label>نام *</label>
+              <input v-model="form.firstName" class="form-control" :class="{ 'field-invalid': errors.firstName }" required />
+              <div v-if="errors.firstName" class="field-error">{{ errors.firstName }}</div>
+            </div>
+            <div class="form-group">
+              <label>نام خانوادگی</label>
+              <input v-model="form.lastName" class="form-control" />
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>نام مستعار</label>
+              <input v-model="form.nickName" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label>جنسیت</label>
+              <select v-model="form.gender" class="form-control">
+                <option v-for="g in genders" :key="g.value" :value="g.value">{{ g.label }}</option>
+              </select>
+            </div>
           </div>
           <div class="form-group">
-            <label>نام خانوادگی</label>
-            <input v-model="form.lastName" class="form-control" />
-          </div>
-        </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label>نام مستعار</label>
-            <input v-model="form.nickName" class="form-control" />
-          </div>
-          <div class="form-group">
-            <label>جنسیت</label>
-            <select v-model="form.gender" class="form-control">
-              <option v-for="g in genders" :key="g.value" :value="g.value">{{ g.label }}</option>
+            <label>پیشوند سفر</label>
+            <select v-model="form.travelPrefixId" class="form-control">
+              <option value="">بدون پیشوند</option>
+              <option v-for="t in travelPrefixes" :key="t.id" :value="t.id">{{ t.name }}</option>
             </select>
           </div>
-        </div>
-        <div class="form-group">
-          <label>پیشوند سفر</label>
-          <select v-model="form.travelPrefixId" class="form-control">
-            <option value="">بدون پیشوند</option>
-            <option v-for="t in travelPrefixes" :key="t.id" :value="t.id">{{ t.name }}</option>
-          </select>
-        </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label>پدر</label>
-            <select v-model="form.fatherId" class="form-control">
-              <option value="">—</option>
-              <option v-for="p in allPersons" :key="p.id" :value="p.id">{{ p.displayName }}</option>
-            </select>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>پدر</label>
+              <select v-model="form.fatherId" class="form-control">
+                <option value="">—</option>
+                <option v-for="p in allPersons" :key="p.id" :value="p.id">{{ p.displayName }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>مادر</label>
+              <select v-model="form.motherId" class="form-control">
+                <option value="">—</option>
+                <option v-for="p in allPersons" :key="p.id" :value="p.id">{{ p.displayName }}</option>
+              </select>
+            </div>
           </div>
           <div class="form-group">
-            <label>مادر</label>
-            <select v-model="form.motherId" class="form-control">
-              <option value="">—</option>
-              <option v-for="p in allPersons" :key="p.id" :value="p.id">{{ p.displayName }}</option>
-            </select>
+            <label>موبایل</label>
+            <input v-model="form.mobile" class="form-control" :class="{ 'field-invalid': errors.mobile }" />
+            <div v-if="errors.mobile" class="field-error">{{ errors.mobile }}</div>
           </div>
-        </div>
-        <div class="form-group">
-          <label>موبایل</label>
-          <input v-model="form.mobile" class="form-control" />
-        </div>
-        <div class="form-group">
-          <label>آدرس</label>
-          <textarea v-model="form.address" class="form-control" rows="2"></textarea>
-        </div>
-        <div class="form-group">
-          <label><input v-model="form.isDead" type="checkbox" /> فوت شده</label>
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-outline" @click="showModal = false">انصراف</button>
-          <button class="btn" @click="submit">ذخیره</button>
-        </div>
+          <div class="form-group">
+            <label>آدرس</label>
+            <textarea v-model="form.address" class="form-control" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label><input v-model="form.isDead" type="checkbox" /> فوت شده</label>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" @click="showModal = false">انصراف</button>
+            <button type="submit" class="btn">ذخیره</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

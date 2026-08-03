@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using JameJafari.Api.Authorization;
 using JameJafari.Core.Constants;
 using JameJafari.Core.DTOs;
@@ -14,7 +15,7 @@ public class PersonsController(PersonService service) : ApiControllerBase
 {
     [HttpGet]
     [RequirePermission(PermissionCodes.PersonsView)]
-    public async Task<ActionResult<PagedResult<PersonDto>>> GetAll([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<PagedResult<PersonDto>>> GetAll([FromQuery] string? search, [FromQuery, Range(1, 100)] int page = 1, [FromQuery, Range(1, 200)] int pageSize = 20)
         => Ok(await service.GetPagedAsync(search, page, pageSize));
 
     [HttpGet("{id:int}")]

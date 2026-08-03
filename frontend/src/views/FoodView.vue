@@ -4,10 +4,12 @@ import api from '../api/client'
 import { formatMoney, toInputDate } from '../utils/format'
 import { todayGregorian } from '../utils/jalali'
 import { useAuthStore } from '../stores/auth'
+import { useFormValidation } from '../composables/useFormValidation'
 import DateDisplay from '../components/DateDisplay.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
 
 const auth = useAuthStore()
+const { error, errors, validate, trySubmit, clearErrors } = useFormValidation()
 const items = ref([])
 const ingredients = ref([])
 const recommendations = ref([])
@@ -17,6 +19,21 @@ const form = ref({
   name: '', cookDate: toInputDate(new Date()), totalCount: '', description: '',
   ingredientRows: [{ costTypeId: '', units: '', price: '' }]
 })
+
+function getRules() {
+  return {
+    name: [{ type: 'required', msg: 'نام غذا الزامی است' }],
+    totalCount: [{ type: 'positiveNumber', msg: 'تعداد باید حداقل ۱ باشد' }],
+    ingredientRows: [
+      (val) => {
+        if (!val || val.length === 0) return 'حداقل یک ماده اولیه الزامی است'
+        const valid = val.some(r => r.costTypeId && r.units && r.price && +r.units > 0 && +r.price > 0)
+        if (!valid) return 'هر ماده اولیه باید نوع، مقدار و قیمت معتبر داشته باشد'
+        return null
+      }
+    ]
+  }
+}
 
 async function load() {
   const [f, ing, rec] = await Promise.all([
@@ -39,11 +56,12 @@ function onIngredientSelect(row) {
 }
 
 async function submit() {
+  if (!validate(getRules(), form.value)) return
   const payload = {
     name: form.value.name,
     cookDate: new Date(form.value.cookDate).toISOString(),
     totalCount: +form.value.totalCount,
-    description: form.value.description,
+    description: form.value.description || null,
     ingredients: form.value.ingredientRows
       .filter(r => r.costTypeId)
       .map(r => ({
@@ -52,7 +70,10 @@ async function submit() {
         price: +r.price
       }))
   }
-  await api.post('/food', payload)
+  const ok = await trySubmit(async () => {
+    await api.post('/food', payload)
+  })
+  if (!ok) return
   showModal.value = false
   cookDate.value = form.value.cookDate
   await load()
@@ -63,6 +84,7 @@ function openCreate() {
     name: '', cookDate: cookDate.value, totalCount: '', description: '',
     ingredientRows: [{ costTypeId: '', units: '', price: '' }]
   }
+  clearErrors()
   showModal.value = true
 }
 
@@ -95,9 +117,7 @@ onMounted(load)
         </div>
       </div>
       <table class="mobile-table">
-        <thead>
-          <tr><th>ماده اولیه</th><th>مقدار</th><th>قیمت</th><th>قیمت پیشنهادی</th></tr>
-        </thead>
+        <thead><tr><th>ماده اولیه</th><th>مقدار</th><th>قیمت</th><th>قیمت پیشنهادی</th></tr></thead>
         <tbody>
           <tr v-for="ing in food.ingredients" :key="ing.id">
             <td data-label="ماده اولیه">{{ ing.costTypeName }} ({{ ing.unitName }})</td>
@@ -113,40 +133,46 @@ onMounted(load)
     <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
       <div class="modal" style="max-width:640px">
         <h2 class="modal-title">ثبت تهیه غذا</h2>
-        <div class="grid-2">
-          <div class="form-group">
-            <label>نام غذا</label>
-            <input v-model="form.name" class="form-control" required />
+        <div v-if="error" class="form-error">{{ error }}</div>
+        <form @submit.prevent="submit">
+          <div class="grid-2">
+            <div class="form-group">
+              <label>نام غذا *</label>
+              <input v-model="form.name" class="form-control" :class="{ 'field-invalid': errors.name }" required />
+              <div v-if="errors.name" class="field-error">{{ errors.name }}</div>
+            </div>
+            <div class="form-group">
+              <label>تاریخ</label>
+              <PersianDatePicker v-model="form.cookDate" />
+            </div>
           </div>
           <div class="form-group">
-            <label>تاریخ</label>
-            <PersianDatePicker v-model="form.cookDate" />
+            <label>تعداد پخته شده *</label>
+            <input v-model="form.totalCount" type="number" class="form-control" :class="{ 'field-invalid': errors.totalCount }" required />
+            <div v-if="errors.totalCount" class="field-error">{{ errors.totalCount }}</div>
           </div>
-        </div>
-        <div class="form-group">
-          <label>تعداد پخته شده</label>
-          <input v-model="form.totalCount" type="number" class="form-control" required />
-        </div>
 
-        <h4 style="margin:1rem 0 0.5rem">مواد اولیه</h4>
-        <div v-for="(row, i) in form.ingredientRows" :key="i" class="grid-3" style="margin-bottom:0.5rem">
-          <select v-model="row.costTypeId" class="form-control" @change="onIngredientSelect(row)">
-            <option value="">ماده اولیه</option>
-            <option v-for="ing in ingredients" :key="ing.id" :value="ing.id">{{ ing.name }}</option>
-          </select>
-          <input v-model="row.units" type="number" class="form-control" placeholder="مقدار" />
-          <input v-model="row.price" type="number" class="form-control" placeholder="قیمت" />
-        </div>
-        <button class="btn btn-outline btn-sm" @click="addRow">+ ماده اولیه</button>
+          <h4 style="margin:1rem 0 0.5rem">مواد اولیه</h4>
+          <div v-if="errors.ingredientRows" class="field-error" style="margin-bottom:0.5rem">{{ errors.ingredientRows }}</div>
+          <div v-for="(row, i) in form.ingredientRows" :key="i" class="grid-3" style="margin-bottom:0.5rem">
+            <select v-model="row.costTypeId" class="form-control" @change="onIngredientSelect(row)">
+              <option value="">ماده اولیه</option>
+              <option v-for="ing in ingredients" :key="ing.id" :value="ing.id">{{ ing.name }}</option>
+            </select>
+            <input v-model="row.units" type="number" class="form-control" placeholder="مقدار" />
+            <input v-model="row.price" type="number" class="form-control" placeholder="قیمت" />
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" @click="addRow">+ ماده اولیه</button>
 
-        <div class="form-group" style="margin-top:1rem">
-          <label>توضیحات</label>
-          <textarea v-model="form.description" class="form-control" rows="2"></textarea>
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-outline" @click="showModal = false">انصراف</button>
-          <button class="btn" @click="submit">ثبت</button>
-        </div>
+          <div class="form-group" style="margin-top:1rem">
+            <label>توضیحات</label>
+            <textarea v-model="form.description" class="form-control" rows="2"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" @click="showModal = false">انصراف</button>
+            <button type="submit" class="btn">ثبت</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
