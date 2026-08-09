@@ -7,9 +7,10 @@ import { useFormValidation } from '../composables/useFormValidation'
 import DateDisplay from '../components/DateDisplay.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
 import FileUpload from '../components/FileUpload.vue'
+import CurrencyInput from '../components/CurrencyInput.vue'
 
 const auth = useAuthStore()
-const { error, errors, validate, trySubmit, clearErrors } = useFormValidation()
+const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
 const accounts = ref([])
 const persons = ref([])
@@ -134,7 +135,12 @@ onMounted(load)
         <form @submit.prevent="submit">
           <div class="form-group">
             <label>شخص *</label>
-            <select v-model="form.personId" class="form-control" :class="{ 'field-invalid': errors.personId }" required>
+            <select
+              v-model="form.personId"
+              class="form-control"
+              :class="{ 'field-invalid': errors.personId }"
+              @change="clearFieldError('personId')"
+            >
               <option value="">انتخاب کنید</option>
               <option v-for="p in persons" :key="p.id" :value="p.id">{{ p.displayName }}</option>
             </select>
@@ -142,7 +148,12 @@ onMounted(load)
           </div>
           <div class="form-group">
             <label>حساب *</label>
-            <select v-model="form.accountId" class="form-control" :class="{ 'field-invalid': errors.accountId }" required>
+            <select
+              v-model="form.accountId"
+              class="form-control"
+              :class="{ 'field-invalid': errors.accountId }"
+              @change="clearFieldError('accountId')"
+            >
               <option value="">انتخاب کنید</option>
               <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option>
             </select>
@@ -151,7 +162,12 @@ onMounted(load)
           <div class="grid-2">
             <div class="form-group">
               <label>مبلغ *</label>
-              <input v-model="form.amount" type="number" class="form-control" :class="{ 'field-invalid': errors.amount }" required />
+              <CurrencyInput
+                v-model="form.amount"
+                :invalid="!!errors.amount"
+                placeholder="مثلاً 1,500,000"
+                @input="clearFieldError('amount')"
+              />
               <div v-if="errors.amount" class="field-error">{{ errors.amount }}</div>
             </div>
             <div class="form-group">
@@ -163,7 +179,12 @@ onMounted(load)
           </div>
           <div class="form-group">
             <label>نوع هزینه *</label>
-            <select v-model="form.costTypeId" class="form-control" :class="{ 'field-invalid': errors.costTypeId }" required>
+            <select
+              v-model="form.costTypeId"
+              class="form-control"
+              :class="{ 'field-invalid': errors.costTypeId }"
+              @change="clearFieldError('costTypeId')"
+            >
               <option value="">انتخاب کنید</option>
               <option v-for="c in costTypes" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>

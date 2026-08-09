@@ -24,6 +24,27 @@ export function formatMoney(amount) {
   return new Intl.NumberFormat('fa-IR').format(amount || 0)
 }
 
+/** Convert Persian/Arabic digits to Western digits. */
+export function toEnglishDigits(value) {
+  return String(value ?? '')
+    .replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+    .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+}
+
+/** Digits-only string from a currency field (supports separators & Persian digits). */
+export function parseCurrencyInput(value) {
+  const digits = toEnglishDigits(value).replace(/[^\d]/g, '')
+  return digits.replace(/^0+(?=\d)/, '')
+}
+
+/** Format a number/string with thousand separators for currency inputs. */
+export function formatCurrencyInput(value) {
+  if (value === '' || value === null || value === undefined) return ''
+  const digits = parseCurrencyInput(value)
+  if (!digits) return ''
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+}
+
 export const paymentTypes = [
   { value: 1, label: 'نقد' },
   { value: 2, label: 'کارتخوان' },

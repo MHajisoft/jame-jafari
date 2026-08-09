@@ -1,4 +1,4 @@
-import { reactive, toRefs } from 'vue'
+import { nextTick, reactive, toRefs } from 'vue'
 
 function isBlank(v) {
   return v === undefined || v === null || (typeof v === 'string' && v.trim() === '')
@@ -11,7 +11,7 @@ const validators = {
   min: (v, num, msg) => (typeof v === 'number' && v < num ? (msg || `حداقل ${num}`) : null),
   max: (v, num, msg) => (typeof v === 'number' && v > num ? (msg || `حداکثر ${num}`) : null),
   positiveNumber: (v, _, msg) => {
-    if (isBlank(v)) return null
+    if (isBlank(v)) return msg || 'مقدار باید بیشتر از صفر باشد'
     const n = Number(v)
     return (isNaN(n) || n <= 0) ? (msg || 'مقدار باید بیشتر از صفر باشد') : null
   },
@@ -19,6 +19,15 @@ const validators = {
     if (isBlank(v)) return null
     return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? (msg || 'فرمت ایمیل نامعتبر است') : null
   }
+}
+
+function focusFirstInvalid() {
+  nextTick(() => {
+    const el = document.querySelector('.field-invalid')
+    if (!el) return
+    if (typeof el.focus === 'function') el.focus()
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  })
 }
 
 /**
@@ -77,6 +86,7 @@ export function useFormValidation() {
       }
     }
 
+    if (!valid) focusFirstInvalid()
     return valid
   }
 
@@ -102,6 +112,7 @@ export function useFormValidation() {
             const key = field.charAt(0).toLowerCase() + field.slice(1)
             state.errors[key] = Array.isArray(messages) ? messages[0] : messages
           }
+          focusFirstInvalid()
         } else if (data.detail || data.title) {
           state.error = data.detail || data.title
         } else if (data.message) {

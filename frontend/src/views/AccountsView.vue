@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
 
 const auth = useAuthStore()
-const { error, errors, validate, trySubmit, clearErrors } = useFormValidation()
+const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
 const showModal = ref(false)
 const editing = ref(null)
@@ -95,7 +95,12 @@ onMounted(load)
         <form @submit.prevent="submit">
           <div class="form-group">
             <label>نام *</label>
-            <input v-model="form.name" class="form-control" :class="{ 'field-invalid': errors.name }" required />
+            <input
+              v-model="form.name"
+              class="form-control"
+              :class="{ 'field-invalid': errors.name }"
+              @input="clearFieldError('name')"
+            />
             <div v-if="errors.name" class="field-error">{{ errors.name }}</div>
           </div>
           <div class="form-group">

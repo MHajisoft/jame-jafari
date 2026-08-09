@@ -7,9 +7,10 @@ import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
 import DateDisplay from '../components/DateDisplay.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
+import CurrencyInput from '../components/CurrencyInput.vue'
 
 const auth = useAuthStore()
-const { error, errors, validate, trySubmit, clearErrors } = useFormValidation()
+const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
 const ingredients = ref([])
 const recommendations = ref([])
@@ -138,7 +139,12 @@ onMounted(load)
           <div class="grid-2">
             <div class="form-group">
               <label>نام غذا *</label>
-              <input v-model="form.name" class="form-control" :class="{ 'field-invalid': errors.name }" required />
+              <input
+                v-model="form.name"
+                class="form-control"
+                :class="{ 'field-invalid': errors.name }"
+                @input="clearFieldError('name')"
+              />
               <div v-if="errors.name" class="field-error">{{ errors.name }}</div>
             </div>
             <div class="form-group">
@@ -148,7 +154,14 @@ onMounted(load)
           </div>
           <div class="form-group">
             <label>تعداد پخته شده *</label>
-            <input v-model="form.totalCount" type="number" class="form-control" :class="{ 'field-invalid': errors.totalCount }" required />
+            <input
+              v-model="form.totalCount"
+              type="number"
+              min="1"
+              class="form-control"
+              :class="{ 'field-invalid': errors.totalCount }"
+              @input="clearFieldError('totalCount')"
+            />
             <div v-if="errors.totalCount" class="field-error">{{ errors.totalCount }}</div>
           </div>
 
@@ -159,8 +172,8 @@ onMounted(load)
               <option value="">ماده اولیه</option>
               <option v-for="ing in ingredients" :key="ing.id" :value="ing.id">{{ ing.name }}</option>
             </select>
-            <input v-model="row.units" type="number" class="form-control" placeholder="مقدار" />
-            <input v-model="row.price" type="number" class="form-control" placeholder="قیمت" />
+            <input v-model="row.units" type="number" min="0" step="any" class="form-control" placeholder="مقدار" />
+            <CurrencyInput v-model="row.price" placeholder="قیمت" />
           </div>
           <button type="button" class="btn btn-outline btn-sm" @click="addRow">+ ماده اولیه</button>
 

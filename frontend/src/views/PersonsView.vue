@@ -6,7 +6,7 @@ import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
 
 const auth = useAuthStore()
-const { error, errors, validate, trySubmit, clearErrors } = useFormValidation()
+const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
 const travelPrefixes = ref([])
 const allPersons = ref([])
@@ -142,7 +142,12 @@ onMounted(load)
           <div class="grid-2">
             <div class="form-group">
               <label>نام *</label>
-              <input v-model="form.firstName" class="form-control" :class="{ 'field-invalid': errors.firstName }" required />
+              <input
+                v-model="form.firstName"
+                class="form-control"
+                :class="{ 'field-invalid': errors.firstName }"
+                @input="clearFieldError('firstName')"
+              />
               <div v-if="errors.firstName" class="field-error">{{ errors.firstName }}</div>
             </div>
             <div class="form-group">
@@ -187,7 +192,12 @@ onMounted(load)
           </div>
           <div class="form-group">
             <label>موبایل</label>
-            <input v-model="form.mobile" class="form-control" :class="{ 'field-invalid': errors.mobile }" />
+            <input
+              v-model="form.mobile"
+              class="form-control"
+              :class="{ 'field-invalid': errors.mobile }"
+              @input="clearFieldError('mobile')"
+            />
             <div v-if="errors.mobile" class="field-error">{{ errors.mobile }}</div>
           </div>
           <div class="form-group">

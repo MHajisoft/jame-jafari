@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
 
 const auth = useAuthStore()
-const { error, errors, validate, trySubmit, clearErrors } = useFormValidation()
+const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
 const permissions = ref([])
 const showModal = ref(false)
@@ -206,18 +206,36 @@ onMounted(load)
         <form @submit.prevent="submit">
           <div v-if="!editing" class="form-group">
             <label>نام کاربری *</label>
-            <input v-model="form.username" class="form-control" :class="{ 'field-invalid': errors.username }" required />
+            <input
+              v-model="form.username"
+              class="form-control"
+              :class="{ 'field-invalid': errors.username }"
+              @input="clearFieldError('username')"
+            />
             <div v-if="errors.username" class="field-error">{{ errors.username }}</div>
           </div>
           <div class="form-group">
             <label>{{ editing ? 'رمز عبور جدید (اختیاری)' : 'رمز عبور *' }}</label>
-            <input v-model="form.password" type="password" class="form-control" :class="{ 'field-invalid': errors.password }" :required="!editing" />
+            <input
+              v-model="form.password"
+              type="password"
+              class="form-control"
+              :class="{ 'field-invalid': errors.password }"
+              @input="clearFieldError('password')"
+            />
             <div v-if="errors.password" class="field-error">{{ errors.password }}</div>
           </div>
           <div class="grid-2">
             <div class="form-group">
               <label>ایمیل</label>
-              <input v-model="form.email" type="email" class="form-control" :class="{ 'field-invalid': errors.email }" />
+              <input
+                v-model="form.email"
+                type="text"
+                inputmode="email"
+                class="form-control"
+                :class="{ 'field-invalid': errors.email }"
+                @input="clearFieldError('email')"
+              />
               <div v-if="errors.email" class="field-error">{{ errors.email }}</div>
             </div>
             <div class="form-group">

@@ -178,6 +178,17 @@ input, select, textarea, button {
   border-color: transparent;
 }
 
+/* Hide native number spinners */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -285,6 +296,11 @@ input.field-invalid,
 select.field-invalid,
 textarea.field-invalid {
   border-color: #991b1b;
+}
+input.field-invalid:focus,
+select.field-invalid:focus,
+textarea.field-invalid:focus {
+  outline-color: #f87171;
 }
 
 .text-muted { color: var(--text-muted); }

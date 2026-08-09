@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
 
 const auth = useAuthStore()
-const { error, errors, validate, trySubmit, clearErrors } = useFormValidation()
+const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
 const units = ref([])
 const showModal = ref(false)
@@ -114,7 +114,12 @@ onMounted(load)
         <form @submit.prevent="submit">
           <div class="form-group">
             <label>نام *</label>
-            <input v-model="form.name" class="form-control" :class="{ 'field-invalid': errors.name }" required />
+            <input
+              v-model="form.name"
+              class="form-control"
+              :class="{ 'field-invalid': errors.name }"
+              @input="clearFieldError('name')"
+            />
             <div v-if="errors.name" class="field-error">{{ errors.name }}</div>
           </div>
           <div class="form-group">
@@ -126,7 +131,12 @@ onMounted(load)
           </div>
           <div v-if="form.isIngredient" class="form-group">
             <label>واحد *</label>
-            <select v-model="form.unitId" class="form-control" :class="{ 'field-invalid': errors.unitId }" required>
+            <select
+              v-model="form.unitId"
+              class="form-control"
+              :class="{ 'field-invalid': errors.unitId }"
+              @change="clearFieldError('unitId')"
+            >
               <option value="">انتخاب کنید</option>
               <option v-for="u in units" :key="u.id" :value="u.id">{{ u.name }}</option>
             </select>

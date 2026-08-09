@@ -8,10 +8,23 @@ const auth = useAuthStore()
 const username = ref('admin')
 const password = ref('admin123')
 const error = ref('')
+const fieldErrors = ref({})
 const loading = ref(false)
+
+function clearField(field) {
+  const next = { ...fieldErrors.value }
+  delete next[field]
+  fieldErrors.value = next
+}
 
 async function submit() {
   error.value = ''
+  fieldErrors.value = {}
+
+  if (!username.value.trim()) fieldErrors.value.username = 'نام کاربری الزامی است'
+  if (!password.value) fieldErrors.value.password = 'رمز عبور الزامی است'
+  if (Object.keys(fieldErrors.value).length) return
+
   loading.value = true
   try {
     await auth.login(username.value, password.value)
@@ -32,11 +45,26 @@ async function submit() {
       <form @submit.prevent="submit">
         <div class="form-group">
           <label>نام کاربری</label>
-          <input v-model="username" class="form-control" required autocomplete="username" />
+          <input
+            v-model="username"
+            class="form-control"
+            :class="{ 'field-invalid': fieldErrors.username }"
+            autocomplete="username"
+            @input="clearField('username')"
+          />
+          <div v-if="fieldErrors.username" class="field-error">{{ fieldErrors.username }}</div>
         </div>
         <div class="form-group">
           <label>رمز عبور</label>
-          <input v-model="password" type="password" class="form-control" required autocomplete="current-password" />
+          <input
+            v-model="password"
+            type="password"
+            class="form-control"
+            :class="{ 'field-invalid': fieldErrors.password }"
+            autocomplete="current-password"
+            @input="clearField('password')"
+          />
+          <div v-if="fieldErrors.password" class="field-error">{{ fieldErrors.password }}</div>
         </div>
         <p v-if="error" class="error">{{ error }}</p>
         <button type="submit" class="btn" :disabled="loading" style="width:100%;margin-top:1rem">
@@ -67,4 +95,5 @@ async function submit() {
 .login-card h1 { color: var(--primary); margin-bottom: 0.25rem; }
 .subtitle { color: var(--text-muted); margin-bottom: 1.5rem; }
 .error { color: var(--danger); margin-top: 0.5rem; font-size: 0.9rem; }
+.form-group { text-align: right; }
 </style>
