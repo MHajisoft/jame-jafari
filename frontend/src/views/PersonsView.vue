@@ -4,6 +4,8 @@ import api from '../api/client'
 import { genders } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
+import AppSelect from '../components/AppSelect.vue'
+import ClearableInput from '../components/ClearableInput.vue'
 
 const auth = useAuthStore()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -89,6 +91,10 @@ function genderLabel(v) {
   return genders.find(g => g.value === v)?.label || v
 }
 
+function onSearchKeyup(e) {
+  if (e.key === 'Enter') load()
+}
+
 onMounted(load)
 </script>
 
@@ -103,7 +109,7 @@ onMounted(load)
     </div>
 
     <div class="card" style="margin-bottom:1rem">
-      <input v-model="search" class="form-control" placeholder="جستجو..." @keyup.enter="load" />
+      <ClearableInput v-model="search" type="search" placeholder="جستجو..." @keyup="onSearchKeyup" />
     </div>
 
     <div class="card">
@@ -142,67 +148,78 @@ onMounted(load)
           <div class="grid-2">
             <div class="form-group">
               <label>نام *</label>
-              <input
+              <ClearableInput
                 v-model="form.firstName"
-                class="form-control"
-                :class="{ 'field-invalid': errors.firstName }"
+                :invalid="!!errors.firstName"
                 @input="clearFieldError('firstName')"
               />
               <div v-if="errors.firstName" class="field-error">{{ errors.firstName }}</div>
             </div>
             <div class="form-group">
               <label>نام خانوادگی</label>
-              <input v-model="form.lastName" class="form-control" />
+              <ClearableInput v-model="form.lastName" />
             </div>
           </div>
           <div class="grid-2">
             <div class="form-group">
               <label>نام مستعار</label>
-              <input v-model="form.nickName" class="form-control" />
+              <ClearableInput v-model="form.nickName" />
             </div>
             <div class="form-group">
               <label>جنسیت</label>
-              <select v-model="form.gender" class="form-control">
-                <option v-for="g in genders" :key="g.value" :value="g.value">{{ g.label }}</option>
-              </select>
+              <AppSelect
+                v-model="form.gender"
+                :options="genders"
+                placeholder="جنسیت"
+                :allow-empty="false"
+                :searchable="false"
+              />
             </div>
           </div>
           <div class="form-group">
             <label>پیشوند سفر</label>
-            <select v-model="form.travelPrefixId" class="form-control">
-              <option value="">بدون پیشوند</option>
-              <option v-for="t in travelPrefixes" :key="t.id" :value="t.id">{{ t.name }}</option>
-            </select>
+            <AppSelect
+              v-model="form.travelPrefixId"
+              :options="travelPrefixes"
+              option-value="id"
+              option-label="name"
+              placeholder="بدون پیشوند"
+            />
           </div>
           <div class="grid-2">
             <div class="form-group">
               <label>پدر</label>
-              <select v-model="form.fatherId" class="form-control">
-                <option value="">—</option>
-                <option v-for="p in allPersons" :key="p.id" :value="p.id">{{ p.displayName }}</option>
-              </select>
+              <AppSelect
+                v-model="form.fatherId"
+                :options="allPersons"
+                option-value="id"
+                option-label="displayName"
+                placeholder="—"
+              />
             </div>
             <div class="form-group">
               <label>مادر</label>
-              <select v-model="form.motherId" class="form-control">
-                <option value="">—</option>
-                <option v-for="p in allPersons" :key="p.id" :value="p.id">{{ p.displayName }}</option>
-              </select>
+              <AppSelect
+                v-model="form.motherId"
+                :options="allPersons"
+                option-value="id"
+                option-label="displayName"
+                placeholder="—"
+              />
             </div>
           </div>
           <div class="form-group">
             <label>موبایل</label>
-            <input
+            <ClearableInput
               v-model="form.mobile"
-              class="form-control"
-              :class="{ 'field-invalid': errors.mobile }"
+              :invalid="!!errors.mobile"
               @input="clearFieldError('mobile')"
             />
             <div v-if="errors.mobile" class="field-error">{{ errors.mobile }}</div>
           </div>
           <div class="form-group">
             <label>آدرس</label>
-            <textarea v-model="form.address" class="form-control" rows="2"></textarea>
+            <ClearableInput v-model="form.address" type="textarea" :rows="2" />
           </div>
           <div class="form-group">
             <label><input v-model="form.isDead" type="checkbox" /> فوت شده</label>

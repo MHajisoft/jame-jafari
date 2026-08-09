@@ -3,6 +3,8 @@ import { ref, onMounted } from 'vue'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
+import AppSelect from '../components/AppSelect.vue'
+import ClearableInput from '../components/ClearableInput.vue'
 
 const auth = useAuthStore()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -114,32 +116,31 @@ onMounted(load)
         <form @submit.prevent="submit">
           <div class="form-group">
             <label>نام *</label>
-            <input
+            <ClearableInput
               v-model="form.name"
-              class="form-control"
-              :class="{ 'field-invalid': errors.name }"
+              :invalid="!!errors.name"
               @input="clearFieldError('name')"
             />
             <div v-if="errors.name" class="field-error">{{ errors.name }}</div>
           </div>
           <div class="form-group">
             <label>توضیحات</label>
-            <textarea v-model="form.description" class="form-control" rows="2"></textarea>
+            <ClearableInput v-model="form.description" type="textarea" :rows="2" />
           </div>
           <div class="form-group">
             <label><input v-model="form.isIngredient" type="checkbox" /> مواد اولیه (برای تهیه غذا)</label>
           </div>
           <div v-if="form.isIngredient" class="form-group">
             <label>واحد *</label>
-            <select
+            <AppSelect
               v-model="form.unitId"
-              class="form-control"
-              :class="{ 'field-invalid': errors.unitId }"
+              :options="units"
+              option-value="id"
+              option-label="name"
+              placeholder="انتخاب کنید"
+              :invalid="!!errors.unitId"
               @change="clearFieldError('unitId')"
-            >
-              <option value="">انتخاب کنید</option>
-              <option v-for="u in units" :key="u.id" :value="u.id">{{ u.name }}</option>
-            </select>
+            />
             <div v-if="errors.unitId" class="field-error">{{ errors.unitId }}</div>
           </div>
           <div class="form-group">

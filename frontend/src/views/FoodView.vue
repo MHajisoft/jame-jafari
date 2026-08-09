@@ -8,6 +8,8 @@ import { useFormValidation } from '../composables/useFormValidation'
 import DateDisplay from '../components/DateDisplay.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
 import CurrencyInput from '../components/CurrencyInput.vue'
+import AppSelect from '../components/AppSelect.vue'
+import ClearableInput from '../components/ClearableInput.vue'
 
 const auth = useAuthStore()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -139,10 +141,9 @@ onMounted(load)
           <div class="grid-2">
             <div class="form-group">
               <label>نام غذا *</label>
-              <input
+              <ClearableInput
                 v-model="form.name"
-                class="form-control"
-                :class="{ 'field-invalid': errors.name }"
+                :invalid="!!errors.name"
                 @input="clearFieldError('name')"
               />
               <div v-if="errors.name" class="field-error">{{ errors.name }}</div>
@@ -154,12 +155,11 @@ onMounted(load)
           </div>
           <div class="form-group">
             <label>تعداد پخته شده *</label>
-            <input
+            <ClearableInput
               v-model="form.totalCount"
               type="number"
-              min="1"
-              class="form-control"
-              :class="{ 'field-invalid': errors.totalCount }"
+              :min="1"
+              :invalid="!!errors.totalCount"
               @input="clearFieldError('totalCount')"
             />
             <div v-if="errors.totalCount" class="field-error">{{ errors.totalCount }}</div>
@@ -168,18 +168,22 @@ onMounted(load)
           <h4 style="margin:1rem 0 0.5rem">مواد اولیه</h4>
           <div v-if="errors.ingredientRows" class="field-error" style="margin-bottom:0.5rem">{{ errors.ingredientRows }}</div>
           <div v-for="(row, i) in form.ingredientRows" :key="i" class="grid-3" style="margin-bottom:0.5rem">
-            <select v-model="row.costTypeId" class="form-control" @change="onIngredientSelect(row)">
-              <option value="">ماده اولیه</option>
-              <option v-for="ing in ingredients" :key="ing.id" :value="ing.id">{{ ing.name }}</option>
-            </select>
-            <input v-model="row.units" type="number" min="0" step="any" class="form-control" placeholder="مقدار" />
+            <AppSelect
+              v-model="row.costTypeId"
+              :options="ingredients"
+              option-value="id"
+              option-label="name"
+              placeholder="ماده اولیه"
+              @change="onIngredientSelect(row)"
+            />
+            <ClearableInput v-model="row.units" type="number" :min="0" step="any" placeholder="مقدار" />
             <CurrencyInput v-model="row.price" placeholder="قیمت" />
           </div>
           <button type="button" class="btn btn-outline btn-sm" @click="addRow">+ ماده اولیه</button>
 
           <div class="form-group" style="margin-top:1rem">
             <label>توضیحات</label>
-            <textarea v-model="form.description" class="form-control" rows="2"></textarea>
+            <ClearableInput v-model="form.description" type="textarea" :rows="2" />
           </div>
           <div class="modal-actions">
             <button type="button" class="btn btn-outline" @click="showModal = false">انصراف</button>

@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
+import ClearableInput from '../components/ClearableInput.vue'
 
 const auth = useAuthStore()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -206,21 +207,19 @@ onMounted(load)
         <form @submit.prevent="submit">
           <div v-if="!editing" class="form-group">
             <label>نام کاربری *</label>
-            <input
+            <ClearableInput
               v-model="form.username"
-              class="form-control"
-              :class="{ 'field-invalid': errors.username }"
+              :invalid="!!errors.username"
               @input="clearFieldError('username')"
             />
             <div v-if="errors.username" class="field-error">{{ errors.username }}</div>
           </div>
           <div class="form-group">
             <label>{{ editing ? 'رمز عبور جدید (اختیاری)' : 'رمز عبور *' }}</label>
-            <input
+            <ClearableInput
               v-model="form.password"
               type="password"
-              class="form-control"
-              :class="{ 'field-invalid': errors.password }"
+              :invalid="!!errors.password"
               @input="clearFieldError('password')"
             />
             <div v-if="errors.password" class="field-error">{{ errors.password }}</div>
@@ -228,19 +227,17 @@ onMounted(load)
           <div class="grid-2">
             <div class="form-group">
               <label>ایمیل</label>
-              <input
+              <ClearableInput
                 v-model="form.email"
-                type="text"
                 inputmode="email"
-                class="form-control"
-                :class="{ 'field-invalid': errors.email }"
+                :invalid="!!errors.email"
                 @input="clearFieldError('email')"
               />
               <div v-if="errors.email" class="field-error">{{ errors.email }}</div>
             </div>
             <div class="form-group">
               <label>موبایل</label>
-              <input v-model="form.mobile" class="form-control" />
+              <ClearableInput v-model="form.mobile" />
             </div>
           </div>
           <div class="form-group">

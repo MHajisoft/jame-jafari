@@ -173,7 +173,17 @@ input, select, textarea, button {
   background: var(--surface);
   color: var(--text);
 }
+button.form-control {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  text-align: inherit;
+}
 .form-control:focus {
+  outline: 2px solid var(--primary);
+  border-color: transparent;
+}
+button.form-control:focus {
   outline: 2px solid var(--primary);
   border-color: transparent;
 }
@@ -294,12 +304,14 @@ tr:hover td { background: rgba(0,0,0,0.02); }
 }
 input.field-invalid,
 select.field-invalid,
-textarea.field-invalid {
+textarea.field-invalid,
+button.field-invalid {
   border-color: #991b1b;
 }
 input.field-invalid:focus,
 select.field-invalid:focus,
-textarea.field-invalid:focus {
+textarea.field-invalid:focus,
+button.field-invalid:focus {
   outline-color: #f87171;
 }
 

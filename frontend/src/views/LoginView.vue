@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import ClearableInput from '../components/ClearableInput.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -45,10 +46,9 @@ async function submit() {
       <form @submit.prevent="submit">
         <div class="form-group">
           <label>نام کاربری</label>
-          <input
+          <ClearableInput
             v-model="username"
-            class="form-control"
-            :class="{ 'field-invalid': fieldErrors.username }"
+            :invalid="!!fieldErrors.username"
             autocomplete="username"
             @input="clearField('username')"
           />
@@ -56,11 +56,10 @@ async function submit() {
         </div>
         <div class="form-group">
           <label>رمز عبور</label>
-          <input
+          <ClearableInput
             v-model="password"
             type="password"
-            class="form-control"
-            :class="{ 'field-invalid': fieldErrors.password }"
+            :invalid="!!fieldErrors.password"
             autocomplete="current-password"
             @input="clearField('password')"
           />

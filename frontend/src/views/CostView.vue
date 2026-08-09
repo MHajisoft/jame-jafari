@@ -8,6 +8,8 @@ import DateDisplay from '../components/DateDisplay.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
 import FileUpload from '../components/FileUpload.vue'
 import CurrencyInput from '../components/CurrencyInput.vue'
+import AppSelect from '../components/AppSelect.vue'
+import ClearableInput from '../components/ClearableInput.vue'
 
 const auth = useAuthStore()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -120,15 +122,15 @@ onMounted(load)
         <form @submit.prevent="submit">
           <div class="form-group">
             <label>حساب *</label>
-            <select
+            <AppSelect
               v-model="form.accountId"
-              class="form-control"
-              :class="{ 'field-invalid': errors.accountId }"
+              :options="accounts"
+              option-value="id"
+              option-label="name"
+              placeholder="انتخاب کنید"
+              :invalid="!!errors.accountId"
               @change="clearFieldError('accountId')"
-            >
-              <option value="">انتخاب کنید</option>
-              <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option>
-            </select>
+            />
             <div v-if="errors.accountId" class="field-error">{{ errors.accountId }}</div>
           </div>
           <div class="form-group">
@@ -143,15 +145,15 @@ onMounted(load)
           </div>
           <div class="form-group">
             <label>نوع هزینه *</label>
-            <select
+            <AppSelect
               v-model="form.costTypeId"
-              class="form-control"
-              :class="{ 'field-invalid': errors.costTypeId }"
+              :options="costTypes"
+              option-value="id"
+              option-label="name"
+              placeholder="انتخاب کنید"
+              :invalid="!!errors.costTypeId"
               @change="clearFieldError('costTypeId')"
-            >
-              <option value="">انتخاب کنید</option>
-              <option v-for="c in costTypes" :key="c.id" :value="c.id">{{ c.name }}</option>
-            </select>
+            />
             <div v-if="errors.costTypeId" class="field-error">{{ errors.costTypeId }}</div>
           </div>
           <div class="form-group">
@@ -160,11 +162,11 @@ onMounted(load)
           </div>
           <div class="form-group">
             <label>کد رهگیری <span class="optional">(اختیاری)</span></label>
-            <input v-model="form.trackingCode" type="text" class="form-control" placeholder="شماره فاکتور / سریال POS / ..." maxlength="100" />
+            <ClearableInput v-model="form.trackingCode" placeholder="شماره فاکتور / سریال POS / ..." :maxlength="100" />
           </div>
           <div class="form-group">
             <label>توضیحات</label>
-            <textarea v-model="form.description" class="form-control" rows="2"></textarea>
+            <ClearableInput v-model="form.description" type="textarea" :rows="2" />
           </div>
           <div class="form-group">
             <label>پیوست (فاکتور/رسید)</label>

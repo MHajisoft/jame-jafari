@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 defineProps({
   modelValue: { type: File, default: null },
@@ -9,8 +9,13 @@ const emit = defineEmits(['update:modelValue'])
 
 const preview = ref(null)
 const sheetOpen = ref(false)
+const isMobile = ref(false)
 const fileInput = ref(null)
 const cameraInput = ref(null)
+
+function checkMobile() {
+  isMobile.value = window.matchMedia('(max-width: 768px)').matches
+}
 
 function handleFile(file) {
   if (!file) return
@@ -28,8 +33,13 @@ function onFileChange(e) {
   e.target.value = ''
 }
 
-function openSheet() {
-  sheetOpen.value = true
+function openAttach() {
+  if (isMobile.value) {
+    sheetOpen.value = true
+    return
+  }
+  // Web: act as a normal file uploader
+  fileInput.value?.click()
 }
 
 function closeSheet() {
@@ -48,6 +58,15 @@ function clear() {
   emit('update:modelValue', null)
   preview.value = null
 }
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkMobile)
+})
 </script>
 
 <template>
@@ -57,18 +76,18 @@ function clear() {
       <div v-else class="file-name">{{ modelValue.name }}</div>
       <button type="button" class="btn btn-sm btn-danger" @click="clear">حذف</button>
     </div>
-    <button v-else type="button" class="attach-btn" @click="openSheet">
+    <button v-else type="button" class="attach-btn" @click="openAttach">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
       </svg>
-      <span>افزودن پیوست</span>
+      <span>{{ isMobile ? 'افزودن پیوست' : 'آپلود فایل' }}</span>
     </button>
 
     <input ref="fileInput" type="file" :accept="accept" hidden @change="onFileChange" />
     <input ref="cameraInput" type="file" accept="image/*" capture="environment" hidden @change="onFileChange" />
 
     <Teleport to="body">
-      <div v-if="sheetOpen" class="attach-overlay" @click.self="closeSheet">
+      <div v-if="sheetOpen && isMobile" class="attach-overlay" @click.self="closeSheet">
         <div class="attach-sheet">
           <div class="sheet-handle" />
           <p class="sheet-title">انتخاب منبع</p>

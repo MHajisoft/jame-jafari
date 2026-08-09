@@ -33,7 +33,9 @@ export function toEnglishDigits(value) {
 
 /** Digits-only string from a currency field (supports separators & Persian digits). */
 export function parseCurrencyInput(value) {
-  const digits = toEnglishDigits(value).replace(/[^\d]/g, '')
+  const digits = toEnglishDigits(value)
+    .replace(/[٬،,]/g, '')
+    .replace(/[^\d]/g, '')
   return digits.replace(/^0+(?=\d)/, '')
 }
 

@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
+import ClearableInput from '../components/ClearableInput.vue'
 
 const auth = useAuthStore()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -95,17 +96,16 @@ onMounted(load)
         <form @submit.prevent="submit">
           <div class="form-group">
             <label>نام *</label>
-            <input
+            <ClearableInput
               v-model="form.name"
-              class="form-control"
-              :class="{ 'field-invalid': errors.name }"
+              :invalid="!!errors.name"
               @input="clearFieldError('name')"
             />
             <div v-if="errors.name" class="field-error">{{ errors.name }}</div>
           </div>
           <div class="form-group">
             <label>توضیحات</label>
-            <textarea v-model="form.description" class="form-control" rows="2"></textarea>
+            <ClearableInput v-model="form.description" type="textarea" :rows="2" />
           </div>
           <div class="form-group">
             <label><input v-model="form.isActive" type="checkbox" /> فعال</label>
