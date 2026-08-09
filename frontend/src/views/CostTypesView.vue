@@ -3,14 +3,17 @@ import { ref, onMounted } from 'vue'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
+import { useIsMobile } from '../composables/useMediaQuery'
 import AppSelect from '../components/AppSelect.vue'
 import ClearableInput from '../components/ClearableInput.vue'
+import FormHost from '../components/FormHost.vue'
 
 const auth = useAuthStore()
+const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
 const units = ref([])
-const showModal = ref(false)
+const showForm = ref(false)
 const editing = ref(null)
 const form = ref({ name: '', description: '', isIngredient: false, unitId: '', isActive: true })
 
@@ -47,7 +50,7 @@ async function submit() {
     }
   })
   if (!ok) return
-  showModal.value = false
+  closeForm()
   await load()
 }
 
@@ -55,7 +58,7 @@ function openCreate() {
   editing.value = null
   form.value = { name: '', description: '', isIngredient: false, unitId: '', isActive: true }
   clearErrors()
-  showModal.value = true
+  showForm.value = true
 }
 
 function openEdit(item) {
@@ -65,7 +68,11 @@ function openEdit(item) {
     isIngredient: item.isIngredient, unitId: item.unitId || '', isActive: item.isActive
   }
   clearErrors()
-  showModal.value = true
+  showForm.value = true
+}
+
+function closeForm() {
+  showForm.value = false
 }
 
 async function remove(id) {
@@ -79,15 +86,61 @@ onMounted(load)
 
 <template>
   <div>
-    <div class="page-header">
-      <h1 class="page-title">انواع هزینه</h1>
-      <button v-if="auth.hasPermission('costtypes.manage')" class="btn btn-fab-mobile" @click="openCreate">
+    <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
+      <h1 class="page-title">{{ showForm && !isMobile ? (editing ? 'ویرایش' : 'نوع هزینه جدید') : 'انواع هزینه' }}</h1>
+      <button
+        v-if="auth.hasPermission('costtypes.manage') && (!showForm || isMobile)"
+        class="btn btn-fab-mobile"
+        @click="openCreate"
+      >
         <span aria-hidden="true">+</span>
         <span class="btn-fab-label">نوع جدید</span>
       </button>
     </div>
 
-    <div class="card">
+    <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش' : 'نوع هزینه جدید') : ''" @close="closeForm">
+      <div v-if="error" class="form-error">{{ error }}</div>
+      <form @submit.prevent="submit">
+        <div class="form-group">
+          <label>نام *</label>
+          <ClearableInput
+            v-model="form.name"
+            :invalid="!!errors.name"
+            @input="clearFieldError('name')"
+          />
+          <div v-if="errors.name" class="field-error">{{ errors.name }}</div>
+        </div>
+        <div class="form-group">
+          <label>توضیحات</label>
+          <ClearableInput v-model="form.description" type="textarea" :rows="2" />
+        </div>
+        <div class="form-group">
+          <label><input v-model="form.isIngredient" type="checkbox" /> مواد اولیه (برای تهیه غذا)</label>
+        </div>
+        <div v-if="form.isIngredient" class="form-group">
+          <label>واحد *</label>
+          <AppSelect
+            v-model="form.unitId"
+            :options="units"
+            option-value="id"
+            option-label="name"
+            placeholder="انتخاب کنید"
+            :invalid="!!errors.unitId"
+            @change="clearFieldError('unitId')"
+          />
+          <div v-if="errors.unitId" class="field-error">{{ errors.unitId }}</div>
+        </div>
+        <div class="form-group">
+          <label><input v-model="form.isActive" type="checkbox" /> فعال</label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" @click="closeForm">انصراف</button>
+          <button type="submit" class="btn">ذخیره</button>
+        </div>
+      </form>
+    </FormHost>
+
+    <div v-show="!showForm || isMobile" class="card list-panel">
       <table class="mobile-table">
         <thead><tr><th>نام</th><th>مواد اولیه</th><th>واحد</th><th>وضعیت</th><th v-if="auth.hasPermission('costtypes.manage')"></th></tr></thead>
         <tbody>
@@ -101,57 +154,14 @@ onMounted(load)
               </span>
             </td>
             <td v-if="auth.hasPermission('costtypes.manage')">
-              <button class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
-              <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+              <div class="table-actions">
+                <button class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
+                <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+              </div>
             </td>
           </tr>
         </tbody>
       </table>
-    </div>
-
-    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
-      <div class="modal">
-        <h2 class="modal-title">{{ editing ? 'ویرایش' : 'نوع هزینه جدید' }}</h2>
-        <div v-if="error" class="form-error">{{ error }}</div>
-        <form @submit.prevent="submit">
-          <div class="form-group">
-            <label>نام *</label>
-            <ClearableInput
-              v-model="form.name"
-              :invalid="!!errors.name"
-              @input="clearFieldError('name')"
-            />
-            <div v-if="errors.name" class="field-error">{{ errors.name }}</div>
-          </div>
-          <div class="form-group">
-            <label>توضیحات</label>
-            <ClearableInput v-model="form.description" type="textarea" :rows="2" />
-          </div>
-          <div class="form-group">
-            <label><input v-model="form.isIngredient" type="checkbox" /> مواد اولیه (برای تهیه غذا)</label>
-          </div>
-          <div v-if="form.isIngredient" class="form-group">
-            <label>واحد *</label>
-            <AppSelect
-              v-model="form.unitId"
-              :options="units"
-              option-value="id"
-              option-label="name"
-              placeholder="انتخاب کنید"
-              :invalid="!!errors.unitId"
-              @change="clearFieldError('unitId')"
-            />
-            <div v-if="errors.unitId" class="field-error">{{ errors.unitId }}</div>
-          </div>
-          <div class="form-group">
-            <label><input v-model="form.isActive" type="checkbox" /> فعال</label>
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-outline" @click="showModal = false">انصراف</button>
-            <button type="submit" class="btn">ذخیره</button>
-          </div>
-        </form>
-      </div>
     </div>
   </div>
 </template>

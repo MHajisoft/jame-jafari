@@ -3,12 +3,15 @@ import { ref, onMounted } from 'vue'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
+import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
+import FormHost from '../components/FormHost.vue'
 
 const auth = useAuthStore()
+const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
-const showModal = ref(false)
+const showForm = ref(false)
 const editing = ref(null)
 const form = ref({ name: '', description: '', isActive: true })
 
@@ -31,7 +34,7 @@ async function submit() {
     }
   })
   if (!ok) return
-  showModal.value = false
+  closeForm()
   await load()
 }
 
@@ -39,14 +42,18 @@ function openCreate() {
   editing.value = null
   form.value = { name: '', description: '', isActive: true }
   clearErrors()
-  showModal.value = true
+  showForm.value = true
 }
 
 function openEdit(item) {
   editing.value = item.id
   form.value = { name: item.name, description: item.description || '', isActive: item.isActive }
   clearErrors()
-  showModal.value = true
+  showForm.value = true
+}
+
+function closeForm() {
+  showForm.value = false
 }
 
 async function remove(id) {
@@ -60,15 +67,45 @@ onMounted(load)
 
 <template>
   <div>
-    <div class="page-header">
-      <h1 class="page-title">حساب‌های مالی</h1>
-      <button v-if="auth.hasPermission('accounts.manage')" class="btn btn-fab-mobile" @click="openCreate">
+    <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
+      <h1 class="page-title">{{ showForm && !isMobile ? (editing ? 'ویرایش حساب' : 'حساب جدید') : 'حساب‌های مالی' }}</h1>
+      <button
+        v-if="auth.hasPermission('accounts.manage') && (!showForm || isMobile)"
+        class="btn btn-fab-mobile"
+        @click="openCreate"
+      >
         <span aria-hidden="true">+</span>
         <span class="btn-fab-label">حساب جدید</span>
       </button>
     </div>
 
-    <div class="card">
+    <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش حساب' : 'حساب جدید') : ''" @close="closeForm">
+      <div v-if="error" class="form-error">{{ error }}</div>
+      <form @submit.prevent="submit">
+        <div class="form-group">
+          <label>نام *</label>
+          <ClearableInput
+            v-model="form.name"
+            :invalid="!!errors.name"
+            @input="clearFieldError('name')"
+          />
+          <div v-if="errors.name" class="field-error">{{ errors.name }}</div>
+        </div>
+        <div class="form-group">
+          <label>توضیحات</label>
+          <ClearableInput v-model="form.description" type="textarea" :rows="2" />
+        </div>
+        <div class="form-group">
+          <label><input v-model="form.isActive" type="checkbox" /> فعال</label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" @click="closeForm">انصراف</button>
+          <button type="submit" class="btn">ذخیره</button>
+        </div>
+      </form>
+    </FormHost>
+
+    <div v-show="!showForm || isMobile" class="card list-panel">
       <table class="mobile-table">
         <thead><tr><th>نام</th><th>توضیحات</th><th>وضعیت</th><th></th></tr></thead>
         <tbody>
@@ -81,41 +118,14 @@ onMounted(load)
               </span>
             </td>
             <td>
-              <button class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
-              <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+              <div class="table-actions">
+                <button class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
+                <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+              </div>
             </td>
           </tr>
         </tbody>
       </table>
-    </div>
-
-    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
-      <div class="modal">
-        <h2 class="modal-title">{{ editing ? 'ویرایش حساب' : 'حساب جدید' }}</h2>
-        <div v-if="error" class="form-error">{{ error }}</div>
-        <form @submit.prevent="submit">
-          <div class="form-group">
-            <label>نام *</label>
-            <ClearableInput
-              v-model="form.name"
-              :invalid="!!errors.name"
-              @input="clearFieldError('name')"
-            />
-            <div v-if="errors.name" class="field-error">{{ errors.name }}</div>
-          </div>
-          <div class="form-group">
-            <label>توضیحات</label>
-            <ClearableInput v-model="form.description" type="textarea" :rows="2" />
-          </div>
-          <div class="form-group">
-            <label><input v-model="form.isActive" type="checkbox" /> فعال</label>
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-outline" @click="showModal = false">انصراف</button>
-            <button type="submit" class="btn">ذخیره</button>
-          </div>
-        </form>
-      </div>
     </div>
   </div>
 </template>

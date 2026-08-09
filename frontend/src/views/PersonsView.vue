@@ -4,16 +4,19 @@ import api from '../api/client'
 import { genders } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
+import { useIsMobile } from '../composables/useMediaQuery'
 import AppSelect from '../components/AppSelect.vue'
 import ClearableInput from '../components/ClearableInput.vue'
+import FormHost from '../components/FormHost.vue'
 
 const auth = useAuthStore()
+const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
 const travelPrefixes = ref([])
 const allPersons = ref([])
 const search = ref('')
-const showModal = ref(false)
+const showForm = ref(false)
 const editing = ref(null)
 const form = ref({
   firstName: '', lastName: '', nickName: '', gender: 1,
@@ -57,7 +60,7 @@ async function submit() {
     }
   })
   if (!ok) return
-  showModal.value = false
+  closeForm()
   editing.value = null
   await load()
 }
@@ -66,7 +69,7 @@ function openCreate() {
   editing.value = null
   form.value = { firstName: '', lastName: '', nickName: '', gender: 1, fatherId: '', motherId: '', mobile: '', address: '', travelPrefixId: '', isDead: false }
   clearErrors()
-  showModal.value = true
+  showForm.value = true
 }
 
 function openEdit(item) {
@@ -78,7 +81,11 @@ function openEdit(item) {
     isDead: item.isDead
   }
   clearErrors()
-  showModal.value = true
+  showForm.value = true
+}
+
+function closeForm() {
+  showForm.value = false
 }
 
 async function remove(id) {
@@ -100,135 +107,140 @@ onMounted(load)
 
 <template>
   <div>
-    <div class="page-header">
-      <h1 class="page-title">اشخاص</h1>
-      <button v-if="auth.hasPermission('persons.manage')" class="btn btn-fab-mobile" @click="openCreate">
+    <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
+      <h1 class="page-title">{{ showForm && !isMobile ? (editing ? 'ویرایش شخص' : 'شخص جدید') : 'اشخاص' }}</h1>
+      <button
+        v-if="auth.hasPermission('persons.manage') && (!showForm || isMobile)"
+        class="btn btn-fab-mobile"
+        @click="openCreate"
+      >
         <span aria-hidden="true">+</span>
         <span class="btn-fab-label">شخص جدید</span>
       </button>
     </div>
 
-    <div class="card" style="margin-bottom:1rem">
-      <ClearableInput v-model="search" type="search" placeholder="جستجو..." @keyup="onSearchKeyup" />
-    </div>
-
-    <div class="card">
-      <table class="mobile-table">
-        <thead>
-          <tr>
-            <th>نام</th><th>جنسیت</th><th>موبایل</th><th>پدر</th><th>مادر</th><th>وضعیت</th>
-            <th v-if="auth.hasPermission('persons.manage')"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in items" :key="item.id">
-            <td data-label="نام"><strong>{{ item.displayName }}</strong></td>
-            <td data-label="جنسیت">{{ genderLabel(item.gender) }}</td>
-            <td data-label="موبایل">{{ item.mobile }}</td>
-            <td data-label="پدر">{{ item.fatherName }}</td>
-            <td data-label="مادر">{{ item.motherName }}</td>
-            <td data-label="وضعیت">
-              <span v-if="item.isDead" class="badge badge-danger">فوت شده</span>
-              <span v-else class="badge badge-success">فعال</span>
-            </td>
-            <td v-if="auth.hasPermission('persons.manage')">
-              <button class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
-              <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
-      <div class="modal">
-        <h2 class="modal-title">{{ editing ? 'ویرایش شخص' : 'شخص جدید' }}</h2>
-        <div v-if="error" class="form-error">{{ error }}</div>
-        <form @submit.prevent="submit">
-          <div class="grid-2">
-            <div class="form-group">
-              <label>نام *</label>
-              <ClearableInput
-                v-model="form.firstName"
-                :invalid="!!errors.firstName"
-                @input="clearFieldError('firstName')"
-              />
-              <div v-if="errors.firstName" class="field-error">{{ errors.firstName }}</div>
-            </div>
-            <div class="form-group">
-              <label>نام خانوادگی</label>
-              <ClearableInput v-model="form.lastName" />
-            </div>
-          </div>
-          <div class="grid-2">
-            <div class="form-group">
-              <label>نام مستعار</label>
-              <ClearableInput v-model="form.nickName" />
-            </div>
-            <div class="form-group">
-              <label>جنسیت</label>
-              <AppSelect
-                v-model="form.gender"
-                :options="genders"
-                placeholder="جنسیت"
-                :allow-empty="false"
-                :searchable="false"
-              />
-            </div>
-          </div>
+    <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش شخص' : 'شخص جدید') : ''" @close="closeForm">
+      <div v-if="error" class="form-error">{{ error }}</div>
+      <form @submit.prevent="submit">
+        <div class="grid-2">
           <div class="form-group">
-            <label>پیشوند سفر</label>
-            <AppSelect
-              v-model="form.travelPrefixId"
-              :options="travelPrefixes"
-              option-value="id"
-              option-label="name"
-              placeholder="بدون پیشوند"
-            />
-          </div>
-          <div class="grid-2">
-            <div class="form-group">
-              <label>پدر</label>
-              <AppSelect
-                v-model="form.fatherId"
-                :options="allPersons"
-                option-value="id"
-                option-label="displayName"
-                placeholder="—"
-              />
-            </div>
-            <div class="form-group">
-              <label>مادر</label>
-              <AppSelect
-                v-model="form.motherId"
-                :options="allPersons"
-                option-value="id"
-                option-label="displayName"
-                placeholder="—"
-              />
-            </div>
-          </div>
-          <div class="form-group">
-            <label>موبایل</label>
+            <label>نام *</label>
             <ClearableInput
-              v-model="form.mobile"
-              :invalid="!!errors.mobile"
-              @input="clearFieldError('mobile')"
+              v-model="form.firstName"
+              :invalid="!!errors.firstName"
+              @input="clearFieldError('firstName')"
             />
-            <div v-if="errors.mobile" class="field-error">{{ errors.mobile }}</div>
+            <div v-if="errors.firstName" class="field-error">{{ errors.firstName }}</div>
           </div>
           <div class="form-group">
-            <label>آدرس</label>
-            <ClearableInput v-model="form.address" type="textarea" :rows="2" />
+            <label>نام خانوادگی</label>
+            <ClearableInput v-model="form.lastName" />
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>نام مستعار</label>
+            <ClearableInput v-model="form.nickName" />
           </div>
           <div class="form-group">
-            <label><input v-model="form.isDead" type="checkbox" /> فوت شده</label>
+            <label>جنسیت</label>
+            <AppSelect
+              v-model="form.gender"
+              :options="genders"
+              placeholder="جنسیت"
+              :allow-empty="false"
+              :searchable="false"
+            />
           </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-outline" @click="showModal = false">انصراف</button>
-            <button type="submit" class="btn">ذخیره</button>
+        </div>
+        <div class="form-group">
+          <label>پیشوند سفر</label>
+          <AppSelect
+            v-model="form.travelPrefixId"
+            :options="travelPrefixes"
+            option-value="id"
+            option-label="name"
+            placeholder="بدون پیشوند"
+          />
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>پدر</label>
+            <AppSelect
+              v-model="form.fatherId"
+              :options="allPersons"
+              option-value="id"
+              option-label="displayName"
+              placeholder="—"
+            />
           </div>
-        </form>
+          <div class="form-group">
+            <label>مادر</label>
+            <AppSelect
+              v-model="form.motherId"
+              :options="allPersons"
+              option-value="id"
+              option-label="displayName"
+              placeholder="—"
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>موبایل</label>
+          <ClearableInput
+            v-model="form.mobile"
+            :invalid="!!errors.mobile"
+            @input="clearFieldError('mobile')"
+          />
+          <div v-if="errors.mobile" class="field-error">{{ errors.mobile }}</div>
+        </div>
+        <div class="form-group">
+          <label>آدرس</label>
+          <ClearableInput v-model="form.address" type="textarea" :rows="2" />
+        </div>
+        <div class="form-group">
+          <label><input v-model="form.isDead" type="checkbox" /> فوت شده</label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" @click="closeForm">انصراف</button>
+          <button type="submit" class="btn">ذخیره</button>
+        </div>
+      </form>
+    </FormHost>
+
+    <div v-show="!showForm || isMobile">
+      <div class="card" style="margin-bottom:1rem">
+        <ClearableInput v-model="search" type="search" placeholder="جستجو..." @keyup="onSearchKeyup" />
+      </div>
+
+      <div class="card list-panel">
+        <table class="mobile-table">
+          <thead>
+            <tr>
+              <th>نام</th><th>جنسیت</th><th>موبایل</th><th>پدر</th><th>مادر</th><th>وضعیت</th>
+              <th v-if="auth.hasPermission('persons.manage')"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in items" :key="item.id">
+              <td data-label="نام"><strong>{{ item.displayName }}</strong></td>
+              <td data-label="جنسیت">{{ genderLabel(item.gender) }}</td>
+              <td data-label="موبایل">{{ item.mobile }}</td>
+              <td data-label="پدر">{{ item.fatherName }}</td>
+              <td data-label="مادر">{{ item.motherName }}</td>
+              <td data-label="وضعیت">
+                <span v-if="item.isDead" class="badge badge-danger">فوت شده</span>
+                <span v-else class="badge badge-success">فعال</span>
+              </td>
+              <td v-if="auth.hasPermission('persons.manage')">
+                <div class="table-actions">
+                  <button class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
+                  <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

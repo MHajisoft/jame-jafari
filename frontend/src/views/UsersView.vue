@@ -3,13 +3,16 @@ import { ref, computed, onMounted } from 'vue'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
+import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
+import FormHost from '../components/FormHost.vue'
 
 const auth = useAuthStore()
+const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
 const permissions = ref([])
-const showModal = ref(false)
+const showForm = ref(false)
 const editing = ref(null)
 const form = ref({ username: '', password: '', email: '', mobile: '', isActive: true, permissionIds: [] })
 
@@ -106,7 +109,7 @@ async function submit() {
     }
   })
   if (!ok) return
-  showModal.value = false
+  closeForm()
   await load()
 }
 
@@ -114,7 +117,7 @@ function openCreate() {
   editing.value = null
   form.value = { username: '', password: '', email: '', mobile: '', isActive: true, permissionIds: [] }
   clearErrors()
-  showModal.value = true
+  showForm.value = true
 }
 
 function openEdit(item) {
@@ -125,7 +128,11 @@ function openEdit(item) {
     permissionIds: permissions.value.filter(p => item.permissions.includes(p.code)).map(p => p.id)
   }
   clearErrors()
-  showModal.value = true
+  showForm.value = true
+}
+
+function closeForm() {
+  showForm.value = false
 }
 
 function toggleGroup(group, on) {
@@ -162,15 +169,91 @@ onMounted(load)
 
 <template>
   <div>
-    <div class="page-header">
-      <h1 class="page-title">مدیریت کاربران</h1>
-      <button v-if="auth.hasPermission('users.manage')" class="btn btn-fab-mobile" @click="openCreate">
+    <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
+      <h1 class="page-title">{{ showForm && !isMobile ? (editing ? 'ویرایش کاربر' : 'کاربر جدید') : 'مدیریت کاربران' }}</h1>
+      <button
+        v-if="auth.hasPermission('users.manage') && (!showForm || isMobile)"
+        class="btn btn-fab-mobile"
+        @click="openCreate"
+      >
         <span aria-hidden="true">+</span>
         <span class="btn-fab-label">کاربر جدید</span>
       </button>
     </div>
 
-    <div class="card">
+    <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش کاربر' : 'کاربر جدید') : ''" @close="closeForm">
+      <div v-if="error" class="form-error">{{ error }}</div>
+      <form @submit.prevent="submit">
+        <div v-if="!editing" class="form-group">
+          <label>نام کاربری *</label>
+          <ClearableInput
+            v-model="form.username"
+            :invalid="!!errors.username"
+            @input="clearFieldError('username')"
+          />
+          <div v-if="errors.username" class="field-error">{{ errors.username }}</div>
+        </div>
+        <div class="form-group">
+          <label>{{ editing ? 'رمز عبور جدید (اختیاری)' : 'رمز عبور *' }}</label>
+          <ClearableInput
+            v-model="form.password"
+            type="password"
+            :invalid="!!errors.password"
+            @input="clearFieldError('password')"
+          />
+          <div v-if="errors.password" class="field-error">{{ errors.password }}</div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>ایمیل</label>
+            <ClearableInput
+              v-model="form.email"
+              inputmode="email"
+              :invalid="!!errors.email"
+              @input="clearFieldError('email')"
+            />
+            <div v-if="errors.email" class="field-error">{{ errors.email }}</div>
+          </div>
+          <div class="form-group">
+            <label>موبایل</label>
+            <ClearableInput v-model="form.mobile" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>دسترسی‌ها (هر مورد به‌صورت جداگانه)</label>
+          <div class="perm-groups">
+            <div v-for="group in groupedPermissions" :key="group.module" class="perm-group">
+              <div class="perm-group-head">
+                <label>
+                  <input
+                    type="checkbox"
+                    :checked="groupState(group) === 'all'"
+                    :indeterminate.prop="groupState(group) === 'some'"
+                    @change="toggleGroup(group, $event.target.checked)"
+                  />
+                  <strong>{{ group.label }}</strong>
+                </label>
+              </div>
+              <div class="perm-group-items">
+                <label v-for="p in group.perms" :key="p.id">
+                  <input v-model="form.permissionIds" type="checkbox" :value="p.id" />
+                  {{ permLabel(p.code) }}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label><input v-model="form.isActive" type="checkbox" /> فعال</label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" @click="closeForm">انصراف</button>
+          <button type="submit" class="btn">ذخیره</button>
+        </div>
+      </form>
+    </FormHost>
+
+    <div v-show="!showForm || isMobile" class="card list-panel">
       <table class="mobile-table">
         <thead>
           <tr><th>نام کاربری</th><th>ایمیل</th><th>موبایل</th><th>دسترسی‌ها</th><th>وضعیت</th><th v-if="auth.hasPermission('users.manage')"></th></tr>
@@ -192,111 +275,50 @@ onMounted(load)
               </span>
             </td>
             <td v-if="auth.hasPermission('users.manage')">
-              <button class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
-              <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+              <div class="table-actions">
+                <button class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
+                <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+              </div>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-
-    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
-      <div class="modal" style="max-width:560px">
-        <h2 class="modal-title">{{ editing ? 'ویرایش کاربر' : 'کاربر جدید' }}</h2>
-        <div v-if="error" class="form-error">{{ error }}</div>
-        <form @submit.prevent="submit">
-          <div v-if="!editing" class="form-group">
-            <label>نام کاربری *</label>
-            <ClearableInput
-              v-model="form.username"
-              :invalid="!!errors.username"
-              @input="clearFieldError('username')"
-            />
-            <div v-if="errors.username" class="field-error">{{ errors.username }}</div>
-          </div>
-          <div class="form-group">
-            <label>{{ editing ? 'رمز عبور جدید (اختیاری)' : 'رمز عبور *' }}</label>
-            <ClearableInput
-              v-model="form.password"
-              type="password"
-              :invalid="!!errors.password"
-              @input="clearFieldError('password')"
-            />
-            <div v-if="errors.password" class="field-error">{{ errors.password }}</div>
-          </div>
-          <div class="grid-2">
-            <div class="form-group">
-              <label>ایمیل</label>
-              <ClearableInput
-                v-model="form.email"
-                inputmode="email"
-                :invalid="!!errors.email"
-                @input="clearFieldError('email')"
-              />
-              <div v-if="errors.email" class="field-error">{{ errors.email }}</div>
-            </div>
-            <div class="form-group">
-              <label>موبایل</label>
-              <ClearableInput v-model="form.mobile" />
-            </div>
-          </div>
-          <div class="form-group">
-            <label>دسترسی‌ها (هر مورد به‌صورت جداگانه)</label>
-            <div v-for="group in groupedPermissions" :key="group.module" class="perm-group">
-              <div class="perm-group-head">
-                <label>
-                  <input
-                    type="checkbox"
-                    :checked="groupState(group) === 'all'"
-                    :indeterminate.prop="groupState(group) === 'some'"
-                    @change="toggleGroup(group, $event.target.checked)"
-                  />
-                  <strong>{{ group.label }}</strong>
-                </label>
-              </div>
-              <div class="perm-group-items">
-                <label v-for="p in group.perms" :key="p.id">
-                  <input v-model="form.permissionIds" type="checkbox" :value="p.id" />
-                  {{ permLabel(p.code) }}
-                </label>
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label><input v-model="form.isActive" type="checkbox" /> فعال</label>
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-outline" @click="showModal = false">انصراف</button>
-            <button type="submit" class="btn">ذخیره</button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 </template>
 
 <style scoped>
+.perm-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
 .perm-group {
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 0.5rem 0.75rem;
-  margin-bottom: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  margin: 0;
+  background: var(--bg);
 }
 .perm-group-head {
-  padding-bottom: 0.35rem;
-  margin-bottom: 0.35rem;
+  padding-bottom: 0.3rem;
+  margin-bottom: 0.3rem;
   border-bottom: 1px solid var(--border);
 }
 .perm-group-items {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1.25rem;
-  padding-right: 1.4rem;
+  gap: 0.35rem 1rem;
+  padding-right: 1.2rem;
 }
 .perm-group-items label {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   font-size: 0.85rem;
+  margin-bottom: 0;
+}
+@media (max-width: 900px) {
+  .perm-groups { grid-template-columns: 1fr; }
 }
 </style>

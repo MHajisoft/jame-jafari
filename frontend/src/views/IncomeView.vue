@@ -4,20 +4,23 @@ import api from '../api/client'
 import { formatMoney, paymentTypes, toInputDate } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
+import { useIsMobile } from '../composables/useMediaQuery'
 import DateDisplay from '../components/DateDisplay.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
 import FileUpload from '../components/FileUpload.vue'
 import CurrencyInput from '../components/CurrencyInput.vue'
 import AppSelect from '../components/AppSelect.vue'
 import ClearableInput from '../components/ClearableInput.vue'
+import FormHost from '../components/FormHost.vue'
 
 const auth = useAuthStore()
+const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
 const accounts = ref([])
 const persons = ref([])
 const costTypes = ref([])
-const showModal = ref(false)
+const showForm = ref(false)
 const document = ref(null)
 const form = ref({
   personId: '', accountId: '', amount: '', paymentType: 1,
@@ -64,7 +67,7 @@ async function submit() {
     await api.post('/income-transactions', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
   })
   if (!ok) return
-  showModal.value = false
+  closeForm()
   document.value = null
   await load()
 }
@@ -82,7 +85,11 @@ function openCreate() {
   }
   document.value = null
   clearErrors()
-  showModal.value = true
+  showForm.value = true
+}
+
+function closeForm() {
+  showForm.value = false
 }
 
 function paymentLabel(v) {
@@ -94,15 +101,106 @@ onMounted(load)
 
 <template>
   <div>
-    <div class="page-header">
-      <h1 class="page-title">تراکنش‌های درآمد</h1>
-      <button v-if="auth.hasPermission('income.create')" class="btn btn-fab-mobile" @click="openCreate">
+    <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
+      <h1 class="page-title">{{ showForm && !isMobile ? 'ثبت درآمد جدید' : 'تراکنش‌های درآمد' }}</h1>
+      <button
+        v-if="auth.hasPermission('income.create') && (!showForm || isMobile)"
+        class="btn btn-fab-mobile"
+        @click="openCreate"
+      >
         <span aria-hidden="true">+</span>
         <span class="btn-fab-label">ثبت درآمد</span>
       </button>
     </div>
 
-    <div class="card">
+    <FormHost :show="showForm" :title="isMobile ? 'ثبت درآمد جدید' : ''" @close="closeForm">
+      <div v-if="error" class="form-error">{{ error }}</div>
+      <form @submit.prevent="submit">
+        <div class="form-group">
+          <label>شخص *</label>
+          <AppSelect
+            v-model="form.personId"
+            :options="persons"
+            option-value="id"
+            option-label="displayName"
+            placeholder="انتخاب کنید"
+            :invalid="!!errors.personId"
+            @change="clearFieldError('personId')"
+          />
+          <div v-if="errors.personId" class="field-error">{{ errors.personId }}</div>
+        </div>
+        <div class="form-group">
+          <label>حساب *</label>
+          <AppSelect
+            v-model="form.accountId"
+            :options="accounts"
+            option-value="id"
+            option-label="name"
+            placeholder="انتخاب کنید"
+            :invalid="!!errors.accountId"
+            @change="clearFieldError('accountId')"
+          />
+          <div v-if="errors.accountId" class="field-error">{{ errors.accountId }}</div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>مبلغ *</label>
+            <CurrencyInput
+              v-model="form.amount"
+              :invalid="!!errors.amount"
+              placeholder="مثلاً 1,500,000"
+              @input="clearFieldError('amount')"
+            />
+            <div v-if="errors.amount" class="field-error">{{ errors.amount }}</div>
+          </div>
+          <div class="form-group">
+            <label>نوع پرداخت</label>
+            <AppSelect
+              v-model="form.paymentType"
+              :options="paymentTypes"
+              placeholder="نوع پرداخت"
+              :allow-empty="false"
+              :searchable="false"
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>نوع هزینه *</label>
+          <AppSelect
+            v-model="form.costTypeId"
+            :options="costTypes"
+            option-value="id"
+            option-label="name"
+            placeholder="انتخاب کنید"
+            :invalid="!!errors.costTypeId"
+            @change="clearFieldError('costTypeId')"
+          />
+          <div v-if="errors.costTypeId" class="field-error">{{ errors.costTypeId }}</div>
+        </div>
+        <div class="form-group">
+          <label>تاریخ</label>
+          <PersianDatePicker v-model="form.transactionDate" />
+        </div>
+        <div class="form-group">
+          <label>کد رهگیری <span class="optional">(اختیاری)</span></label>
+          <ClearableInput v-model="form.trackingCode" placeholder="شماره فاکتور / سریال POS / ..." :maxlength="100" />
+        </div>
+        <div class="form-group">
+          <label>توضیحات</label>
+          <ClearableInput v-model="form.description" type="textarea" :rows="2" />
+        </div>
+        <div class="form-group">
+          <label>پیوست (فاکتور/رسید)</label>
+          <FileUpload v-model="document" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" @click="closeForm">انصراف</button>
+          <button type="submit" class="btn">ثبت</button>
+        </div>
+      </form>
+    </FormHost>
+
+    <div v-show="!showForm || isMobile" class="card list-panel">
       <table class="mobile-table">
         <thead>
           <tr>
@@ -122,102 +220,14 @@ onMounted(load)
             <td data-label="کد رهگیری">{{ item.trackingCode || '—' }}</td>
             <td data-label="توضیحات">{{ item.description }}</td>
             <td v-if="auth.hasPermission('income.delete')">
-              <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+              <div class="table-actions">
+                <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+              </div>
             </td>
           </tr>
         </tbody>
       </table>
       <div v-if="!items.length" class="empty-state">تراکنشی ثبت نشده</div>
-    </div>
-
-    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
-      <div class="modal">
-        <h2 class="modal-title">ثبت درآمد جدید</h2>
-        <div v-if="error" class="form-error">{{ error }}</div>
-        <form @submit.prevent="submit">
-          <div class="form-group">
-            <label>شخص *</label>
-            <AppSelect
-              v-model="form.personId"
-              :options="persons"
-              option-value="id"
-              option-label="displayName"
-              placeholder="انتخاب کنید"
-              :invalid="!!errors.personId"
-              @change="clearFieldError('personId')"
-            />
-            <div v-if="errors.personId" class="field-error">{{ errors.personId }}</div>
-          </div>
-          <div class="form-group">
-            <label>حساب *</label>
-            <AppSelect
-              v-model="form.accountId"
-              :options="accounts"
-              option-value="id"
-              option-label="name"
-              placeholder="انتخاب کنید"
-              :invalid="!!errors.accountId"
-              @change="clearFieldError('accountId')"
-            />
-            <div v-if="errors.accountId" class="field-error">{{ errors.accountId }}</div>
-          </div>
-          <div class="grid-2">
-            <div class="form-group">
-              <label>مبلغ *</label>
-              <CurrencyInput
-                v-model="form.amount"
-                :invalid="!!errors.amount"
-                placeholder="مثلاً 1,500,000"
-                @input="clearFieldError('amount')"
-              />
-              <div v-if="errors.amount" class="field-error">{{ errors.amount }}</div>
-            </div>
-            <div class="form-group">
-              <label>نوع پرداخت</label>
-              <AppSelect
-                v-model="form.paymentType"
-                :options="paymentTypes"
-                placeholder="نوع پرداخت"
-                :allow-empty="false"
-                :searchable="false"
-              />
-            </div>
-          </div>
-          <div class="form-group">
-            <label>نوع هزینه *</label>
-            <AppSelect
-              v-model="form.costTypeId"
-              :options="costTypes"
-              option-value="id"
-              option-label="name"
-              placeholder="انتخاب کنید"
-              :invalid="!!errors.costTypeId"
-              @change="clearFieldError('costTypeId')"
-            />
-            <div v-if="errors.costTypeId" class="field-error">{{ errors.costTypeId }}</div>
-          </div>
-          <div class="form-group">
-            <label>تاریخ</label>
-            <PersianDatePicker v-model="form.transactionDate" />
-          </div>
-          <div class="form-group">
-            <label>کد رهگیری <span class="optional">(اختیاری)</span></label>
-            <ClearableInput v-model="form.trackingCode" placeholder="شماره فاکتور / سریال POS / ..." :maxlength="100" />
-          </div>
-          <div class="form-group">
-            <label>توضیحات</label>
-            <ClearableInput v-model="form.description" type="textarea" :rows="2" />
-          </div>
-          <div class="form-group">
-            <label>پیوست (فاکتور/رسید)</label>
-            <FileUpload v-model="document" />
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-outline" @click="showModal = false">انصراف</button>
-            <button type="submit" class="btn">ثبت</button>
-          </div>
-        </form>
-      </div>
     </div>
   </div>
 </template>

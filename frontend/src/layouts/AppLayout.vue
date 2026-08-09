@@ -21,8 +21,11 @@ import AppBottomNav from '../components/AppBottomNav.vue'
 .layout { min-height: 100vh; min-height: 100dvh; }
 .main {
   margin-right: 240px;
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem 1.5rem;
   max-width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
 }
 .desktop-only { display: block; }
 .mobile-only { display: none; }
