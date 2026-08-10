@@ -9,6 +9,7 @@ import AppSelect from '../components/AppSelect.vue'
 import AppCheckbox from '../components/AppCheckbox.vue'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
+import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -201,10 +202,12 @@ onMounted(load)
               </span>
             </td>
             <td v-if="canUpdate || canDelete">
-              <div class="table-actions">
-                <button v-if="canUpdate" class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
-                <button v-if="canDelete" class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
-              </div>
+              <RowActions
+                :show-edit="canUpdate"
+                :show-delete="canDelete"
+                @edit="openEdit(item)"
+                @delete="remove(item.id)"
+              />
             </td>
           </tr>
         </tbody>

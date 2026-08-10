@@ -11,6 +11,7 @@ dist/
 *.user
 *.suo
 .zcode
+.cursor
 
 # Dependencies
 node_modules/

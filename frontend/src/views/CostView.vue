@@ -12,6 +12,7 @@ import CurrencyInput from '../components/CurrencyInput.vue'
 import AppSelect from '../components/AppSelect.vue'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
+import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
 const isMobile = useIsMobile()
@@ -180,9 +181,7 @@ onMounted(load)
             <td data-label="کد رهگیری">{{ item.trackingCode || '—' }}</td>
             <td data-label="توضیحات">{{ item.description }}</td>
             <td v-if="auth.hasPermission('cost.delete')">
-              <div class="table-actions">
-                <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
-              </div>
+              <RowActions show-delete @delete="remove(item.id)" />
             </td>
           </tr>
         </tbody>

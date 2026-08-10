@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/client'
-import { genders } from '../utils/format'
+import { genders, genderLabel, enumValue } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
@@ -11,6 +11,7 @@ import PersonSelect from '../components/PersonSelect.vue'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import AppCheckbox from '../components/AppCheckbox.vue'
+import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -50,7 +51,7 @@ async function submit() {
     firstName: form.value.firstName.trim(),
     lastName: form.value.lastName?.trim() || null,
     nickName: form.value.nickName?.trim() || null,
-    gender: form.value.gender,
+    gender: +form.value.gender,
     fatherId: form.value.fatherId ? +form.value.fatherId : null,
     motherId: form.value.motherId ? +form.value.motherId : null,
     mobile: form.value.mobile?.trim() || null,
@@ -82,7 +83,7 @@ function openEdit(item) {
   editing.value = item.id
   form.value = {
     firstName: item.firstName, lastName: item.lastName || '', nickName: item.nickName || '',
-    gender: item.gender, fatherId: item.fatherId || '', motherId: item.motherId || '',
+    gender: enumValue(genders, item.gender, 1), fatherId: item.fatherId || '', motherId: item.motherId || '',
     mobile: item.mobile || '', address: item.address || '', namePrefixId: item.namePrefixId || '',
     isDead: item.isDead
   }
@@ -98,10 +99,6 @@ async function remove(id) {
   if (!confirm('حذف این شخص؟')) return
   await api.delete(`/persons/${id}`)
   await load()
-}
-
-function genderLabel(v) {
-  return genders.find(g => g.value === v)?.label || v
 }
 
 function onSearchKeyup(e) {
@@ -245,18 +242,12 @@ onMounted(load)
                 <span v-else class="badge badge-success">فعال</span>
               </td>
               <td v-if="auth.hasAnyPermission('persons.update', 'persons.delete')">
-                <div class="table-actions">
-                  <button
-                    v-if="auth.hasPermission('persons.update')"
-                    class="btn btn-sm btn-outline"
-                    @click="openEdit(item)"
-                  >ویرایش</button>
-                  <button
-                    v-if="auth.hasPermission('persons.delete')"
-                    class="btn btn-sm btn-danger"
-                    @click="remove(item.id)"
-                  >حذف</button>
-                </div>
+                <RowActions
+                  :show-edit="auth.hasPermission('persons.update')"
+                  :show-delete="auth.hasPermission('persons.delete')"
+                  @edit="openEdit(item)"
+                  @delete="remove(item.id)"
+                />
               </td>
             </tr>
           </tbody>

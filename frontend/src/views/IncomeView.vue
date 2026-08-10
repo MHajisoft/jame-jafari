@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '../api/client'
-import { formatMoney, paymentTypes, toInputDate } from '../utils/format'
+import { formatMoney, paymentTypes, paymentTypeLabel, toInputDate } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
@@ -13,6 +13,7 @@ import AppSelect from '../components/AppSelect.vue'
 import PersonSelect from '../components/PersonSelect.vue'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
+import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
 const isMobile = useIsMobile()
@@ -88,10 +89,6 @@ function openCreate() {
 
 function closeForm() {
   showForm.value = false
-}
-
-function paymentLabel(v) {
-  return paymentTypes.find(p => p.value === v)?.label || v
 }
 
 onMounted(load)
@@ -210,14 +207,12 @@ onMounted(load)
             <td data-label="شخص">{{ item.personName }}</td>
             <td data-label="حساب">{{ item.accountName }}</td>
             <td class="text-success" data-label="مبلغ">{{ formatMoney(item.amount) }}</td>
-            <td data-label="نوع پرداخت">{{ paymentLabel(item.paymentType) }}</td>
+            <td data-label="نوع پرداخت">{{ paymentTypeLabel(item.paymentType) }}</td>
             <td data-label="نوع هزینه">{{ item.costTypeName }}</td>
             <td data-label="کد رهگیری">{{ item.trackingCode || '—' }}</td>
             <td data-label="توضیحات">{{ item.description }}</td>
             <td v-if="auth.hasPermission('income.delete')">
-              <div class="table-actions">
-                <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
-              </div>
+              <RowActions show-delete @delete="remove(item.id)" />
             </td>
           </tr>
         </tbody>

@@ -7,6 +7,7 @@ import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import AppCheckbox from '../components/AppCheckbox.vue'
+import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
 const isMobile = useIsMobile()
@@ -108,7 +109,14 @@ onMounted(load)
 
     <div v-show="!showForm || isMobile" class="card list-panel">
       <table class="mobile-table">
-        <thead><tr><th>نام</th><th>توضیحات</th><th>وضعیت</th><th></th></tr></thead>
+        <thead>
+          <tr>
+            <th>نام</th>
+            <th>توضیحات</th>
+            <th>وضعیت</th>
+            <th v-if="auth.hasAnyPermission('accounts.update', 'accounts.delete')"></th>
+          </tr>
+        </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
             <td data-label="نام"><strong>{{ item.name }}</strong></td>
@@ -118,19 +126,13 @@ onMounted(load)
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>
             </td>
-            <td>
-              <div class="table-actions">
-                <button
-                  v-if="auth.hasPermission('accounts.update')"
-                  class="btn btn-sm btn-outline"
-                  @click="openEdit(item)"
-                >ویرایش</button>
-                <button
-                  v-if="auth.hasPermission('accounts.delete')"
-                  class="btn btn-sm btn-danger"
-                  @click="remove(item.id)"
-                >حذف</button>
-              </div>
+            <td v-if="auth.hasAnyPermission('accounts.update', 'accounts.delete')">
+              <RowActions
+                :show-edit="auth.hasPermission('accounts.update')"
+                :show-delete="auth.hasPermission('accounts.delete')"
+                @edit="openEdit(item)"
+                @delete="remove(item.id)"
+              />
             </td>
           </tr>
         </tbody>

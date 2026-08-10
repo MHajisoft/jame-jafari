@@ -7,6 +7,7 @@ import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import AppCheckbox from '../components/AppCheckbox.vue'
+import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
 const isMobile = useIsMobile()
@@ -164,6 +165,12 @@ function permLabel(code) {
   return map[action] || action
 }
 
+function permissionTitle(code) {
+  const [mod] = String(code).split('.')
+  const moduleName = moduleLabels[mod] || mod
+  return `${moduleName} · ${permLabel(code)}`
+}
+
 async function remove(id) {
   if (!confirm('حذف این کاربر؟')) return
   await api.delete(`/users/${id}`)
@@ -273,7 +280,7 @@ onMounted(load)
             <td data-label="موبایل">{{ item.mobile }}</td>
             <td data-label="دسترسی‌ها">
               <div class="perm-badges">
-                <span v-for="p in item.permissions" :key="p" class="badge badge-perm">{{ p }}</span>
+                <span v-for="p in item.permissions" :key="p" class="badge badge-perm">{{ permissionTitle(p) }}</span>
                 <span v-if="!item.permissions.length" class="text-muted">—</span>
               </div>
             </td>
@@ -283,18 +290,12 @@ onMounted(load)
               </span>
             </td>
             <td v-if="auth.hasAnyPermission('users.update', 'users.delete')">
-              <div class="table-actions">
-                <button
-                  v-if="auth.hasPermission('users.update')"
-                  class="btn btn-sm btn-outline"
-                  @click="openEdit(item)"
-                >ویرایش</button>
-                <button
-                  v-if="auth.hasPermission('users.delete')"
-                  class="btn btn-sm btn-danger"
-                  @click="remove(item.id)"
-                >حذف</button>
-              </div>
+              <RowActions
+                :show-edit="auth.hasPermission('users.update')"
+                :show-delete="auth.hasPermission('users.delete')"
+                @edit="openEdit(item)"
+                @delete="remove(item.id)"
+              />
             </td>
           </tr>
         </tbody>

@@ -2,6 +2,19 @@ import dayjs from 'dayjs'
 import jalaliday from 'jalaliday'
 import { formatJalali } from './jalali'
 
+export {
+  genders,
+  paymentTypes,
+  transactionDirections,
+  generalTypeCategories,
+  enumLabel,
+  enumValue,
+  genderLabel,
+  paymentTypeLabel,
+  transactionDirectionLabel,
+  generalTypeCategoryLabel
+} from './enums'
+
 dayjs.extend(jalaliday)
 
 export function formatDate(date) {
@@ -46,15 +59,3 @@ export function formatCurrencyInput(value) {
   if (!digits) return ''
   return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
-
-export const paymentTypes = [
-  { value: 1, label: 'نقد' },
-  { value: 2, label: 'کارتخوان' },
-  { value: 3, label: 'چک' },
-  { value: 4, label: 'انتقال بانکی' }
-]
-
-export const genders = [
-  { value: 1, label: 'مرد' },
-  { value: 2, label: 'زن' }
-]
