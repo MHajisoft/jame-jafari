@@ -3,6 +3,7 @@ import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
+import { useToastStore } from '../stores/toast'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import AppSelect from '../components/AppSelect.vue'
@@ -12,6 +13,7 @@ import FormHost from '../components/FormHost.vue'
 import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
+const toast = useToastStore()
 const router = useRouter()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -70,7 +72,7 @@ async function submit() {
     } else {
       await api.post('/cost-types', payload)
     }
-  })
+  }, { successMessage: editing.value ? 'نوع هزینه ویرایش شد' : 'نوع هزینه ایجاد شد' })
   if (!ok) return
   closeForm()
   await load()
@@ -103,6 +105,7 @@ function closeForm() {
 async function remove(id) {
   if (!confirm('حذف این نوع هزینه؟')) return
   await api.delete(`/cost-types/${id}`)
+  toast.success('نوع هزینه حذف شد')
   await load()
 }
 

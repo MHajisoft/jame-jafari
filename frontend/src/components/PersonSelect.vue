@@ -151,7 +151,7 @@ async function ensureSelected() {
     return
   }
   try {
-    const { data } = await api.get(`/persons/${props.modelValue}`)
+    const { data } = await api.get(`/persons/${props.modelValue}`, { skipErrorToast: true })
     selected.value = data
   } catch {
     selected.value = { id: props.modelValue, firstName: `#${props.modelValue}`, lastName: '' }

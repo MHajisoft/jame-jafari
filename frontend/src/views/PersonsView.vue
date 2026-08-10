@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import api from '../api/client'
 import { genders, genderLabel, enumValue } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
+import { useToastStore } from '../stores/toast'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import AppSelect from '../components/AppSelect.vue'
@@ -14,6 +15,7 @@ import AppCheckbox from '../components/AppCheckbox.vue'
 import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
+const toast = useToastStore()
 const router = useRouter()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -65,7 +67,7 @@ async function submit() {
     } else {
       await api.post('/persons', payload)
     }
-  })
+  }, { successMessage: editing.value ? 'شخص با موفقیت ویرایش شد' : 'شخص با موفقیت ایجاد شد' })
   if (!ok) return
   closeForm()
   editing.value = null
@@ -98,6 +100,7 @@ function closeForm() {
 async function remove(id) {
   if (!confirm('حذف این شخص؟')) return
   await api.delete(`/persons/${id}`)
+  toast.success('شخص حذف شد')
   await load()
 }
 

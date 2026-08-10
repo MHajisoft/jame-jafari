@@ -11,6 +11,7 @@
   --border: #e5e7eb;
   --danger: #dc2626;
   --success: #16a34a;
+  --warning: #d97706;
   --sidebar: #1a5f4a;
   --sidebar-text: #ffffff;
 }
@@ -25,6 +26,7 @@
   --border: #334155;
   --danger: #f87171;
   --success: #4ade80;
+  --warning: #fbbf24;
   --sidebar: #0f172a;
   --sidebar-text: #f1f5f9;
 }
@@ -39,6 +41,7 @@
   --border: #b7e4c7;
   --danger: #c1121f;
   --success: #40916c;
+  --warning: #ca8a04;
   --sidebar: #1b4332;
   --sidebar-text: #d8f3dc;
 }
@@ -53,6 +56,7 @@
   --border: #fff176;
   --danger: #e65100;
   --success: #689f38;
+  --warning: #f9a825;
   --sidebar: #f57f17;
   --sidebar-text: #fff8e1;
 }
@@ -67,6 +71,7 @@
   --border: #ffb3c1;
   --danger: #9d0208;
   --success: #52b788;
+  --warning: #e09f3e;
   --sidebar: #a4133c;
   --sidebar-text: #ffccd5;
 }
@@ -81,6 +86,7 @@
   --border: #ffe082;
   --danger: #bf360c;
   --success: #558b2f;
+  --warning: #c9a227;
   --sidebar: #996515;
   --sidebar-text: #fff8e1;
 }
@@ -95,6 +101,7 @@
   --border: #90caf9;
   --danger: #c62828;
   --success: #00897b;
+  --warning: #f9a825;
   --sidebar: #0d47a1;
   --sidebar-text: #e3f2fd;
 }

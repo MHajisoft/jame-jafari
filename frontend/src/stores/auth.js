@@ -42,7 +42,7 @@ export const useAuthStore = defineStore('auth', {
   },
   actions: {
     async login(username, password) {
-      const { data } = await api.post('/auth/login', { username, password })
+      const { data } = await api.post('/auth/login', { username, password }, { skipErrorToast: true })
       this.token = data.token
       localStorage.setItem('token', data.token)
       applyProfile(this, data)
@@ -64,7 +64,7 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     async fetchProfile() {
-      const { data } = await api.get('/profile')
+      const { data } = await api.get('/profile', { skipErrorToast: true })
       applyProfile(this, data)
       persistUser(this)
       return data

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
+import { useToastStore } from '../stores/toast'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
@@ -10,6 +11,7 @@ import AppCheckbox from '../components/AppCheckbox.vue'
 import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
+const toast = useToastStore()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
@@ -114,7 +116,7 @@ async function submit() {
     } else {
       await api.post('/users', payload)
     }
-  })
+  }, { successMessage: editing.value ? 'کاربر با موفقیت ویرایش شد' : 'کاربر با موفقیت ایجاد شد' })
   if (!ok) return
   closeForm()
   await load()
@@ -174,6 +176,7 @@ function permissionTitle(code) {
 async function remove(id) {
   if (!confirm('حذف این کاربر؟')) return
   await api.delete(`/users/${id}`)
+  toast.success('کاربر حذف شد')
   await load()
 }
 

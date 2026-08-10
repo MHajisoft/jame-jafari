@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useToastStore } from '../stores/toast'
 
 const api = axios.create({
   baseURL: '/api',
@@ -19,6 +20,12 @@ api.interceptors.response.use(
       localStorage.removeItem('user')
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login'
+      }
+    } else if (!error.config?.skipErrorToast) {
+      try {
+        useToastStore().fromApiError(error)
+      } catch {
+        /* pinia may be unavailable during early boot */
       }
     }
     return Promise.reject(error)

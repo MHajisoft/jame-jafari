@@ -78,7 +78,7 @@ async function submit() {
   }
   const ok = await trySubmit(async () => {
     await api.post('/food', payload)
-  })
+  }, { successMessage: 'غذا با موفقیت ثبت شد' })
   if (!ok) return
   closeForm()
   cookDate.value = form.value.cookDate

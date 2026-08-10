@@ -3,6 +3,7 @@ import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
+import { useToastStore } from '../stores/toast'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import AppCheckbox from '../components/AppCheckbox.vue'
@@ -16,6 +17,7 @@ const CATEGORIES = [
 ]
 
 const auth = useAuthStore()
+const toast = useToastStore()
 const route = useRoute()
 const router = useRouter()
 const isMobile = useIsMobile()
@@ -72,6 +74,10 @@ async function submit() {
     } else {
       await api.post('/general-types', payload)
     }
+  }, {
+    successMessage: editing.value
+      ? `${currentMeta.value.singular} ویرایش شد`
+      : `${currentMeta.value.singular} ایجاد شد`
   })
   if (!ok) return
   closeForm()
@@ -109,6 +115,7 @@ function closeForm() {
 async function remove(id) {
   if (!confirm(`حذف این ${currentMeta.value.singular}؟`)) return
   await api.delete(`/general-types/${id}`)
+  toast.success(`${currentMeta.value.singular} حذف شد`)
   await load()
 }
 

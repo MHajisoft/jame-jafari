@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import api from '../api/client'
 import { formatMoney, toInputDate } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
+import { useToastStore } from '../stores/toast'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import DateDisplay from '../components/DateDisplay.vue'
@@ -15,6 +16,7 @@ import FormHost from '../components/FormHost.vue'
 import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
+const toast = useToastStore()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
@@ -59,7 +61,7 @@ async function submit() {
   if (document.value) fd.append('document', document.value)
   const ok = await trySubmit(async () => {
     await api.post('/cost-transactions', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-  })
+  }, { successMessage: 'هزینه با موفقیت ثبت شد' })
   if (!ok) return
   closeForm()
   document.value = null
@@ -69,6 +71,7 @@ async function submit() {
 async function remove(id) {
   if (!confirm('حذف این تراکنش؟')) return
   await api.delete(`/cost-transactions/${id}`)
+  toast.success('تراکنش حذف شد')
   await load()
 }
 

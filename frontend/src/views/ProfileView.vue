@@ -2,19 +2,19 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useToastStore } from '../stores/toast'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
+const toast = useToastStore()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 
 const profileForm = reactive({ email: '', mobile: '' })
 const passwordForm = reactive({ currentPassword: '', newPassword: '', confirmPassword: '' })
-const profileMsg = ref('')
-const passwordMsg = ref('')
 const avatarBusy = ref(false)
 const sheetOpen = ref(false)
 const fileInput = ref(null)
@@ -57,33 +57,29 @@ async function load() {
 }
 
 async function saveProfile() {
-  profileMsg.value = ''
   if (!validate(profileRules, profileForm)) return
   const ok = await trySubmit(async () => {
     await auth.updateProfile({
       email: profileForm.email?.trim() || null,
       mobile: profileForm.mobile?.trim() || null
     })
-  })
+  }, { successMessage: 'اطلاعات پروفایل ذخیره شد' })
   if (!ok) return
   syncFormsFromAuth()
-  profileMsg.value = 'اطلاعات پروفایل ذخیره شد'
 }
 
 async function savePassword() {
-  passwordMsg.value = ''
   if (!validate(passwordRules, passwordForm)) return
   const ok = await trySubmit(async () => {
     await auth.changePassword({
       currentPassword: passwordForm.currentPassword,
       newPassword: passwordForm.newPassword
     })
-  })
+  }, { successMessage: 'رمز عبور با موفقیت تغییر کرد' })
   if (!ok) return
   passwordForm.currentPassword = ''
   passwordForm.newPassword = ''
   passwordForm.confirmPassword = ''
-  passwordMsg.value = 'رمز عبور با موفقیت تغییر کرد'
 }
 
 function openAvatarPicker() {
@@ -112,6 +108,7 @@ async function onAvatarChange(e) {
   clearErrors()
   try {
     await auth.uploadAvatar(file)
+    toast.success('تصویر پروفایل به‌روز شد')
   } catch (err) {
     await trySubmit(async () => { throw err })
   } finally {
@@ -126,6 +123,7 @@ async function removeAvatar() {
   clearErrors()
   try {
     await auth.removeAvatar()
+    toast.success('تصویر پروفایل حذف شد')
   } catch (err) {
     await trySubmit(async () => { throw err })
   } finally {
@@ -180,7 +178,7 @@ function logout() {
       <div class="profile-forms">
         <section class="card form-panel">
           <h3 class="section-title">اطلاعات حساب</h3>
-          <div v-if="profileMsg" class="form-success">{{ profileMsg }}</div>
+          <div v-if="error" class="form-error">{{ error }}</div>
           <form @submit.prevent="saveProfile">
             <div class="form-group">
               <label>نام کاربری</label>
@@ -215,7 +213,6 @@ function logout() {
 
         <section class="card form-panel">
           <h3 class="section-title">تغییر رمز عبور</h3>
-          <div v-if="passwordMsg" class="form-success">{{ passwordMsg }}</div>
           <form @submit.prevent="savePassword">
             <div class="form-group">
               <label>رمز عبور فعلی *</label>

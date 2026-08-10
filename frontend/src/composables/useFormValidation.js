@@ -1,4 +1,5 @@
 import { nextTick, reactive, toRefs } from 'vue'
+import { useToastStore } from '../stores/toast'
 
 function isBlank(v) {
   return v === undefined || v === null || (typeof v === 'string' && v.trim() === '')
@@ -93,36 +94,29 @@ export function useFormValidation() {
   /**
    * Wrap an async action in try/catch.
    * Parses ASP.NET Core ValidationProblemDetails into per-field errors.
+   * API error toasts are shown by the axios interceptor.
    * @param {Function} fn - async function to execute
+   * @param {{ successMessage?: string }} [options]
    * @returns success boolean
    */
-  async function trySubmit(fn) {
+  async function trySubmit(fn, options = {}) {
     clearErrors()
     try {
       await fn()
+      if (options.successMessage) {
+        useToastStore().success(options.successMessage)
+      }
       return true
     } catch (e) {
       const response = e.response
-      if (response && response.data) {
-        const data = response.data
-        if (data.errors && typeof data.errors === 'object') {
-          // ASP.NET ValidationProblemDetails: { errors: { "FieldName": ["msg1","msg2"] } }
-          for (const [field, messages] of Object.entries(data.errors)) {
-            // Convert PascalCase to camelCase for matching
-            const key = field.charAt(0).toLowerCase() + field.slice(1)
-            state.errors[key] = Array.isArray(messages) ? messages[0] : messages
-          }
-          focusFirstInvalid()
-        } else if (data.detail || data.title) {
-          state.error = data.detail || data.title
-        } else if (data.message) {
-          state.error = data.message
+      if (response?.data?.errors && typeof response.data.errors === 'object') {
+        for (const [field, messages] of Object.entries(response.data.errors)) {
+          const key = field.charAt(0).toLowerCase() + field.slice(1)
+          state.errors[key] = Array.isArray(messages) ? messages[0] : messages
         }
-      } else if (e.message) {
-        state.error = e.message
-      } else {
-        state.error = 'خطایی رخ داد. لطفاً دوباره تلاش کنید.'
+        focusFirstInvalid()
       }
+      // Non-field API errors: toast already shown by interceptor
       return false
     }
   }

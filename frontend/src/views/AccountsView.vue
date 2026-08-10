@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
+import { useToastStore } from '../stores/toast'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
@@ -10,6 +11,7 @@ import AppCheckbox from '../components/AppCheckbox.vue'
 import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
+const toast = useToastStore()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
@@ -34,7 +36,7 @@ async function submit() {
     } else {
       await api.post('/accounts', form.value)
     }
-  })
+  }, { successMessage: editing.value ? 'حساب با موفقیت ویرایش شد' : 'حساب با موفقیت ایجاد شد' })
   if (!ok) return
   closeForm()
   await load()
@@ -61,6 +63,7 @@ function closeForm() {
 async function remove(id) {
   if (!confirm('حذف این حساب؟')) return
   await api.delete(`/accounts/${id}`)
+  toast.success('حساب حذف شد')
   await load()
 }
 

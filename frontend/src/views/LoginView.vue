@@ -30,8 +30,14 @@ async function submit() {
   try {
     await auth.login(username.value, password.value)
     router.push('/')
-  } catch {
-    error.value = 'نام کاربری یا رمز عبور اشتباه است'
+  } catch (e) {
+    if (!e.response) {
+      error.value = 'ارتباط با سرور برقرار نشد. اتصال اینترنت را بررسی کنید.'
+    } else if (e.response.status >= 500) {
+      error.value = 'خطای سرور رخ داد. لطفاً دوباره تلاش کنید.'
+    } else {
+      error.value = 'نام کاربری یا رمز عبور اشتباه است'
+    }
   } finally {
     loading.value = false
   }
