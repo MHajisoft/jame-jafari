@@ -89,7 +89,7 @@ function clear(e) {
   width: 100%;
 }
 .clearable-input.has-clear :is(input, textarea).form-control {
-  padding-inline-start: 2.4rem;
+  padding-inline-start: 2.85rem;
 }
 .clearable-input.textarea .clear-btn {
   top: 0.55rem;
@@ -97,7 +97,7 @@ function clear(e) {
 }
 .clear-btn {
   position: absolute;
-  inset-inline-start: 0.55rem;
+  inset-inline-start: 0.45rem;
   top: 50%;
   transform: translateY(-50%);
   width: 28px;

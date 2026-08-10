@@ -444,7 +444,7 @@ onBeforeUnmount(() => {
   padding-inline-end: 2.75rem;
 }
 .date-field.has-clear .date-input {
-  padding-inline-start: 2.4rem;
+  padding-inline-start: 2.85rem;
 }
 .field-clear {
   position: absolute;

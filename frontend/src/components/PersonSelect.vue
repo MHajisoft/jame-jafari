@@ -472,7 +472,7 @@ onBeforeUnmount(() => {
   height: 100%;
   object-fit: cover;
 }
-.has-clear .select-trigger { padding-inline-start: 2.4rem; }
+.has-clear .select-trigger { padding-inline-start: 2.85rem; }
 .select-trigger.placeholder .select-value { color: var(--text-muted); }
 .select-trigger:disabled { opacity: 0.6; cursor: not-allowed; }
 .select-value {

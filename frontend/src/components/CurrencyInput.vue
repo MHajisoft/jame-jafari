@@ -128,7 +128,7 @@ function clear(e) {
   width: 100%;
 }
 .currency-input.has-clear .form-control {
-  padding-inline-start: 2.4rem;
+  padding-inline-start: 2.85rem;
 }
 .clear-btn {
   position: absolute;
