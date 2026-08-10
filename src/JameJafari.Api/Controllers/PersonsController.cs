@@ -50,11 +50,19 @@ public class PersonsController(PersonService service) : ApiControllerBase
         => await service.DeleteAsync(id, CurrentUserId) ? NoContent() : NotFound();
 
     [HttpPost("{id:int}/picture")]
-    [RequirePermission(PermissionCodes.PersonsUpdate)]
+    [RequirePermission(PermissionCodes.PersonsUpdate, PermissionCodes.PersonsCreate)]
     public async Task<ActionResult<PersonDto>> UploadPicture(int id, IFormFile file, [FromServices] FileStorageService storage)
     {
         var path = await storage.SaveAsync(file, "persons");
         var person = await service.UpdatePictureAsync(id, path, CurrentUserId);
+        return person is null ? NotFound() : Ok(person);
+    }
+
+    [HttpDelete("{id:int}/picture")]
+    [RequirePermission(PermissionCodes.PersonsUpdate)]
+    public async Task<ActionResult<PersonDto>> RemovePicture(int id)
+    {
+        var person = await service.UpdatePictureAsync(id, null, CurrentUserId);
         return person is null ? NotFound() : Ok(person);
     }
 }

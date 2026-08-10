@@ -527,6 +527,12 @@ button.field-invalid:focus {
     line-height: 1.35;
   }
   .mobile-table tbody td[data-label]:first-of-type::before { display: none; }
+  .mobile-table tbody td[data-label]:first-of-type .entity-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+  .mobile-table tbody td[data-label]:first-of-type .entity-cell strong,
   .mobile-table tbody td[data-label]:first-of-type strong {
     display: block;
     font-size: inherit;

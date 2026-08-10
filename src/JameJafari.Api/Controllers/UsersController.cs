@@ -45,11 +45,19 @@ public class UsersController(UserService service) : ApiControllerBase
         => await service.DeleteAsync(id, CurrentUserId) ? NoContent() : NotFound();
 
     [HttpPost("{id:int}/avatar")]
-    [RequirePermission(PermissionCodes.UsersUpdate)]
+    [RequirePermission(PermissionCodes.UsersUpdate, PermissionCodes.UsersCreate)]
     public async Task<ActionResult<UserDto>> UploadAvatar(int id, IFormFile file, [FromServices] FileStorageService storage)
     {
         var path = await storage.SaveAsync(file, "avatars");
         var user = await service.UpdateAvatarAsync(id, path, CurrentUserId);
+        return user is null ? NotFound() : Ok(user);
+    }
+
+    [HttpDelete("{id:int}/avatar")]
+    [RequirePermission(PermissionCodes.UsersUpdate)]
+    public async Task<ActionResult<UserDto>> RemoveAvatar(int id)
+    {
+        var user = await service.UpdateAvatarAsync(id, null, CurrentUserId);
         return user is null ? NotFound() : Ok(user);
     }
 }

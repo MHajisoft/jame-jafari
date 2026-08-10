@@ -227,7 +227,7 @@ public class PersonService(AppDbContext db)
         return true;
     }
 
-    public async Task<PersonDto?> UpdatePictureAsync(int id, string path, int userId)
+    public async Task<PersonDto?> UpdatePictureAsync(int id, string? path, int userId)
     {
         var entity = await db.Persons.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
         if (entity is null) return null;

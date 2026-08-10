@@ -75,7 +75,7 @@ public class UserService(AppDbContext db)
         return true;
     }
 
-    public async Task<UserDto?> UpdateAvatarAsync(int id, string path, int userId)
+    public async Task<UserDto?> UpdateAvatarAsync(int id, string? path, int userId)
     {
         var entity = await db.Users.FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
         if (entity is null) return null;

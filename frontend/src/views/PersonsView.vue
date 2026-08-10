@@ -13,6 +13,8 @@ import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import AppCheckbox from '../components/AppCheckbox.vue'
 import RowActions from '../components/RowActions.vue'
+import EntityAvatar from '../components/EntityAvatar.vue'
+import AvatarPicker from '../components/AvatarPicker.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -21,13 +23,19 @@ const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
 const namePrefixes = ref([])
-const search = ref('')
 const showForm = ref(false)
 const editing = ref(null)
+const avatarFile = ref(null)
+const avatarPath = ref('')
+const initialAvatarPath = ref('')
 const form = ref({
   firstName: '', lastName: '', nickName: '', gender: 1,
   fatherId: '', motherId: '', mobile: '', address: '', namePrefixId: '', isDead: false
 })
+
+const avatarName = computed(() =>
+  [form.value.firstName, form.value.lastName].filter(Boolean).join(' ') || 'شخص'
+)
 
 const canManagePrefixes = computed(() =>
   auth.hasAnyPermission('generaltypes.create', 'generaltypes.update', 'generaltypes.delete', 'generaltypes.view')
@@ -40,11 +48,25 @@ const rules = {
 
 async function load() {
   const [p, t] = await Promise.all([
-    api.get('/persons', { params: { search: search.value, page: 1, pageSize: 20 } }),
+    api.get('/persons', { params: { page: 1, pageSize: 20 } }),
     api.get('/general-types', { params: { category: 'NamePrefix' } })
   ])
   items.value = p.data.items
   namePrefixes.value = t.data
+}
+
+async function syncPersonPicture(id) {
+  if (avatarFile.value) {
+    const fd = new FormData()
+    fd.append('file', avatarFile.value)
+    await api.post(`/persons/${id}/picture`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    return
+  }
+  if (editing.value && initialAvatarPath.value && !avatarPath.value) {
+    await api.delete(`/persons/${id}/picture`)
+  }
 }
 
 async function submit() {
@@ -62,11 +84,14 @@ async function submit() {
     isDead: form.value.isDead
   }
   const ok = await trySubmit(async () => {
+    let id = editing.value
     if (editing.value) {
       await api.put(`/persons/${editing.value}`, payload)
     } else {
-      await api.post('/persons', payload)
+      const { data } = await api.post('/persons', payload)
+      id = data.id
     }
+    await syncPersonPicture(id)
   }, { successMessage: editing.value ? 'شخص با موفقیت ویرایش شد' : 'شخص با موفقیت ایجاد شد' })
   if (!ok) return
   closeForm()
@@ -74,9 +99,16 @@ async function submit() {
   await load()
 }
 
+function resetAvatarState(path = '') {
+  avatarFile.value = null
+  avatarPath.value = path || ''
+  initialAvatarPath.value = path || ''
+}
+
 function openCreate() {
   editing.value = null
   form.value = { firstName: '', lastName: '', nickName: '', gender: 1, fatherId: '', motherId: '', mobile: '', address: '', namePrefixId: '', isDead: false }
+  resetAvatarState()
   clearErrors()
   showForm.value = true
 }
@@ -89,12 +121,14 @@ function openEdit(item) {
     mobile: item.mobile || '', address: item.address || '', namePrefixId: item.namePrefixId || '',
     isDead: item.isDead
   }
+  resetAvatarState(item.picturePath || '')
   clearErrors()
   showForm.value = true
 }
 
 function closeForm() {
   showForm.value = false
+  resetAvatarState()
 }
 
 async function remove(id) {
@@ -102,10 +136,6 @@ async function remove(id) {
   await api.delete(`/persons/${id}`)
   toast.success('شخص حذف شد')
   await load()
-}
-
-function onSearchKeyup(e) {
-  if (e.key === 'Enter') load()
 }
 
 onMounted(load)
@@ -128,6 +158,12 @@ onMounted(load)
     <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش شخص' : 'شخص جدید') : ''" @close="closeForm">
       <div v-if="error" class="form-error">{{ error }}</div>
       <form @submit.prevent="submit">
+        <AvatarPicker
+          v-model="avatarFile"
+          v-model:path="avatarPath"
+          :name="avatarName"
+          label="تصویر شخص"
+        />
         <div class="grid-2">
           <div class="form-group">
             <label>نام *</label>
@@ -221,10 +257,6 @@ onMounted(load)
     </FormHost>
 
     <div v-show="!showForm || isMobile">
-      <div class="card" style="margin-bottom:1rem">
-        <ClearableInput v-model="search" type="search" placeholder="جستجو..." @keyup="onSearchKeyup" />
-      </div>
-
       <div class="card list-panel">
         <table class="mobile-table">
           <thead>
@@ -235,7 +267,12 @@ onMounted(load)
           </thead>
           <tbody>
             <tr v-for="item in items" :key="item.id">
-              <td data-label="نام"><strong>{{ item.displayName }}</strong></td>
+              <td data-label="نام">
+                <div class="entity-cell">
+                  <EntityAvatar :src="item.picturePath" :name="item.displayName" />
+                  <strong>{{ item.displayName }}</strong>
+                </div>
+              </td>
               <td data-label="جنسیت">{{ genderLabel(item.gender) }}</td>
               <td data-label="موبایل">{{ item.mobile }}</td>
               <td data-label="پدر">{{ item.fatherName }}</td>
@@ -272,5 +309,17 @@ onMounted(load)
   cursor: pointer;
   padding: 0;
 }
-.link-btn:hover { text-decoration: underline; }
+<link-btn:hover { text-decoration: underline; }
+
+.entity-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+.entity-cell strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 </style>

@@ -9,6 +9,8 @@ import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import AppCheckbox from '../components/AppCheckbox.vue'
 import RowActions from '../components/RowActions.vue'
+import EntityAvatar from '../components/EntityAvatar.vue'
+import AvatarPicker from '../components/AvatarPicker.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -18,6 +20,9 @@ const items = ref([])
 const permissions = ref([])
 const showForm = ref(false)
 const editing = ref(null)
+const avatarFile = ref(null)
+const avatarPath = ref('')
+const initialAvatarPath = ref('')
 const form = ref({ username: '', password: '', email: '', mobile: '', isActive: true, permissionIds: [] })
 
 const moduleLabels = {
@@ -81,6 +86,20 @@ async function load() {
   permissions.value = p.data
 }
 
+async function syncUserAvatar(id) {
+  if (avatarFile.value) {
+    const fd = new FormData()
+    fd.append('file', avatarFile.value)
+    await api.post(`/users/${id}/avatar`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    return
+  }
+  if (editing.value && initialAvatarPath.value && !avatarPath.value) {
+    await api.delete(`/users/${id}/avatar`)
+  }
+}
+
 async function submit() {
   if (!validate(getRules(), form.value)) return
   const normalized = {
@@ -111,20 +130,30 @@ async function submit() {
       }
 
   const ok = await trySubmit(async () => {
+    let id = editing.value
     if (editing.value) {
       await api.put(`/users/${editing.value}`, payload)
     } else {
-      await api.post('/users', payload)
+      const { data } = await api.post('/users', payload)
+      id = data.id
     }
+    await syncUserAvatar(id)
   }, { successMessage: editing.value ? 'کاربر با موفقیت ویرایش شد' : 'کاربر با موفقیت ایجاد شد' })
   if (!ok) return
   closeForm()
   await load()
 }
 
+function resetAvatarState(path = '') {
+  avatarFile.value = null
+  avatarPath.value = path || ''
+  initialAvatarPath.value = path || ''
+}
+
 function openCreate() {
   editing.value = null
   form.value = { username: '', password: '', email: '', mobile: '', isActive: true, permissionIds: [] }
+  resetAvatarState()
   clearErrors()
   showForm.value = true
 }
@@ -136,12 +165,14 @@ function openEdit(item) {
     mobile: item.mobile || '', isActive: item.isActive,
     permissionIds: permissions.value.filter(p => item.permissions.includes(p.code)).map(p => p.id)
   }
+  resetAvatarState(item.avatarPath || '')
   clearErrors()
   showForm.value = true
 }
 
 function closeForm() {
   showForm.value = false
+  resetAvatarState()
 }
 
 function toggleGroup(group, on) {
@@ -200,6 +231,12 @@ onMounted(load)
     <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش کاربر' : 'کاربر جدید') : ''" @close="closeForm">
       <div v-if="error" class="form-error">{{ error }}</div>
       <form @submit.prevent="submit">
+        <AvatarPicker
+          v-model="avatarFile"
+          v-model:path="avatarPath"
+          :name="form.username || 'کاربر'"
+          label="تصویر کاربر"
+        />
         <div v-if="!editing" class="form-group">
           <label>نام کاربری *</label>
           <ClearableInput
@@ -278,7 +315,12 @@ onMounted(load)
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
-            <td data-label="نام کاربری"><strong>{{ item.username }}</strong></td>
+            <td data-label="نام کاربری">
+              <div class="entity-cell">
+                <EntityAvatar :src="item.avatarPath" :name="item.username" />
+                <strong>{{ item.username }}</strong>
+              </div>
+            </td>
             <td data-label="ایمیل">{{ item.email }}</td>
             <td data-label="موبایل">{{ item.mobile }}</td>
             <td data-label="دسترسی‌ها">
@@ -337,6 +379,17 @@ onMounted(load)
 }
 .perm-group-head :deep(.app-checkbox) {
   font-weight: 600;
+}
+.entity-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+.entity-cell strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 @media (max-width: 900px) {
   .perm-groups { grid-template-columns: 1fr; }
