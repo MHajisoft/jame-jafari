@@ -109,6 +109,7 @@ onMounted(load)
         <PersianDatePicker v-model="cookDate" variant="bar" placeholder="تاریخ پخت" @change="load" />
         <button
           v-if="auth.hasPermission('food.create')"
+          type="button"
           class="btn btn-fab-mobile"
           @click="openCreate"
         >
