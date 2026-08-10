@@ -27,7 +27,6 @@ onMounted(async () => {
   <div>
     <div class="page-header">
       <h1 class="page-title">داشبورد</h1>
-      <span class="text-muted">خوش آمدید، {{ auth.username }}</span>
     </div>
 
     <div v-if="summary" class="grid-3" style="margin-bottom:1.5rem">

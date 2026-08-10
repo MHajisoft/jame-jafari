@@ -1,27 +1,26 @@
 <script setup>
 import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { navItems, filterNavItems } from '../config/navigation'
 
 const route = useRoute()
-const router = useRouter()
 const auth = useAuthStore()
-
 const items = computed(() => filterNavItems(navItems, auth.hasPermission))
-
-function logout() {
-  auth.logout()
-  router.push('/login')
-}
 </script>
 
 <template>
   <aside class="sidebar">
-    <div class="brand">
-      <h1>موسسه جامعه جعفری</h1>
-      <p class="user">{{ auth.username }}</p>
-    </div>
+    <router-link to="/profile" class="brand" :class="{ active: route.path === '/profile' }">
+      <div class="brand-avatar">
+        <img v-if="auth.avatarUrl" :src="auth.avatarUrl" alt="" />
+        <span v-else>{{ auth.initials }}</span>
+      </div>
+      <div class="brand-text">
+        <h1>موسسه جامعه جعفری</h1>
+        <p class="user">{{ auth.username }}</p>
+      </div>
+    </router-link>
     <nav>
       <router-link
         v-for="item in items"
@@ -33,7 +32,6 @@ function logout() {
         {{ item.label }}
       </router-link>
     </nav>
-    <button class="logout-btn" @click="logout">خروج</button>
   </aside>
 </template>
 
@@ -51,11 +49,50 @@ function logout() {
   z-index: 100;
 }
 .brand {
-  padding: 1.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
   border-bottom: 1px solid rgba(255,255,255,0.15);
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.15s;
 }
-.brand h1 { font-size: 1.1rem; }
-.user { font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem; }
+.brand:hover,
+.brand.active {
+  background: rgba(255,255,255,0.12);
+}
+.brand-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+.brand-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.brand-text { min-width: 0; }
+.brand h1 {
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.3;
+}
+.user {
+  font-size: 0.8rem;
+  opacity: 0.85;
+  margin-top: 0.15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 nav { flex: 1; padding: 1rem 0; overflow-y: auto; }
 nav a {
   display: flex;
@@ -69,14 +106,5 @@ nav a {
 nav a:hover, nav a.active {
   background: rgba(255,255,255,0.15);
   opacity: 1;
-}
-.logout-btn {
-  margin: 1rem;
-  padding: 0.75rem;
-  background: rgba(255,255,255,0.15);
-  border: none;
-  border-radius: 8px;
-  color: var(--sidebar-text);
-  cursor: pointer;
 }
 </style>

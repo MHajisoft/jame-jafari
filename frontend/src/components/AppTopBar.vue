@@ -7,6 +7,7 @@ const route = useRoute()
 
 const title = computed(() => {
   if (route.path === '/more') return 'بیشتر'
+  if (route.path === '/profile') return 'پروفایل'
   const item = navItems.find(n => n.to === route.path)
   return item?.title || 'جامعه جعفری'
 })

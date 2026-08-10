@@ -11,8 +11,36 @@ public record LoginRequest(
     [StringLength(100, ErrorMessage = "رمز عبور حداکثر ۱۰۰ کاراکتر")]
     string Password);
 
-public record LoginResponse(string Token, string Username, IReadOnlyList<string> Permissions);
+public record LoginResponse(
+    string Token,
+    int Id,
+    string Username,
+    string? Email,
+    string? Mobile,
+    string? AvatarPath,
+    IReadOnlyList<string> Permissions);
 
 public record ChangePasswordRequest(
-    [Required] string CurrentPassword,
-    [Required, MinLength(4), StringLength(100)] string NewPassword);
+    [Required(ErrorMessage = "رمز عبور فعلی الزامی است")]
+    string CurrentPassword,
+
+    [Required(ErrorMessage = "رمز عبور جدید الزامی است")]
+    [MinLength(4, ErrorMessage = "رمز عبور حداقل ۴ کاراکتر")]
+    [StringLength(100, ErrorMessage = "رمز عبور حداکثر ۱۰۰ کاراکتر")]
+    string NewPassword);
+
+public record ProfileDto(
+    int Id,
+    string Username,
+    string? Email,
+    string? Mobile,
+    string? AvatarPath,
+    IReadOnlyList<string> Permissions);
+
+public record UpdateProfileRequest(
+    [EmailAddress(ErrorMessage = "فرمت ایمیل نامعتبر است")]
+    [StringLength(200, ErrorMessage = "ایمیل حداکثر ۲۰۰ کاراکتر")]
+    string? Email,
+
+    [StringLength(20, ErrorMessage = "موبایل حداکثر ۲۰ کاراکتر")]
+    string? Mobile);

@@ -18,13 +18,9 @@ public class AuthController(AuthService authService) : ApiControllerBase
 
     [HttpGet("me")]
     [Authorize]
-    public ActionResult<object> Me()
+    public async Task<ActionResult<ProfileDto>> Me()
     {
-        var permissions = User.FindAll("permission").Select(c => c.Value).ToList();
-        return Ok(new
-        {
-            Username = User.Identity?.Name,
-            Permissions = permissions
-        });
+        var profile = await authService.GetProfileAsync(CurrentUserId);
+        return profile is null ? Unauthorized() : Ok(profile);
     }
 }

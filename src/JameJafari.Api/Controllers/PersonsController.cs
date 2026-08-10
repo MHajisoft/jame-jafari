@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using JameJafari.Api.Authorization;
 using JameJafari.Core.Constants;
 using JameJafari.Core.DTOs;
+using JameJafari.Core.Enums;
 using JameJafari.Api.Services;
 using JameJafari.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -15,8 +16,12 @@ public class PersonsController(PersonService service) : ApiControllerBase
 {
     [HttpGet]
     [RequirePermission(PermissionCodes.PersonsView)]
-    public async Task<ActionResult<PagedResult<PersonDto>>> GetAll([FromQuery] string? search, [FromQuery, Range(1, 100)] int page = 1, [FromQuery, Range(1, 200)] int pageSize = 20)
-        => Ok(await service.GetPagedAsync(search, page, pageSize));
+    public async Task<ActionResult<PagedResult<PersonDto>>> GetAll(
+        [FromQuery] string? search,
+        [FromQuery] Gender? gender,
+        [FromQuery, Range(1, 100)] int page = 1,
+        [FromQuery, Range(1, 200)] int pageSize = 20)
+        => Ok(await service.GetPagedAsync(search, gender, page, pageSize));
 
     [HttpGet("{id:int}")]
     [RequirePermission(PermissionCodes.PersonsView)]

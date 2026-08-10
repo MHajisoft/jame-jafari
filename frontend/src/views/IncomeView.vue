@@ -10,6 +10,7 @@ import PersianDatePicker from '../components/PersianDatePicker.vue'
 import FileUpload from '../components/FileUpload.vue'
 import CurrencyInput from '../components/CurrencyInput.vue'
 import AppSelect from '../components/AppSelect.vue'
+import PersonSelect from '../components/PersonSelect.vue'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 
@@ -18,7 +19,6 @@ const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
 const accounts = ref([])
-const persons = ref([])
 const costTypes = ref([])
 const showForm = ref(false)
 const document = ref(null)
@@ -36,15 +36,13 @@ const rules = {
 }
 
 async function load() {
-  const [t, a, p, c] = await Promise.all([
+  const [t, a, c] = await Promise.all([
     api.get('/income-transactions'),
     api.get('/accounts'),
-    api.get('/persons', { params: { pageSize: 500 } }),
     api.get('/cost-types')
   ])
   items.value = t.data.items
   accounts.value = a.data
-  persons.value = p.data.items
   costTypes.value = c.data
 }
 
@@ -116,19 +114,16 @@ onMounted(load)
     <FormHost :show="showForm" :title="isMobile ? 'ثبت درآمد جدید' : ''" @close="closeForm">
       <div v-if="error" class="form-error">{{ error }}</div>
       <form @submit.prevent="submit">
-        <div class="form-group">
-          <label>شخص *</label>
-          <AppSelect
-            v-model="form.personId"
-            :options="persons"
-            option-value="id"
-            option-label="displayName"
-            placeholder="انتخاب کنید"
-            :invalid="!!errors.personId"
-            @change="clearFieldError('personId')"
-          />
-          <div v-if="errors.personId" class="field-error">{{ errors.personId }}</div>
-        </div>
+          <div class="form-group">
+            <label>شخص *</label>
+            <PersonSelect
+              v-model="form.personId"
+              placeholder="انتخاب شخص"
+              :invalid="!!errors.personId"
+              @change="clearFieldError('personId')"
+            />
+            <div v-if="errors.personId" class="field-error">{{ errors.personId }}</div>
+          </div>
         <div class="form-group">
           <label>حساب *</label>
           <AppSelect

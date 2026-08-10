@@ -23,5 +23,8 @@ theme.init()
 
 const auth = useAuthStore()
 auth.loadFromStorage()
+if (auth.isAuthenticated) {
+  auth.fetchProfile().catch(() => {})
+}
 
 app.mount('#app')

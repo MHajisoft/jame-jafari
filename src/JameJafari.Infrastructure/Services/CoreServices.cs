@@ -30,8 +30,64 @@ public class AuthService(AppDbContext db, IConfiguration config)
             .ToList();
 
         var token = GenerateToken(user, permissions);
-        return new LoginResponse(token, user.Username, permissions);
+        return new LoginResponse(token, user.Id, user.Username, user.Email, user.Mobile, user.AvatarPath, permissions);
     }
+
+    public async Task<ProfileDto?> GetProfileAsync(int userId)
+    {
+        var user = await db.Users
+            .Include(u => u.UserPermissions).ThenInclude(up => up.Permission)
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted && u.IsActive);
+        return user is null ? null : MapProfile(user);
+    }
+
+    public async Task<ProfileDto?> UpdateProfileAsync(int userId, UpdateProfileRequest request)
+    {
+        var user = await db.Users
+            .Include(u => u.UserPermissions).ThenInclude(up => up.Permission)
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted && u.IsActive);
+        if (user is null) return null;
+
+        user.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
+        user.Mobile = string.IsNullOrWhiteSpace(request.Mobile) ? null : request.Mobile.Trim();
+        user.UpdatedById = userId;
+        await db.SaveChangesAsync();
+        return MapProfile(user);
+    }
+
+    public async Task<(bool Ok, string? Error)> ChangePasswordAsync(int userId, ChangePasswordRequest request)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted && u.IsActive);
+        if (user is null) return (false, "کاربر یافت نشد");
+        if (!VerifyPassword(request.CurrentPassword, user.PasswordHash))
+            return (false, "رمز عبور فعلی اشتباه است");
+
+        user.PasswordHash = HashPassword(request.NewPassword);
+        user.UpdatedById = userId;
+        await db.SaveChangesAsync();
+        return (true, null);
+    }
+
+    public async Task<ProfileDto?> UpdateAvatarAsync(int userId, string? path)
+    {
+        var user = await db.Users
+            .Include(u => u.UserPermissions).ThenInclude(up => up.Permission)
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted && u.IsActive);
+        if (user is null) return null;
+
+        user.AvatarPath = path;
+        user.UpdatedById = userId;
+        await db.SaveChangesAsync();
+        return MapProfile(user);
+    }
+
+    private static ProfileDto MapProfile(User user) => new(
+        user.Id,
+        user.Username,
+        user.Email,
+        user.Mobile,
+        user.AvatarPath,
+        user.UserPermissions.Select(up => up.Permission.Code).Distinct().ToList());
 
     public async Task<IReadOnlyList<string>> GetUserPermissionsAsync(int userId)
     {
@@ -82,7 +138,7 @@ public class AuditHelper
 
 public class PersonService(AppDbContext db)
 {
-    public async Task<PagedResult<PersonDto>> GetPagedAsync(string? search, int page, int pageSize)
+    public async Task<PagedResult<PersonDto>> GetPagedAsync(string? search, Gender? gender, int page, int pageSize)
     {
         var query = db.Persons
             .Include(p => p.Father)
@@ -92,14 +148,15 @@ public class PersonService(AppDbContext db)
             .Include(p => p.UpdatedBy)
             .Where(p => !p.IsDeleted);
 
+        if (gender.HasValue)
+            query = query.Where(p => p.Gender == gender.Value);
+
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim();
             query = query.Where(p =>
                 p.FirstName.Contains(s) ||
-                (p.LastName != null && p.LastName.Contains(s)) ||
-                (p.NickName != null && p.NickName.Contains(s)) ||
-                (p.Mobile != null && p.Mobile.Contains(s)));
+                (p.LastName != null && p.LastName.Contains(s)));
         }
 
         var total = await query.CountAsync();

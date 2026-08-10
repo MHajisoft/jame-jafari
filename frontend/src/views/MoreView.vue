@@ -1,31 +1,32 @@
 <script setup>
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { navItems, filterNavItems } from '../config/navigation'
 
-const router = useRouter()
 const auth = useAuthStore()
 
 const menuItems = computed(() =>
   filterNavItems(navItems.filter(n => n.section === 'more'), auth.hasPermission)
 )
 
-function logout() {
-  auth.logout()
-  router.push('/login')
-}
+onMounted(() => {
+  if (auth.isAuthenticated) auth.fetchProfile().catch(() => {})
+})
 </script>
 
 <template>
   <div class="more-page">
-    <div class="user-card card">
-      <div class="user-avatar">{{ auth.username?.charAt(0)?.toUpperCase() || '؟' }}</div>
-      <div>
-        <div class="user-name">{{ auth.username }}</div>
-        <div class="text-muted user-sub">موسسه جامعه جعفری</div>
+    <router-link to="/profile" class="user-card card">
+      <div class="user-avatar">
+        <img v-if="auth.avatarUrl" :src="auth.avatarUrl" alt="" />
+        <span v-else>{{ auth.initials }}</span>
       </div>
-    </div>
+      <div class="user-meta">
+        <div class="user-name">{{ auth.username }}</div>
+        <div class="text-muted user-sub">مشاهده و ویرایش پروفایل</div>
+      </div>
+      <span class="user-chevron" aria-hidden="true">‹</span>
+    </router-link>
 
     <div class="menu-grid">
       <router-link
@@ -38,8 +39,6 @@ function logout() {
         <span class="menu-label">{{ item.label }}</span>
       </router-link>
     </div>
-
-    <button class="logout-btn" @click="logout">خروج از حساب</button>
   </div>
 </template>
 
@@ -50,6 +49,8 @@ function logout() {
   align-items: center;
   gap: 1rem;
   margin-bottom: 1.25rem;
+  color: inherit;
+  text-decoration: none;
 }
 .user-avatar {
   width: 52px;
@@ -63,9 +64,21 @@ function logout() {
   font-size: 1.25rem;
   font-weight: 700;
   flex-shrink: 0;
+  overflow: hidden;
 }
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.user-meta { flex: 1; min-width: 0; }
 .user-name { font-weight: 700; font-size: 1.05rem; }
 .user-sub { font-size: 0.85rem; margin-top: 0.15rem; }
+.user-chevron {
+  font-size: 1.4rem;
+  color: var(--text-muted);
+  line-height: 1;
+}
 .menu-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -85,14 +98,4 @@ function logout() {
 .menu-item:active { transform: scale(0.97); }
 .menu-icon { font-size: 1.75rem; }
 .menu-label { font-size: 0.85rem; font-weight: 600; text-align: center; }
-.logout-btn {
-  width: 100%;
-  padding: 0.9rem;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  color: var(--danger);
-  font-weight: 600;
-  cursor: pointer;
-}
 </style>

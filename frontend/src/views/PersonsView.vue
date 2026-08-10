@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/auth'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import AppSelect from '../components/AppSelect.vue'
+import PersonSelect from '../components/PersonSelect.vue'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 
@@ -14,7 +15,6 @@ const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
 const travelPrefixes = ref([])
-const allPersons = ref([])
 const search = ref('')
 const showForm = ref(false)
 const editing = ref(null)
@@ -30,12 +30,11 @@ const rules = {
 
 async function load() {
   const [p, t] = await Promise.all([
-    api.get('/persons', { params: { search: search.value, pageSize: 100 } }),
+    api.get('/persons', { params: { search: search.value, page: 1, pageSize: 20 } }),
     api.get('/general-types', { params: { category: 'TravelPrefix' } })
   ])
   items.value = p.data.items
   travelPrefixes.value = t.data
-  allPersons.value = p.data.items
 }
 
 async function submit() {
@@ -163,28 +162,26 @@ onMounted(load)
             placeholder="بدون پیشوند"
           />
         </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label>پدر</label>
-            <AppSelect
-              v-model="form.fatherId"
-              :options="allPersons"
-              option-value="id"
-              option-label="displayName"
-              placeholder="—"
-            />
+          <div class="grid-2">
+            <div class="form-group">
+              <label>پدر</label>
+              <PersonSelect
+                v-model="form.fatherId"
+                placeholder="انتخاب پدر"
+                :gender="1"
+                :exclude-id="editing"
+              />
+            </div>
+            <div class="form-group">
+              <label>مادر</label>
+              <PersonSelect
+                v-model="form.motherId"
+                placeholder="انتخاب مادر"
+                :gender="2"
+                :exclude-id="editing"
+              />
+            </div>
           </div>
-          <div class="form-group">
-            <label>مادر</label>
-            <AppSelect
-              v-model="form.motherId"
-              :options="allPersons"
-              option-value="id"
-              option-label="displayName"
-              placeholder="—"
-            />
-          </div>
-        </div>
         <div class="form-group">
           <label>موبایل</label>
           <ClearableInput

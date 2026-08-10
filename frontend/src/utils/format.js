@@ -56,6 +56,5 @@ export const paymentTypes = [
 
 export const genders = [
   { value: 1, label: 'مرد' },
-  { value: 2, label: 'زن' },
-  { value: 3, label: 'سایر' }
+  { value: 2, label: 'زن' }
 ]
