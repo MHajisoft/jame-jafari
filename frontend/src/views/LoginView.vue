@@ -87,7 +87,7 @@ async function submit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--primary), var(--sidebar));
+  background: linear-gradient(145deg, var(--sidebar) 0%, color-mix(in srgb, var(--primary) 70%, var(--sidebar)) 55%, var(--primary) 100%);
   padding: 1rem;
   padding-top: calc(1rem + env(safe-area-inset-top, 0));
   padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0));

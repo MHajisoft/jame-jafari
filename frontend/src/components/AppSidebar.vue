@@ -87,7 +87,7 @@ const items = computed(() => filterNavItems(navItems, auth.hasPermission))
 }
 .user {
   font-size: 0.8rem;
-  opacity: 0.85;
+  color: var(--sidebar-muted);
   margin-top: 0.15rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -100,11 +100,11 @@ nav a {
   gap: 0.75rem;
   padding: 0.75rem 1.25rem;
   color: var(--sidebar-text);
-  opacity: 0.85;
+  opacity: 0.88;
   transition: all 0.2s;
 }
 nav a:hover, nav a.active {
-  background: rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.12);
   opacity: 1;
 }
 </style>
