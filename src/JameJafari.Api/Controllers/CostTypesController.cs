@@ -13,8 +13,10 @@ public class CostTypesController(CostTypeService service) : ApiControllerBase
 {
     [HttpGet]
     [RequirePermission(PermissionCodes.CostTypesView)]
-    public async Task<ActionResult<IReadOnlyList<CostTypeDto>>> GetAll([FromQuery] bool? isIngredient)
-        => Ok(await service.GetAllAsync(isIngredient));
+    public async Task<ActionResult<IReadOnlyList<CostTypeDto>>> GetAll(
+        [FromQuery] bool? isIngredient,
+        [FromQuery] bool activeOnly = true)
+        => Ok(await service.GetAllAsync(isIngredient, activeOnly));
 
     [HttpPost]
     [RequirePermission(PermissionCodes.CostTypesManage)]

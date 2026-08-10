@@ -10,7 +10,7 @@ public class PermissionFilter : IAsyncAuthorizationFilter
     {
         var endpoint = context.ActionDescriptor.EndpointMetadata
             .OfType<RequirePermissionAttribute>().FirstOrDefault();
-        if (endpoint is null || string.IsNullOrEmpty(endpoint.Permission))
+        if (endpoint is null || endpoint.Permissions.Length == 0)
             return Task.CompletedTask;
 
         var user = context.HttpContext.User;
@@ -20,7 +20,8 @@ public class PermissionFilter : IAsyncAuthorizationFilter
             return Task.CompletedTask;
         }
 
-        if (!user.HasClaim("permission", endpoint.Permission))
+        var allowed = endpoint.Permissions.Any(p => user.HasClaim("permission", p));
+        if (!allowed)
             context.Result = new ForbidResult();
 
         return Task.CompletedTask;

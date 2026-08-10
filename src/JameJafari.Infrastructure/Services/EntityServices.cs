@@ -153,10 +153,12 @@ public class AccountService(AppDbContext db)
 
 public class GeneralTypeService(AppDbContext db)
 {
-    public async Task<IReadOnlyList<GeneralTypeDto>> GetByCategoryAsync(GeneralTypeCategory category)
+    public async Task<IReadOnlyList<GeneralTypeDto>> GetByCategoryAsync(GeneralTypeCategory category, bool includeInactive = false)
     {
-        var items = await db.GeneralTypes.Where(g => !g.IsDeleted && g.Category == category && g.IsActive)
-            .OrderBy(g => g.SortOrder).ThenBy(g => g.Name).ToListAsync();
+        var query = db.GeneralTypes.Where(g => !g.IsDeleted && g.Category == category);
+        if (!includeInactive)
+            query = query.Where(g => g.IsActive);
+        var items = await query.OrderBy(g => g.SortOrder).ThenBy(g => g.Name).ToListAsync();
         return items.Select(Map).ToList();
     }
 
@@ -188,19 +190,38 @@ public class GeneralTypeService(AppDbContext db)
         return Map(entity);
     }
 
+    public async Task<bool> DeleteAsync(int id, int userId)
+    {
+        var entity = await db.GeneralTypes.FirstOrDefaultAsync(g => g.Id == id && !g.IsDeleted);
+        if (entity is null) return false;
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        entity.DeletedById = userId;
+        await db.SaveChangesAsync();
+        return true;
+    }
+
     private static GeneralTypeDto Map(GeneralType g) =>
         new(g.Id, g.Name, g.Code, g.Category.ToString(), g.SortOrder, g.IsActive);
 }
 
 public class CostTypeService(AppDbContext db)
 {
-    public async Task<IReadOnlyList<CostTypeDto>> GetAllAsync(bool? isIngredient = null)
+    public async Task<IReadOnlyList<CostTypeDto>> GetAllAsync(bool? isIngredient = null, bool activeOnly = true)
     {
         var query = db.CostTypes.Include(c => c.Unit).Include(c => c.CreatedBy).Include(c => c.UpdatedBy)
-            .Where(c => !c.IsDeleted && c.IsActive);
+            .Where(c => !c.IsDeleted);
+        if (activeOnly) query = query.Where(c => c.IsActive);
         if (isIngredient.HasValue) query = query.Where(c => c.IsIngredient == isIngredient.Value);
         var items = await query.OrderBy(c => c.Name).ToListAsync();
         return items.Select(Map).ToList();
+    }
+
+    public async Task<CostTypeDto?> GetByIdAsync(int id)
+    {
+        var entity = await db.CostTypes.Include(c => c.Unit).Include(c => c.CreatedBy).Include(c => c.UpdatedBy)
+            .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        return entity is null ? null : Map(entity);
     }
 
     public async Task<CostTypeDto> CreateAsync(CreateCostTypeRequest request, int userId)
@@ -213,7 +234,7 @@ public class CostTypeService(AppDbContext db)
         };
         db.CostTypes.Add(entity);
         await db.SaveChangesAsync();
-        return (await GetAllAsync()).First(c => c.Id == entity.Id);
+        return (await GetByIdAsync(entity.Id))!;
     }
 
     public async Task<CostTypeDto?> UpdateAsync(int id, UpdateCostTypeRequest request, int userId)
@@ -227,7 +248,7 @@ public class CostTypeService(AppDbContext db)
         entity.IsActive = request.IsActive;
         entity.UpdatedById = userId;
         await db.SaveChangesAsync();
-        return (await GetAllAsync()).FirstOrDefault(c => c.Id == id);
+        return await GetByIdAsync(id);
     }
 
     public async Task<bool> DeleteAsync(int id, int userId)

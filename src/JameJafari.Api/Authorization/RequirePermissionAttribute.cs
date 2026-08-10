@@ -3,9 +3,16 @@ using Microsoft.AspNetCore.Authorization;
 namespace JameJafari.Api.Authorization;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-public class RequirePermissionAttribute(string permission) : AuthorizeAttribute
+public class RequirePermissionAttribute : AuthorizeAttribute
 {
-    public string Permission { get; } = permission;
+    public string[] Permissions { get; }
 
-    public RequirePermissionAttribute() : this(string.Empty) { }
+    public string Permission => Permissions.Length > 0 ? Permissions[0] : string.Empty;
+
+    public RequirePermissionAttribute(params string[] permissions)
+    {
+        Permissions = permissions ?? [];
+    }
+
+    public RequirePermissionAttribute() : this([]) { }
 }

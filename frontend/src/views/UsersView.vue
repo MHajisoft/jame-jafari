@@ -6,6 +6,7 @@ import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
+import AppCheckbox from '../components/AppCheckbox.vue'
 
 const auth = useAuthStore()
 const isMobile = useIsMobile()
@@ -224,27 +225,29 @@ onMounted(load)
           <div class="perm-groups">
             <div v-for="group in groupedPermissions" :key="group.module" class="perm-group">
               <div class="perm-group-head">
-                <label>
-                  <input
-                    type="checkbox"
-                    :checked="groupState(group) === 'all'"
-                    :indeterminate.prop="groupState(group) === 'some'"
-                    @change="toggleGroup(group, $event.target.checked)"
-                  />
+                <AppCheckbox
+                  :model-value="groupState(group) === 'all'"
+                  :indeterminate="groupState(group) === 'some'"
+                  @change="toggleGroup(group, $event.target.checked)"
+                >
                   <strong>{{ group.label }}</strong>
-                </label>
+                </AppCheckbox>
               </div>
               <div class="perm-group-items">
-                <label v-for="p in group.perms" :key="p.id">
-                  <input v-model="form.permissionIds" type="checkbox" :value="p.id" />
+                <AppCheckbox
+                  v-for="p in group.perms"
+                  :key="p.id"
+                  v-model="form.permissionIds"
+                  :value="p.id"
+                >
                   {{ permLabel(p.code) }}
-                </label>
+                </AppCheckbox>
               </div>
             </div>
           </div>
         </div>
         <div class="form-group">
-          <label><input v-model="form.isActive" type="checkbox" /> فعال</label>
+          <AppCheckbox v-model="form.isActive" label="فعال" />
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" @click="closeForm">انصراف</button>
@@ -309,14 +312,14 @@ onMounted(load)
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem 1rem;
-  padding-right: 1.2rem;
+  padding-right: 0.15rem;
 }
-.perm-group-items label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
+.perm-group-items :deep(.app-checkbox) {
   font-size: 0.85rem;
   margin-bottom: 0;
+}
+.perm-group-head :deep(.app-checkbox) {
+  font-weight: 600;
 }
 @media (max-width: 900px) {
   .perm-groups { grid-template-columns: 1fr; }

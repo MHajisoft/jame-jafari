@@ -6,6 +6,7 @@ import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
+import AppCheckbox from '../components/AppCheckbox.vue'
 
 const auth = useAuthStore()
 const isMobile = useIsMobile()
@@ -96,7 +97,7 @@ onMounted(load)
           <ClearableInput v-model="form.description" type="textarea" :rows="2" />
         </div>
         <div class="form-group">
-          <label><input v-model="form.isActive" type="checkbox" /> فعال</label>
+          <AppCheckbox v-model="form.isActive" label="فعال" />
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" @click="closeForm">انصراف</button>

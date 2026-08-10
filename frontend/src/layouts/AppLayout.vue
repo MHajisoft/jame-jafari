@@ -33,13 +33,18 @@ import AppBottomNav from '../components/AppBottomNav.vue'
 @media (max-width: 768px) {
   .desktop-only { display: none !important; }
   .mobile-only { display: block !important; }
+  .layout {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
   .main {
     margin-right: 0;
     padding: 1rem;
     padding-top: calc(56px + env(safe-area-inset-top, 0) + 1rem);
     padding-bottom: calc(64px + env(safe-area-inset-bottom, 0) + 1rem);
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100%;
+    min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }

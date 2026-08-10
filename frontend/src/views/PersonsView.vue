@@ -9,6 +9,7 @@ import AppSelect from '../components/AppSelect.vue'
 import PersonSelect from '../components/PersonSelect.vue'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
+import AppCheckbox from '../components/AppCheckbox.vue'
 
 const auth = useAuthStore()
 const isMobile = useIsMobile()
@@ -196,7 +197,7 @@ onMounted(load)
           <ClearableInput v-model="form.address" type="textarea" :rows="2" />
         </div>
         <div class="form-group">
-          <label><input v-model="form.isDead" type="checkbox" /> فوت شده</label>
+          <AppCheckbox v-model="form.isDead" label="فوت شده" />
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" @click="closeForm">انصراف</button>
