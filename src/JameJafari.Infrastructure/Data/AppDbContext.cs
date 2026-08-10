@@ -57,7 +57,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Mobile).HasMaxLength(20);
             e.HasOne(x => x.Father).WithMany(x => x.ChildrenAsFather).HasForeignKey(x => x.FatherId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Mother).WithMany(x => x.ChildrenAsMother).HasForeignKey(x => x.MotherId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(x => x.TravelPrefix).WithMany().HasForeignKey(x => x.TravelPrefixId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.NamePrefix).WithMany().HasForeignKey(x => x.NamePrefixId).OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<Account>(e =>

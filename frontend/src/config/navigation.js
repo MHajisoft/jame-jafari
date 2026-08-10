@@ -5,6 +5,7 @@ export const navItems = [
   { to: '/persons', label: 'اشخاص', title: 'اشخاص', permission: 'persons.view', icon: '👥', section: 'more' },
   { to: '/accounts', label: 'حساب‌ها', title: 'حساب‌ها', permission: 'accounts.manage', icon: '🏦', section: 'more' },
   { to: '/cost-types', label: 'انواع هزینه', title: 'انواع هزینه', permission: 'costtypes.view', icon: '📋', section: 'more' },
+  { to: '/general-types', label: 'انواع عمومی', title: 'انواع عمومی', permissionsAny: ['generaltypes.manage', 'costtypes.manage'], icon: '🏷️', section: 'more' },
   { to: '/food', label: 'تهیه غذا', title: 'تهیه غذا', permission: 'food.view', icon: '🍲', section: 'more' },
   { to: '/reports', label: 'گزارشات', title: 'گزارشات', permission: 'reports.view', icon: '📊', section: 'more' },
   { to: '/users', label: 'کاربران', title: 'کاربران', permission: 'users.view', icon: '👤', section: 'more' },
@@ -19,5 +20,10 @@ export const bottomTabs = [
 ]
 
 export function filterNavItems(items, hasPermission) {
-  return items.filter(item => !item.permission || hasPermission(item.permission))
+  return items.filter((item) => {
+    if (item.permissionsAny?.length) {
+      return item.permissionsAny.some((p) => hasPermission(p))
+    }
+    return !item.permission || hasPermission(item.permission)
+  })
 }

@@ -277,7 +277,7 @@ public class ReportService(AppDbContext db)
         if (from.HasValue) query = query.Where(t => t.TransactionDate >= from.Value);
         if (to.HasValue) query = query.Where(t => t.TransactionDate <= to.Value);
 
-        return await query.GroupBy(t => new { t.PersonId, t.Person.FirstName, t.Person.LastName, t.Person.TravelPrefixId })
+        return await query.GroupBy(t => new { t.PersonId, t.Person.FirstName, t.Person.LastName, t.Person.NamePrefixId })
             .Select(g => new PersonIncomeReportDto(
                 g.Key.PersonId,
                 g.Key.FirstName + " " + (g.Key.LastName ?? ""),

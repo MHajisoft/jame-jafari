@@ -15,8 +15,8 @@ public class Person : AuditableEntity
     public string? PicturePath { get; set; }
     public string? Mobile { get; set; }
     public string? Address { get; set; }
-    public int? TravelPrefixId { get; set; }
-    public GeneralType? TravelPrefix { get; set; }
+    public int? NamePrefixId { get; set; }
+    public GeneralType? NamePrefix { get; set; }
     public bool IsDead { get; set; }
 
     public ICollection<Person> ChildrenAsFather { get; set; } = [];

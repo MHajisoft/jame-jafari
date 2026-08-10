@@ -143,7 +143,7 @@ public class PersonService(AppDbContext db)
         var query = db.Persons
             .Include(p => p.Father)
             .Include(p => p.Mother)
-            .Include(p => p.TravelPrefix)
+            .Include(p => p.NamePrefix)
             .Include(p => p.CreatedBy)
             .Include(p => p.UpdatedBy)
             .Where(p => !p.IsDeleted);
@@ -169,7 +169,7 @@ public class PersonService(AppDbContext db)
     public async Task<PersonDto?> GetByIdAsync(int id)
     {
         var p = await db.Persons
-            .Include(x => x.Father).Include(x => x.Mother).Include(x => x.TravelPrefix)
+            .Include(x => x.Father).Include(x => x.Mother).Include(x => x.NamePrefix)
             .Include(x => x.CreatedBy).Include(x => x.UpdatedBy)
             .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
         return p is null ? null : Map(p);
@@ -187,7 +187,7 @@ public class PersonService(AppDbContext db)
             MotherId = request.MotherId,
             Mobile = request.Mobile,
             Address = request.Address,
-            TravelPrefixId = request.TravelPrefixId,
+            NamePrefixId = request.NamePrefixId,
             IsDead = request.IsDead,
             CreatedById = userId
         };
@@ -209,7 +209,7 @@ public class PersonService(AppDbContext db)
         entity.MotherId = request.MotherId;
         entity.Mobile = request.Mobile;
         entity.Address = request.Address;
-        entity.TravelPrefixId = request.TravelPrefixId;
+        entity.NamePrefixId = request.NamePrefixId;
         entity.IsDead = request.IsDead;
         entity.UpdatedById = userId;
         await db.SaveChangesAsync();
@@ -239,7 +239,7 @@ public class PersonService(AppDbContext db)
 
     public static string GetDisplayName(Person p)
     {
-        var prefix = p.TravelPrefix?.Name;
+        var prefix = p.NamePrefix?.Name;
         var name = string.Join(" ", new[] { p.FirstName, p.LastName }.Where(x => !string.IsNullOrWhiteSpace(x)));
         return string.IsNullOrWhiteSpace(prefix) ? name : $"{prefix} {name}";
     }
@@ -249,6 +249,6 @@ public class PersonService(AppDbContext db)
         p.FatherId, p.Father != null ? GetDisplayName(p.Father) : null,
         p.MotherId, p.Mother != null ? GetDisplayName(p.Mother) : null,
         p.PicturePath, p.Mobile, p.Address,
-        p.TravelPrefixId, p.TravelPrefix?.Name, p.IsDead,
+        p.NamePrefixId, p.NamePrefix?.Name, p.IsDead,
         GetDisplayName(p), AuditHelper.ToDto(p));
 }

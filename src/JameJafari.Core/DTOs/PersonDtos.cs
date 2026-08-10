@@ -16,8 +16,8 @@ public record PersonDto(
     string? PicturePath,
     string? Mobile,
     string? Address,
-    int? TravelPrefixId,
-    string? TravelPrefixName,
+    int? NamePrefixId,
+    string? NamePrefixName,
     bool IsDead,
     string DisplayName,
     AuditInfoDto Audit);
@@ -45,7 +45,7 @@ public record CreatePersonRequest(
     [StringLength(500, ErrorMessage = "آدرس حداکثر ۵۰۰ کاراکتر")]
     string? Address,
 
-    int? TravelPrefixId,
+    int? NamePrefixId,
 
     bool IsDead);
 
@@ -72,6 +72,6 @@ public record UpdatePersonRequest(
     [StringLength(500, ErrorMessage = "آدرس حداکثر ۵۰۰ کاراکتر")]
     string? Address,
 
-    int? TravelPrefixId,
+    int? NamePrefixId,
 
     bool IsDead);

@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '../api/client'
 import { genders } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
@@ -12,17 +13,22 @@ import FormHost from '../components/FormHost.vue'
 import AppCheckbox from '../components/AppCheckbox.vue'
 
 const auth = useAuthStore()
+const router = useRouter()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
-const travelPrefixes = ref([])
+const namePrefixes = ref([])
 const search = ref('')
 const showForm = ref(false)
 const editing = ref(null)
 const form = ref({
   firstName: '', lastName: '', nickName: '', gender: 1,
-  fatherId: '', motherId: '', mobile: '', address: '', travelPrefixId: '', isDead: false
+  fatherId: '', motherId: '', mobile: '', address: '', namePrefixId: '', isDead: false
 })
+
+const canManagePrefixes = computed(() =>
+  auth.hasPermission('generaltypes.manage') || auth.hasPermission('costtypes.manage')
+)
 
 const rules = {
   firstName: [{ type: 'required', msg: 'نام الزامی است' }],
@@ -32,10 +38,10 @@ const rules = {
 async function load() {
   const [p, t] = await Promise.all([
     api.get('/persons', { params: { search: search.value, page: 1, pageSize: 20 } }),
-    api.get('/general-types', { params: { category: 'TravelPrefix' } })
+    api.get('/general-types', { params: { category: 'NamePrefix' } })
   ])
   items.value = p.data.items
-  travelPrefixes.value = t.data
+  namePrefixes.value = t.data
 }
 
 async function submit() {
@@ -49,7 +55,7 @@ async function submit() {
     motherId: form.value.motherId ? +form.value.motherId : null,
     mobile: form.value.mobile?.trim() || null,
     address: form.value.address?.trim() || null,
-    travelPrefixId: form.value.travelPrefixId ? +form.value.travelPrefixId : null,
+    namePrefixId: form.value.namePrefixId ? +form.value.namePrefixId : null,
     isDead: form.value.isDead
   }
   const ok = await trySubmit(async () => {
@@ -67,7 +73,7 @@ async function submit() {
 
 function openCreate() {
   editing.value = null
-  form.value = { firstName: '', lastName: '', nickName: '', gender: 1, fatherId: '', motherId: '', mobile: '', address: '', travelPrefixId: '', isDead: false }
+  form.value = { firstName: '', lastName: '', nickName: '', gender: 1, fatherId: '', motherId: '', mobile: '', address: '', namePrefixId: '', isDead: false }
   clearErrors()
   showForm.value = true
 }
@@ -77,7 +83,7 @@ function openEdit(item) {
   form.value = {
     firstName: item.firstName, lastName: item.lastName || '', nickName: item.nickName || '',
     gender: item.gender, fatherId: item.fatherId || '', motherId: item.motherId || '',
-    mobile: item.mobile || '', address: item.address || '', travelPrefixId: item.travelPrefixId || '',
+    mobile: item.mobile || '', address: item.address || '', namePrefixId: item.namePrefixId || '',
     isDead: item.isDead
   }
   clearErrors()
@@ -154,14 +160,22 @@ onMounted(load)
           </div>
         </div>
         <div class="form-group">
-          <label>پیشوند سفر</label>
+          <label>پیشوند نام</label>
           <AppSelect
-            v-model="form.travelPrefixId"
-            :options="travelPrefixes"
+            v-model="form.namePrefixId"
+            :options="namePrefixes"
             option-value="id"
             option-label="name"
             placeholder="بدون پیشوند"
           />
+          <button
+            v-if="canManagePrefixes"
+            type="button"
+            class="link-btn"
+            @click="router.push({ path: '/general-types', query: { category: 'NamePrefix' } })"
+          >
+            مدیریت پیشوندها
+          </button>
         </div>
           <div class="grid-2">
             <div class="form-group">
@@ -243,3 +257,18 @@ onMounted(load)
     </div>
   </div>
 </template>
+
+<style scoped>
+.link-btn {
+  margin-top: 0.45rem;
+  border: none;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+.link-btn:hover { text-decoration: underline; }
+</style>
