@@ -71,7 +71,7 @@ onMounted(load)
     <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
       <h1 class="page-title">{{ showForm && !isMobile ? (editing ? 'ویرایش حساب' : 'حساب جدید') : 'حساب‌های مالی' }}</h1>
       <button
-        v-if="auth.hasPermission('accounts.manage') && (!showForm || isMobile)"
+        v-if="auth.hasPermission('accounts.create') && (!showForm || isMobile)"
         class="btn btn-fab-mobile"
         @click="openCreate"
       >
@@ -120,8 +120,16 @@ onMounted(load)
             </td>
             <td>
               <div class="table-actions">
-                <button class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
-                <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+                <button
+                  v-if="auth.hasPermission('accounts.update')"
+                  class="btn btn-sm btn-outline"
+                  @click="openEdit(item)"
+                >ویرایش</button>
+                <button
+                  v-if="auth.hasPermission('accounts.delete')"
+                  class="btn btn-sm btn-danger"
+                  @click="remove(item.id)"
+                >حذف</button>
               </div>
             </td>
           </tr>

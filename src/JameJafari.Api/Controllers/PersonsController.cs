@@ -32,12 +32,12 @@ public class PersonsController(PersonService service) : ApiControllerBase
     }
 
     [HttpPost]
-    [RequirePermission(PermissionCodes.PersonsManage)]
+    [RequirePermission(PermissionCodes.PersonsCreate)]
     public async Task<ActionResult<PersonDto>> Create([FromBody] CreatePersonRequest request)
         => Ok(await service.CreateAsync(request, CurrentUserId));
 
     [HttpPut("{id:int}")]
-    [RequirePermission(PermissionCodes.PersonsManage)]
+    [RequirePermission(PermissionCodes.PersonsUpdate)]
     public async Task<ActionResult<PersonDto>> Update(int id, [FromBody] UpdatePersonRequest request)
     {
         var item = await service.UpdateAsync(id, request, CurrentUserId);
@@ -45,12 +45,12 @@ public class PersonsController(PersonService service) : ApiControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [RequirePermission(PermissionCodes.PersonsManage)]
+    [RequirePermission(PermissionCodes.PersonsDelete)]
     public async Task<IActionResult> Delete(int id)
         => await service.DeleteAsync(id, CurrentUserId) ? NoContent() : NotFound();
 
     [HttpPost("{id:int}/picture")]
-    [RequirePermission(PermissionCodes.PersonsManage)]
+    [RequirePermission(PermissionCodes.PersonsUpdate)]
     public async Task<ActionResult<PersonDto>> UploadPicture(int id, IFormFile file, [FromServices] FileStorageService storage)
     {
         var path = await storage.SaveAsync(file, "persons");

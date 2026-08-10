@@ -108,7 +108,7 @@ onMounted(load)
       <div v-if="!showForm || isMobile" class="page-toolbar date-toolbar">
         <PersianDatePicker v-model="cookDate" variant="bar" placeholder="تاریخ پخت" @change="load" />
         <button
-          v-if="auth.hasPermission('food.manage')"
+          v-if="auth.hasPermission('food.create')"
           class="btn btn-fab-mobile"
           @click="openCreate"
         >

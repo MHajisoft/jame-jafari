@@ -3,33 +3,55 @@ namespace JameJafari.Core.Constants;
 public static class PermissionCodes
 {
     public const string AccountsView = "accounts.view";
-    public const string AccountsManage = "accounts.manage";
+    public const string AccountsCreate = "accounts.create";
+    public const string AccountsUpdate = "accounts.update";
+    public const string AccountsDelete = "accounts.delete";
+
     public const string IncomeView = "income.view";
     public const string IncomeCreate = "income.create";
     public const string IncomeDelete = "income.delete";
+
     public const string CostView = "cost.view";
     public const string CostCreate = "cost.create";
     public const string CostDelete = "cost.delete";
+
     public const string UsersView = "users.view";
-    public const string UsersManage = "users.manage";
+    public const string UsersCreate = "users.create";
+    public const string UsersUpdate = "users.update";
+    public const string UsersDelete = "users.delete";
+
     public const string PersonsView = "persons.view";
-    public const string PersonsManage = "persons.manage";
+    public const string PersonsCreate = "persons.create";
+    public const string PersonsUpdate = "persons.update";
+    public const string PersonsDelete = "persons.delete";
+
     public const string CostTypesView = "costtypes.view";
-    public const string CostTypesManage = "costtypes.manage";
+    public const string CostTypesCreate = "costtypes.create";
+    public const string CostTypesUpdate = "costtypes.update";
+    public const string CostTypesDelete = "costtypes.delete";
+
     public const string FoodView = "food.view";
-    public const string FoodManage = "food.manage";
+    public const string FoodCreate = "food.create";
+    public const string FoodUpdate = "food.update";
+    public const string FoodDelete = "food.delete";
+
     public const string ReportsView = "reports.view";
-    public const string GeneralTypesManage = "generaltypes.manage";
+
+    public const string GeneralTypesView = "generaltypes.view";
+    public const string GeneralTypesCreate = "generaltypes.create";
+    public const string GeneralTypesUpdate = "generaltypes.update";
+    public const string GeneralTypesDelete = "generaltypes.delete";
 
     public static readonly string[] All =
     [
-        AccountsView, AccountsManage,
+        AccountsView, AccountsCreate, AccountsUpdate, AccountsDelete,
         IncomeView, IncomeCreate, IncomeDelete,
         CostView, CostCreate, CostDelete,
-        UsersView, UsersManage,
-        PersonsView, PersonsManage,
-        CostTypesView, CostTypesManage,
-        FoodView, FoodManage,
-        ReportsView, GeneralTypesManage
+        UsersView, UsersCreate, UsersUpdate, UsersDelete,
+        PersonsView, PersonsCreate, PersonsUpdate, PersonsDelete,
+        CostTypesView, CostTypesCreate, CostTypesUpdate, CostTypesDelete,
+        FoodView, FoodCreate, FoodUpdate, FoodDelete,
+        ReportsView,
+        GeneralTypesView, GeneralTypesCreate, GeneralTypesUpdate, GeneralTypesDelete
     ];
 }

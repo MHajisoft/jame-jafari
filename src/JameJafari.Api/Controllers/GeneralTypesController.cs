@@ -20,16 +20,26 @@ public class GeneralTypesController(GeneralTypeService service) : ApiControllerB
     {
         if (!Enum.TryParse<GeneralTypeCategory>(category, true, out var cat))
             return BadRequest("Invalid category");
+        // Inactive listing is for management screens only
+        if (includeInactive)
+        {
+            var user = User;
+            var canManage = user.HasClaim("permission", PermissionCodes.GeneralTypesView)
+                || user.HasClaim("permission", PermissionCodes.GeneralTypesCreate)
+                || user.HasClaim("permission", PermissionCodes.GeneralTypesUpdate)
+                || user.HasClaim("permission", PermissionCodes.GeneralTypesDelete);
+            if (!canManage) return Forbid();
+        }
         return Ok(await service.GetByCategoryAsync(cat, includeInactive));
     }
 
     [HttpPost]
-    [RequirePermission(PermissionCodes.GeneralTypesManage, PermissionCodes.CostTypesManage)]
+    [RequirePermission(PermissionCodes.GeneralTypesCreate)]
     public async Task<ActionResult<GeneralTypeDto>> Create([FromBody] CreateGeneralTypeRequest request)
         => Ok(await service.CreateAsync(request, CurrentUserId));
 
     [HttpPut("{id:int}")]
-    [RequirePermission(PermissionCodes.GeneralTypesManage, PermissionCodes.CostTypesManage)]
+    [RequirePermission(PermissionCodes.GeneralTypesUpdate)]
     public async Task<ActionResult<GeneralTypeDto>> Update(int id, [FromBody] UpdateGeneralTypeRequest request)
     {
         var item = await service.UpdateAsync(id, request, CurrentUserId);
@@ -37,7 +47,7 @@ public class GeneralTypesController(GeneralTypeService service) : ApiControllerB
     }
 
     [HttpDelete("{id:int}")]
-    [RequirePermission(PermissionCodes.GeneralTypesManage, PermissionCodes.CostTypesManage)]
+    [RequirePermission(PermissionCodes.GeneralTypesDelete)]
     public async Task<IActionResult> Delete(int id)
         => await service.DeleteAsync(id, CurrentUserId) ? NoContent() : NotFound();
 }

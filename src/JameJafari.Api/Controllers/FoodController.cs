@@ -30,7 +30,7 @@ public class FoodController(FoodService service) : ApiControllerBase
     }
 
     [HttpPost]
-    [RequirePermission(PermissionCodes.FoodManage)]
+    [RequirePermission(PermissionCodes.FoodCreate)]
     public async Task<ActionResult<FoodGenerationDto>> Create([FromBody] CreateFoodGenerationRequest request)
         => Ok(await service.CreateAsync(request, CurrentUserId));
 }

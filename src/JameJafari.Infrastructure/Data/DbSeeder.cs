@@ -21,13 +21,12 @@ public static class DbSeeder
 
         if (!await db.Permissions.AnyAsync())
         {
-            var permissions = PermissionCodes.All.Select(code => new Permission
+            db.Permissions.AddRange(PermissionCodes.All.Select(code => new Permission
             {
                 Code = code,
                 Name = code,
                 Description = code
-            }).ToList();
-            db.Permissions.AddRange(permissions);
+            }));
             await db.SaveChangesAsync();
         }
 

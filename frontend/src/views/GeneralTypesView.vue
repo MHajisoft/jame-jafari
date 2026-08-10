@@ -26,9 +26,9 @@ const showForm = ref(false)
 const editing = ref(null)
 const form = ref({ name: '', code: '', sortOrder: 0, isActive: true })
 
-const canManage = computed(() =>
-  auth.hasPermission('generaltypes.manage') || auth.hasPermission('costtypes.manage')
-)
+const canCreate = computed(() => auth.hasPermission('generaltypes.create'))
+const canUpdate = computed(() => auth.hasPermission('generaltypes.update'))
+const canDelete = computed(() => auth.hasPermission('generaltypes.delete'))
 
 const currentMeta = computed(() =>
   CATEGORIES.find((c) => c.key === category.value) || CATEGORIES[0]
@@ -136,7 +136,7 @@ onMounted(load)
         <template v-else>انواع عمومی</template>
       </h1>
       <button
-        v-if="canManage && (!showForm || isMobile)"
+        v-if="canCreate && (!showForm || isMobile)"
         class="btn btn-fab-mobile"
         @click="openCreate"
       >
@@ -204,7 +204,7 @@ onMounted(load)
             <th>کد</th>
             <th>ترتیب</th>
             <th>وضعیت</th>
-            <th v-if="canManage"></th>
+            <th v-if="canUpdate || canDelete"></th>
           </tr>
         </thead>
         <tbody>
@@ -217,15 +217,15 @@ onMounted(load)
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>
             </td>
-            <td v-if="canManage">
+            <td v-if="canUpdate || canDelete">
               <div class="table-actions">
-                <button class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
-                <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+                <button v-if="canUpdate" class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
+                <button v-if="canDelete" class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
               </div>
             </td>
           </tr>
           <tr v-if="!items.length">
-            <td :colspan="canManage ? 5 : 4" class="text-muted" style="text-align:center">
+            <td :colspan="(canUpdate || canDelete) ? 5 : 4" class="text-muted" style="text-align:center">
               هنوز موردی تعریف نشده است
             </td>
           </tr>

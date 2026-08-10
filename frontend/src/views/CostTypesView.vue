@@ -31,9 +31,11 @@ const unitOptions = computed(() => {
 const showForm = ref(false)
 const editing = ref(null)
 const form = ref({ name: '', description: '', isIngredient: false, unitId: '', isActive: true })
-const canManage = computed(() => auth.hasPermission('costtypes.manage'))
+const canCreate = computed(() => auth.hasPermission('costtypes.create'))
+const canUpdate = computed(() => auth.hasPermission('costtypes.update'))
+const canDelete = computed(() => auth.hasPermission('costtypes.delete'))
 const canManageUnits = computed(() =>
-  auth.hasPermission('generaltypes.manage') || auth.hasPermission('costtypes.manage')
+  auth.hasAnyPermission('generaltypes.view', 'generaltypes.create', 'generaltypes.update', 'generaltypes.delete')
 )
 
 function rules() {
@@ -118,7 +120,7 @@ onMounted(load)
     <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
       <h1 class="page-title">{{ showForm && !isMobile ? (editing ? 'ویرایش' : 'نوع هزینه جدید') : 'انواع هزینه' }}</h1>
       <button
-        v-if="canManage && (!showForm || isMobile)"
+        v-if="canCreate && (!showForm || isMobile)"
         class="btn btn-fab-mobile"
         @click="openCreate"
       >
@@ -185,7 +187,7 @@ onMounted(load)
             <th>مواد اولیه</th>
             <th>واحد</th>
             <th>وضعیت</th>
-            <th v-if="canManage"></th>
+            <th v-if="canUpdate || canDelete"></th>
           </tr>
         </thead>
         <tbody>
@@ -198,10 +200,10 @@ onMounted(load)
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>
             </td>
-            <td v-if="canManage">
+            <td v-if="canUpdate || canDelete">
               <div class="table-actions">
-                <button class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
-                <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+                <button v-if="canUpdate" class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
+                <button v-if="canDelete" class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
               </div>
             </td>
           </tr>

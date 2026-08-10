@@ -53,6 +53,7 @@ function getRules() {
 }
 
 const groupedPermissions = computed(() => {
+  const order = { view: 1, create: 2, update: 3, delete: 4 }
   const groups = {}
   for (const p of permissions.value) {
     (groups[p.module] ??= []).push(p)
@@ -60,7 +61,11 @@ const groupedPermissions = computed(() => {
   return Object.entries(groups).map(([module, perms]) => ({
     module,
     label: moduleLabels[module] || module,
-    perms
+    perms: [...perms].sort((a, b) => {
+      const aa = order[a.code.split('.')[1]] || 99
+      const bb = order[b.code.split('.')[1]] || 99
+      return aa - bb
+    })
   }))
 })
 
@@ -154,7 +159,7 @@ function groupState(group) {
 }
 
 function permLabel(code) {
-  const map = { view: 'مشاهده', manage: 'مدیریت', create: 'ایجاد', delete: 'حذف' }
+  const map = { view: 'مشاهده', create: 'ایجاد', update: 'ویرایش', delete: 'حذف' }
   const action = code.split('.')[1]
   return map[action] || action
 }
@@ -173,7 +178,7 @@ onMounted(load)
     <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
       <h1 class="page-title">{{ showForm && !isMobile ? (editing ? 'ویرایش کاربر' : 'کاربر جدید') : 'مدیریت کاربران' }}</h1>
       <button
-        v-if="auth.hasPermission('users.manage') && (!showForm || isMobile)"
+        v-if="auth.hasPermission('users.create') && (!showForm || isMobile)"
         class="btn btn-fab-mobile"
         @click="openCreate"
       >
@@ -259,7 +264,7 @@ onMounted(load)
     <div v-show="!showForm || isMobile" class="card list-panel">
       <table class="mobile-table">
         <thead>
-          <tr><th>نام کاربری</th><th>ایمیل</th><th>موبایل</th><th>دسترسی‌ها</th><th>وضعیت</th><th v-if="auth.hasPermission('users.manage')"></th></tr>
+          <tr><th>نام کاربری</th><th>ایمیل</th><th>موبایل</th><th>دسترسی‌ها</th><th>وضعیت</th><th v-if="auth.hasAnyPermission('users.update', 'users.delete')"></th></tr>
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
@@ -277,10 +282,18 @@ onMounted(load)
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>
             </td>
-            <td v-if="auth.hasPermission('users.manage')">
+            <td v-if="auth.hasAnyPermission('users.update', 'users.delete')">
               <div class="table-actions">
-                <button class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
-                <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+                <button
+                  v-if="auth.hasPermission('users.update')"
+                  class="btn btn-sm btn-outline"
+                  @click="openEdit(item)"
+                >ویرایش</button>
+                <button
+                  v-if="auth.hasPermission('users.delete')"
+                  class="btn btn-sm btn-danger"
+                  @click="remove(item.id)"
+                >حذف</button>
               </div>
             </td>
           </tr>

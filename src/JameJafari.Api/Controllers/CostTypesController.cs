@@ -19,12 +19,12 @@ public class CostTypesController(CostTypeService service) : ApiControllerBase
         => Ok(await service.GetAllAsync(isIngredient, activeOnly));
 
     [HttpPost]
-    [RequirePermission(PermissionCodes.CostTypesManage)]
+    [RequirePermission(PermissionCodes.CostTypesCreate)]
     public async Task<ActionResult<CostTypeDto>> Create([FromBody] CreateCostTypeRequest request)
         => Ok(await service.CreateAsync(request, CurrentUserId));
 
     [HttpPut("{id:int}")]
-    [RequirePermission(PermissionCodes.CostTypesManage)]
+    [RequirePermission(PermissionCodes.CostTypesUpdate)]
     public async Task<ActionResult<CostTypeDto>> Update(int id, [FromBody] UpdateCostTypeRequest request)
     {
         var item = await service.UpdateAsync(id, request, CurrentUserId);
@@ -32,7 +32,7 @@ public class CostTypesController(CostTypeService service) : ApiControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [RequirePermission(PermissionCodes.CostTypesManage)]
+    [RequirePermission(PermissionCodes.CostTypesDelete)]
     public async Task<IActionResult> Delete(int id)
         => await service.DeleteAsync(id, CurrentUserId) ? NoContent() : NotFound();
 }

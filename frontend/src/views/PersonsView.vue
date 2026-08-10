@@ -27,7 +27,7 @@ const form = ref({
 })
 
 const canManagePrefixes = computed(() =>
-  auth.hasPermission('generaltypes.manage') || auth.hasPermission('costtypes.manage')
+  auth.hasAnyPermission('generaltypes.create', 'generaltypes.update', 'generaltypes.delete', 'generaltypes.view')
 )
 
 const rules = {
@@ -116,7 +116,7 @@ onMounted(load)
     <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
       <h1 class="page-title">{{ showForm && !isMobile ? (editing ? 'ویرایش شخص' : 'شخص جدید') : 'اشخاص' }}</h1>
       <button
-        v-if="auth.hasPermission('persons.manage') && (!showForm || isMobile)"
+        v-if="auth.hasPermission('persons.create') && (!showForm || isMobile)"
         class="btn btn-fab-mobile"
         @click="openCreate"
       >
@@ -230,7 +230,7 @@ onMounted(load)
           <thead>
             <tr>
               <th>نام</th><th>جنسیت</th><th>موبایل</th><th>پدر</th><th>مادر</th><th>وضعیت</th>
-              <th v-if="auth.hasPermission('persons.manage')"></th>
+              <th v-if="auth.hasAnyPermission('persons.update', 'persons.delete')"></th>
             </tr>
           </thead>
           <tbody>
@@ -244,10 +244,18 @@ onMounted(load)
                 <span v-if="item.isDead" class="badge badge-danger">فوت شده</span>
                 <span v-else class="badge badge-success">فعال</span>
               </td>
-              <td v-if="auth.hasPermission('persons.manage')">
+              <td v-if="auth.hasAnyPermission('persons.update', 'persons.delete')">
                 <div class="table-actions">
-                  <button class="btn btn-sm btn-outline" @click="openEdit(item)">ویرایش</button>
-                  <button class="btn btn-sm btn-danger" @click="remove(item.id)">حذف</button>
+                  <button
+                    v-if="auth.hasPermission('persons.update')"
+                    class="btn btn-sm btn-outline"
+                    @click="openEdit(item)"
+                  >ویرایش</button>
+                  <button
+                    v-if="auth.hasPermission('persons.delete')"
+                    class="btn btn-sm btn-danger"
+                    @click="remove(item.id)"
+                  >حذف</button>
                 </div>
               </td>
             </tr>
