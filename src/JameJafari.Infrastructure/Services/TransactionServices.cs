@@ -273,18 +273,39 @@ public class ReportService(AppDbContext db)
 
     public async Task<IReadOnlyList<PersonIncomeReportDto>> GetPersonIncomeReportAsync(DateTime? from, DateTime? to)
     {
-        var query = db.IncomeTransactions.Include(t => t.Person).Where(t => !t.IsDeleted);
+        var query = db.IncomeTransactions.Where(t => !t.IsDeleted);
         if (from.HasValue) query = query.Where(t => t.TransactionDate >= from.Value);
         if (to.HasValue) query = query.Where(t => t.TransactionDate <= to.Value);
 
-        return await query.GroupBy(t => new { t.PersonId, t.Person.FirstName, t.Person.LastName, t.Person.NamePrefixId })
-            .Select(g => new PersonIncomeReportDto(
-                g.Key.PersonId,
-                g.Key.FirstName + " " + (g.Key.LastName ?? ""),
-                g.Sum(t => t.Amount),
-                g.Count()))
-            .OrderByDescending(r => r.TotalAmount)
+        // Group only by PersonId so EF can translate; resolve names in a second query.
+        var aggregates = await query
+            .GroupBy(t => t.PersonId)
+            .Select(g => new
+            {
+                PersonId = g.Key,
+                TotalAmount = g.Sum(t => t.Amount),
+                TransactionCount = g.Count()
+            })
+            .OrderByDescending(x => x.TotalAmount)
             .ToListAsync();
+
+        if (aggregates.Count == 0)
+            return Array.Empty<PersonIncomeReportDto>();
+
+        var personIds = aggregates.Select(a => a.PersonId).ToList();
+        var names = await db.Persons
+            .AsNoTracking()
+            .Where(p => personIds.Contains(p.Id))
+            .Select(p => new { p.Id, p.FirstName, p.LastName })
+            .ToDictionaryAsync(p => p.Id, p => ((p.FirstName ?? "") + " " + (p.LastName ?? "")).Trim());
+
+        return aggregates
+            .Select(a => new PersonIncomeReportDto(
+                a.PersonId,
+                names.TryGetValue(a.PersonId, out var name) ? name : "",
+                a.TotalAmount,
+                a.TransactionCount))
+            .ToList();
     }
 
     public async Task<IReadOnlyList<FoodCostReportDto>> GetFoodCostReportAsync(DateTime? from, DateTime? to)

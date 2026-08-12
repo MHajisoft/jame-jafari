@@ -23,29 +23,35 @@ function requestClose() {
   emit('close')
 }
 
-function activateMobilePage() {
-  registerFormPage({
-    title: props.title,
-    close: requestClose
-  })
-  if (!pushed.value && !history.state?.mobileForm) {
-    history.pushState({ mobileForm: true, formPath: route.fullPath }, '')
+function pushFormHistory() {
+  if (!pushed.value && !history.state?.appForm) {
+    history.pushState({ appForm: true, formPath: route.fullPath }, '')
     pushed.value = true
   }
 }
 
-function deactivateMobilePage() {
-  unregisterFormPage(requestClose)
+function popFormHistory() {
   if (pushed.value && !closingFromPop) {
     pushed.value = false
-    if (history.state?.mobileForm) history.back()
+    if (history.state?.appForm) history.back()
   } else {
     pushed.value = false
   }
 }
 
+function syncMobileChrome(show, mobile) {
+  if (show && mobile) {
+    registerFormPage({
+      title: props.title,
+      close: requestClose
+    })
+  } else {
+    unregisterFormPage(requestClose)
+  }
+}
+
 function onPopState() {
-  if (!props.show || !isMobile.value) return
+  if (!props.show) return
   closingFromPop = true
   pushed.value = false
   unregisterFormPage(requestClose)
@@ -54,13 +60,18 @@ function onPopState() {
 }
 
 watch(
-  () => [props.show, isMobile.value],
-  ([show, mobile]) => {
-    if (show && mobile) activateMobilePage()
-    else deactivateMobilePage()
+  () => props.show,
+  (show) => {
+    if (show) pushFormHistory()
+    else popFormHistory()
+    syncMobileChrome(show, isMobile.value)
   },
   { immediate: true }
 )
+
+watch(isMobile, (mobile) => {
+  syncMobileChrome(props.show, mobile)
+})
 
 watch(
   () => props.title,
@@ -73,7 +84,7 @@ watch(
 watch(
   () => route.fullPath,
   (to, from) => {
-    if (!props.show || !isMobile.value) return
+    if (!props.show) return
     if (to !== from) {
       pushed.value = false
       unregisterFormPage(requestClose)
@@ -86,6 +97,11 @@ onMounted(() => window.addEventListener('popstate', onPopState))
 onBeforeUnmount(() => {
   window.removeEventListener('popstate', onPopState)
   unregisterFormPage(requestClose)
+  // Drop the extra history entry if still open so Back doesn't reopen a dead form
+  if (pushed.value && history.state?.appForm) {
+    pushed.value = false
+    history.back()
+  }
 })
 
 defineExpose({ isMobile })
