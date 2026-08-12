@@ -118,6 +118,7 @@ async function onAvatarChange(e) {
 
 async function removeAvatar() {
   if (!auth.avatarPath) return
+  sheetOpen.value = false
   if (!confirm('حذف تصویر پروفایل؟')) return
   avatarBusy.value = true
   clearErrors()
@@ -149,28 +150,40 @@ function logout() {
 
     <div class="profile-layout">
       <section class="card profile-avatar-card">
-        <div class="avatar-wrap">
-          <img v-if="avatarSrc" :src="avatarSrc" alt="avatar" class="avatar-img" />
-          <div v-else class="avatar-fallback">{{ auth.initials }}</div>
-        </div>
+        <button
+          type="button"
+          class="avatar-hit"
+          :disabled="avatarBusy"
+          :aria-label="auth.avatarPath ? 'تغییر تصویر پروفایل' : 'افزودن تصویر پروفایل'"
+          @click="openAvatarPicker"
+        >
+          <span class="avatar-wrap">
+            <img v-if="avatarSrc" :src="avatarSrc" alt="" class="avatar-img" />
+            <span v-else class="avatar-fallback">{{ auth.initials }}</span>
+          </span>
+          <span class="avatar-badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 8h3l2-2h6l2 2h3v11H4z" />
+              <circle cx="12" cy="13" r="3.2" />
+            </svg>
+          </span>
+        </button>
+
         <div class="avatar-meta">
           <h2 class="avatar-name">{{ auth.username }}</h2>
           <p class="text-muted">حساب کاربری شما</p>
-        </div>
-        <div class="avatar-actions">
-          <button type="button" class="btn" :disabled="avatarBusy" @click="openAvatarPicker">
-            {{ avatarBusy ? '...' : 'تغییر تصویر' }}
-          </button>
+          <p class="avatar-hint text-muted">برای {{ auth.avatarPath ? 'تغییر' : 'افزودن' }} تصویر، روی عکس بزنید</p>
           <button
             v-if="auth.avatarPath"
             type="button"
-            class="btn btn-outline"
+            class="avatar-remove"
             :disabled="avatarBusy"
             @click="removeAvatar"
           >
             حذف تصویر
           </button>
         </div>
+
         <input ref="fileInput" type="file" accept="image/*" hidden @change="onAvatarChange" />
         <input ref="cameraInput" type="file" accept="image/*" capture="environment" hidden @change="onAvatarChange" />
       </section>
@@ -261,21 +274,33 @@ function logout() {
 
     <Teleport to="body">
       <div v-if="sheetOpen && isMobile" class="attach-overlay" @click.self="closeSheet">
-        <div class="attach-sheet">
+        <div class="attach-sheet" role="dialog" aria-modal="true" aria-label="تصویر پروفایل">
           <div class="sheet-handle" />
-          <p class="sheet-title">انتخاب تصویر</p>
+          <p class="sheet-title">تصویر پروفایل</p>
           <button type="button" class="sheet-option" @click="openCamera">
-            <span class="option-icon camera">📷</span>
+            <span class="option-icon camera" aria-hidden="true">📷</span>
             <span class="option-text">
               <strong>دوربین</strong>
               <small>گرفتن عکس جدید</small>
             </span>
           </button>
           <button type="button" class="sheet-option" @click="openGallery">
-            <span class="option-icon gallery">🖼</span>
+            <span class="option-icon gallery" aria-hidden="true">🖼</span>
             <span class="option-text">
               <strong>گالری</strong>
               <small>انتخاب از تصاویر دستگاه</small>
+            </span>
+          </button>
+          <button
+            v-if="auth.avatarPath"
+            type="button"
+            class="sheet-option danger"
+            @click="removeAvatar"
+          >
+            <span class="option-icon" aria-hidden="true">🗑</span>
+            <span class="option-text">
+              <strong>حذف تصویر</strong>
+              <small>بازگشت به حروف اول نام</small>
             </span>
           </button>
           <button type="button" class="sheet-cancel" @click="closeSheet">انصراف</button>
@@ -307,7 +332,22 @@ function logout() {
   position: sticky;
   top: 1rem;
 }
+.avatar-hit {
+  position: relative;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  -webkit-tap-highlight-color: transparent;
+}
+.avatar-hit:disabled { opacity: 0.65; cursor: not-allowed; }
+.avatar-hit:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
 .avatar-wrap {
+  display: block;
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -315,6 +355,22 @@ function logout() {
   border: 3px solid color-mix(in srgb, var(--primary) 35%, var(--border));
   background: var(--bg);
 }
+.avatar-badge {
+  position: absolute;
+  inset-inline-end: 4px;
+  bottom: 4px;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary);
+  color: var(--on-primary);
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+}
+.avatar-badge svg { display: block; }
 .avatar-img {
   width: 100%;
   height: 100%;
@@ -337,16 +393,24 @@ function logout() {
   font-weight: 700;
   margin: 0;
 }
-.avatar-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  width: 100%;
+.avatar-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
-.avatar-actions .btn {
-  width: 100%;
-  justify-content: center;
+.avatar-remove {
+  border: none;
+  background: transparent;
+  color: var(--danger);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.35rem 0;
+  margin-top: 0.15rem;
+  cursor: pointer;
+  min-height: 44px;
 }
+.avatar-remove:disabled { opacity: 0.55; cursor: not-allowed; }
 .section-title {
   font-size: 1rem;
   font-weight: 700;
@@ -416,7 +480,9 @@ function logout() {
   color: var(--text);
   text-align: right;
   cursor: pointer;
+  min-height: 56px;
 }
+.sheet-option.danger strong { color: var(--danger); }
 .option-icon {
   width: 44px;
   height: 44px;
@@ -426,6 +492,7 @@ function logout() {
   justify-content: center;
   font-size: 1.25rem;
   background: var(--bg);
+  flex-shrink: 0;
 }
 .option-text {
   display: flex;
@@ -457,14 +524,16 @@ function logout() {
     align-items: center;
   }
   .avatar-wrap {
-    width: 72px;
-    height: 72px;
+    width: 88px;
+    height: 88px;
   }
-  .avatar-fallback { font-size: 1.6rem; }
-  .avatar-meta { flex: 1; min-width: 0; }
-  .avatar-actions {
-    flex-direction: row;
-    width: 100%;
+  .avatar-fallback { font-size: 1.8rem; }
+  .avatar-badge {
+    width: 30px;
+    height: 30px;
+    inset-inline-end: 2px;
+    bottom: 2px;
   }
+  .avatar-meta { flex: 1; min-width: 0; text-align: right; }
 }
 </style>

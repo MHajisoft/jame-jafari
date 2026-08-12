@@ -69,6 +69,7 @@ function onFileChange(e) {
 
 function clear() {
   if (props.disabled) return
+  sheetOpen.value = false
   if (props.modelValue) {
     emit('update:modelValue', null)
     return
@@ -80,32 +81,38 @@ function clear() {
 <template>
   <div class="avatar-picker">
     <label v-if="label" class="avatar-picker-label">{{ label }}</label>
-    <div class="avatar-picker-row">
+
+    <div class="avatar-stage">
       <button
         type="button"
         class="avatar-hit"
         :disabled="disabled"
-        :aria-label="hasImage ? 'تغییر تصویر' : 'افزودن تصویر'"
+        :aria-label="hasImage ? 'تغییر تصویر پروفایل' : 'افزودن تصویر پروفایل'"
         @click="openPicker"
       >
-        <EntityAvatar :src="displayPath" :name="name" :size="72" />
-        <span class="avatar-hit-hint">{{ hasImage ? 'تغییر' : 'افزودن' }}</span>
+        <EntityAvatar :src="displayPath" :name="name" :size="88" />
+        <span class="avatar-badge" aria-hidden="true">
+          <!-- Camera badge: clearer than +/pencil for “change photo” -->
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 8h3l2-2h6l2 2h3v11H4z" />
+            <circle cx="12" cy="13" r="3.2" />
+          </svg>
+        </span>
       </button>
-      <div class="avatar-picker-actions">
-        <button type="button" class="btn btn-sm" :disabled="disabled" @click="openPicker">
-          {{ hasImage ? 'انتخاب تصویر' : 'افزودن تصویر' }}
-        </button>
-        <button
-          v-if="hasImage"
-          type="button"
-          class="btn btn-sm btn-outline"
-          :disabled="disabled"
-          @click="clear"
-        >
-          حذف تصویر
-        </button>
-        <p class="text-muted hint">فرمت‌های تصویری؛ در موبایل می‌توانید از دوربین استفاده کنید.</p>
-      </div>
+
+      <p class="avatar-hint text-muted">
+        برای {{ hasImage ? 'تغییر' : 'افزودن' }} تصویر، روی عکس بزنید
+      </p>
+
+      <button
+        v-if="hasImage"
+        type="button"
+        class="avatar-remove"
+        :disabled="disabled"
+        @click="clear"
+      >
+        حذف تصویر
+      </button>
     </div>
 
     <input ref="fileInput" type="file" accept="image/*" hidden @change="onFileChange" />
@@ -113,23 +120,56 @@ function clear() {
 
     <Teleport to="body">
       <div v-if="sheetOpen && isMobile" class="attach-overlay" @click.self="closeSheet">
-        <div class="attach-sheet">
+        <div class="attach-sheet" role="dialog" aria-modal="true" aria-label="انتخاب تصویر">
           <div class="sheet-handle" />
-          <p class="sheet-title">انتخاب تصویر</p>
+          <p class="sheet-title">تصویر پروفایل</p>
+
           <button type="button" class="sheet-option" @click="openCamera">
-            <span class="option-icon">دوربین</span>
+            <span class="option-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 8h3l2-2h6l2 2h3v11H4z" />
+                <circle cx="12" cy="13" r="3.2" />
+              </svg>
+            </span>
             <span class="option-text">
               <strong>دوربین</strong>
               <small>گرفتن عکس جدید</small>
             </span>
           </button>
+
           <button type="button" class="sheet-option" @click="openGallery">
-            <span class="option-icon">گالری</span>
+            <span class="option-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <circle cx="9" cy="10" r="1.8" />
+                <path d="m21 16-5-5-8 8" />
+              </svg>
+            </span>
             <span class="option-text">
               <strong>گالری</strong>
               <small>انتخاب از تصاویر دستگاه</small>
             </span>
           </button>
+
+          <button
+            v-if="hasImage"
+            type="button"
+            class="sheet-option danger"
+            @click="clear"
+          >
+            <span class="option-icon danger" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18" />
+                <path d="M8 6V4h8v2" />
+                <path d="M19 6l-1 14H6L5 6" />
+              </svg>
+            </span>
+            <span class="option-text">
+              <strong>حذف تصویر</strong>
+              <small>بازگشت به حروف اول نام</small>
+            </span>
+          </button>
+
           <button type="button" class="sheet-cancel" @click="closeSheet">انصراف</button>
         </div>
       </div>
@@ -141,15 +181,18 @@ function clear() {
 .avatar-picker { margin-bottom: 1rem; }
 .avatar-picker-label {
   display: block;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.55rem;
   font-weight: 600;
   font-size: 0.9rem;
 }
-.avatar-picker-row {
+
+.avatar-stage {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
 }
+
 .avatar-hit {
   position: relative;
   border: none;
@@ -157,32 +200,50 @@ function clear() {
   padding: 0;
   cursor: pointer;
   border-radius: 50%;
+  -webkit-tap-highlight-color: transparent;
 }
 .avatar-hit:disabled { opacity: 0.6; cursor: not-allowed; }
-.avatar-hit-hint {
+.avatar-hit:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.avatar-badge {
   position: absolute;
-  inset-inline-end: -0.15rem;
-  bottom: -0.1rem;
+  inset-inline-end: 0;
+  bottom: 0;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: var(--primary);
   color: var(--on-primary);
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 0.15rem 0.4rem;
-  border-radius: 999px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
 }
-.avatar-picker-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  align-items: center;
-  min-width: 0;
-}
-.hint {
-  flex-basis: 100%;
+.avatar-badge svg { display: block; }
+
+.avatar-hint {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  max-width: 16rem;
 }
+
+.avatar-remove {
+  border: none;
+  background: transparent;
+  color: var(--danger);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.25rem 0;
+  cursor: pointer;
+  min-height: 44px;
+}
+.avatar-remove:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .attach-overlay {
   position: fixed;
@@ -223,6 +284,11 @@ function clear() {
   cursor: pointer;
   color: var(--text);
   text-align: right;
+  min-height: 56px;
+}
+.sheet-option.danger {
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--border));
+  background: color-mix(in srgb, var(--danger) 6%, var(--surface));
 }
 .option-icon {
   width: 2.4rem;
@@ -232,8 +298,11 @@ function clear() {
   place-items: center;
   background: color-mix(in srgb, var(--primary) 14%, transparent);
   color: var(--primary);
-  font-size: 0.72rem;
-  font-weight: 700;
+  flex-shrink: 0;
+}
+.option-icon.danger {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
 }
 .option-text {
   display: flex;
@@ -241,6 +310,7 @@ function clear() {
   gap: 0.1rem;
 }
 .option-text small { color: var(--text-muted); }
+.sheet-option.danger .option-text strong { color: var(--danger); }
 .sheet-cancel {
   width: 100%;
   margin-top: 0.25rem;
@@ -250,5 +320,6 @@ function clear() {
   padding: 0.85rem;
   font: inherit;
   cursor: pointer;
+  min-height: 48px;
 }
 </style>
