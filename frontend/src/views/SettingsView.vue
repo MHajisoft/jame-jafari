@@ -137,8 +137,8 @@ async function installApp() {
 }
 .theme-option.active {
   border-color: var(--primary);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent), var(--shadow);
-  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent), var(--shadow), var(--glow-primary, none);
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface-glass, var(--surface)));
 }
 
 .theme-swatches {
@@ -146,11 +146,16 @@ async function installApp() {
   grid-template-columns: repeat(4, 1fr);
   gap: 0.35rem;
   height: 2.4rem;
+  padding: 0.15rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 .swatch {
   display: block;
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 .theme-meta {

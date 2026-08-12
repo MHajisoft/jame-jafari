@@ -7,26 +7,26 @@ export const THEME_OPTIONS = [
   {
     id: 'emerald',
     label: 'زمردی',
-    description: 'تم سازمانی پیش‌فرض؛ سبز آرام و خوانا',
-    swatches: ['#143f33', '#1b6b52', '#f3f6f4', '#ffffff']
+    description: 'پاستلی نعنایی با درخشش شیشه‌ای — تم سازمانی پیش‌فرض',
+    swatches: ['#0d3d2e', '#15956f', '#d1fae5', '#ffffff']
   },
   {
     id: 'midnight',
     label: 'شب',
-    description: 'حالت تاریک با کنتراست مناسب برای شب',
-    swatches: ['#080e1a', '#3dcf9a', '#0b1220', '#152238']
+    description: 'خاکستری تیره نرم — بدون آبی، با اکcent زمردی',
+    swatches: ['#141414', '#2dd4a8', '#2e2e2e', '#ececec']
   },
   {
     id: 'saffron',
     label: 'زعفرانی',
-    description: 'فضای گرم سنگی با تاکید کهربایی',
-    swatches: ['#3b2a1d', '#b45309', '#f7f1e8', '#fffaf3']
+    description: 'پاستلی هلویی و کهربایی با هاله گرم',
+    swatches: ['#3d2818', '#d97706', '#fed7aa', '#fffcf7']
   },
   {
     id: 'slate',
-    label: 'خاکستری',
-    description: 'ظاهر مدرن خنثی با آبی سرمه‌ای',
-    swatches: ['#1a2740', '#1e3a5f', '#eef2f6', '#ffffff']
+    label: 'یاسی',
+    description: 'پاستلی یاسی و آسمانی با جلوه شیشه‌ای',
+    swatches: ['#2e1065', '#7c3aed', '#c4b5fd', '#ffffff']
   }
 ]
 
@@ -46,10 +46,10 @@ const DEFAULT_THEME = 'emerald'
 
 /** Status-bar / PWA theme-color per theme */
 const THEME_COLORS = {
-  emerald: '#1a5f4a',
-  midnight: '#0b1220',
-  saffron: '#3b2a1d',
-  slate: '#1a2740'
+  emerald: '#15956f',
+  midnight: '#1c1c1c',
+  saffron: '#3d2818',
+  slate: '#2e1065'
 }
 
 function resolveTheme(raw) {

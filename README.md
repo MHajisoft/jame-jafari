@@ -112,7 +112,8 @@ npm run dev
 - موجودی حساب‌ها، تحلیل نوع هزینه، درآمد اشخاص، هزینه غذا
 
 ### PWA و UI
-- تم‌ها: **زمردی** (پیش‌فرض)، **شب**، **زعفرانی**، **خاکستری**
+- تم‌ها: **زمردی** (پاستلی پیش‌فرض)، **شب** (خاکستری تیره نرم)، **زعفرانی** (هلویی پاستلی)، **یاسی** (بنفش/آسمانی پاستلی)
+- کارت‌ها: جلوه شیشه‌ای (blur + highlight) در تم‌های روشن
 - فونت IRANSans FaNum، RTL، FAB موبایل برای ایجاد رکورد
 
 ## سیاست رمز عبور
@@ -163,5 +164,6 @@ cd frontend && npm run build
 | `frontend-vue.mdc` | `frontend/**/*` |
 | `permissions-auth.mdc` | auth + permissions |
 | `forms-ui-patterns.mdc` | فرم‌ها و UI |
+| `jame-jafari-theming` skill | `.cursor/skills/jame-jafari-theming/` — توکن رنگ و تم |
 
 هنگام افزودن feature جدید: permission در `PermissionCodes`، seed خودکار، route + `meta.permission`، `[RequirePermission]` در API، و الگوی FormHost در frontend.
