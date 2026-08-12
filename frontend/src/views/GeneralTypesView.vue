@@ -3,8 +3,8 @@ import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
-import { useToastStore } from '../stores/toast'
 import { useDialogStore } from '../stores/dialog'
+import { useLookupsStore } from '../stores/lookups'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import AppCheckbox from '../components/AppCheckbox.vue'
@@ -18,8 +18,8 @@ const CATEGORIES = [
 ]
 
 const auth = useAuthStore()
-const toast = useToastStore()
 const dialog = useDialogStore()
+const lookups = useLookupsStore()
 const route = useRoute()
 const router = useRouter()
 const isMobile = useIsMobile()
@@ -50,10 +50,10 @@ function resolveInitialCategory() {
 }
 
 async function load() {
-  const { data } = await api.get('/general-types', {
-    params: { category: category.value, includeInactive: true }
+  items.value = await lookups.getGeneralTypes(category.value, {
+    includeInactive: true,
+    force: true
   })
-  items.value = data
 }
 
 async function submit() {
@@ -82,6 +82,7 @@ async function submit() {
       : `${currentMeta.value.singular} ایجاد شد`
   })
   if (!ok) return
+  lookups.invalidateGeneralTypes()
   closeForm()
   await load()
 }
@@ -116,8 +117,11 @@ function closeForm() {
 
 async function remove(id) {
   if (!(await dialog.confirmDelete(`این ${currentMeta.value.singular}`))) return
-  await api.delete(`/general-types/${id}`)
-  toast.success(`${currentMeta.value.singular} حذف شد`)
+  const ok = await trySubmit(async () => {
+    await api.delete(`/general-types/${id}`)
+  }, { successMessage: `${currentMeta.value.singular} حذف شد` })
+  if (!ok) return
+  lookups.invalidateGeneralTypes()
   await load()
 }
 

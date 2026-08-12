@@ -6,6 +6,7 @@ import { genders, genderLabel, enumValue } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
 import { useDialogStore } from '../stores/dialog'
+import { useLookupsStore } from '../stores/lookups'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import AppSelect from '../components/AppSelect.vue'
@@ -20,6 +21,7 @@ import AvatarPicker from '../components/AvatarPicker.vue'
 const auth = useAuthStore()
 const toast = useToastStore()
 const dialog = useDialogStore()
+const lookups = useLookupsStore()
 const router = useRouter()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -51,10 +53,10 @@ const rules = {
 async function load() {
   const [p, t] = await Promise.all([
     api.get('/persons', { params: { page: 1, pageSize: 20 } }),
-    api.get('/general-types', { params: { category: 'NamePrefix' } })
+    lookups.getGeneralTypes('NamePrefix')
   ])
   items.value = p.data.items
-  namePrefixes.value = t.data
+  namePrefixes.value = t
 }
 
 async function syncPersonPicture(id) {

@@ -3,8 +3,8 @@ import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
-import { useToastStore } from '../stores/toast'
 import { useDialogStore } from '../stores/dialog'
+import { useLookupsStore } from '../stores/lookups'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import AppSelect from '../components/AppSelect.vue'
@@ -14,8 +14,8 @@ import FormHost from '../components/FormHost.vue'
 import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
-const toast = useToastStore()
 const dialog = useDialogStore()
+const lookups = useLookupsStore()
 const router = useRouter()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -55,11 +55,11 @@ function rules() {
 
 async function load() {
   const [c, u] = await Promise.all([
-    api.get('/cost-types', { params: { activeOnly: false } }),
-    api.get('/general-types', { params: { category: 'Unit', includeInactive: true } })
+    lookups.getCostTypes({ activeOnly: false, force: true }),
+    lookups.getGeneralTypes('Unit', { includeInactive: true })
   ])
-  items.value = c.data
-  units.value = u.data
+  items.value = c
+  units.value = u
 }
 
 async function submit() {
@@ -76,6 +76,7 @@ async function submit() {
     }
   }, { successMessage: editing.value ? 'نوع هزینه ویرایش شد' : 'نوع هزینه ایجاد شد' })
   if (!ok) return
+  lookups.invalidateCostTypes()
   closeForm()
   await load()
 }
@@ -106,8 +107,11 @@ function closeForm() {
 
 async function remove(id) {
   if (!(await dialog.confirmDelete('این نوع هزینه'))) return
-  await api.delete(`/cost-types/${id}`)
-  toast.success('نوع هزینه حذف شد')
+  const ok = await trySubmit(async () => {
+    await api.delete(`/cost-types/${id}`)
+  }, { successMessage: 'نوع هزینه حذف شد' })
+  if (!ok) return
+  lookups.invalidateCostTypes()
   await load()
 }
 

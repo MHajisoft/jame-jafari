@@ -4,6 +4,7 @@ import api from '../api/client'
 import { formatMoney, toInputDate } from '../utils/format'
 import { todayGregorian } from '../utils/jalali'
 import { useAuthStore } from '../stores/auth'
+import { useLookupsStore } from '../stores/lookups'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import DateDisplay from '../components/DateDisplay.vue'
@@ -14,6 +15,7 @@ import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 
 const auth = useAuthStore()
+const lookups = useLookupsStore()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
@@ -44,11 +46,11 @@ function getRules() {
 async function load() {
   const [f, ing, rec] = await Promise.all([
     api.get('/food', { params: { date: new Date(cookDate.value).toISOString() } }),
-    api.get('/cost-types', { params: { isIngredient: true } }),
+    lookups.getCostTypes({ isIngredient: true, activeOnly: true }),
     api.get('/food/recommendations')
   ])
   items.value = f.data
-  ingredients.value = ing.data
+  ingredients.value = ing
   recommendations.value = rec.data
 }
 

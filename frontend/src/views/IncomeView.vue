@@ -1,11 +1,13 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import api from '../api/client'
+import { ApiPaths } from '../api/paths'
 import { formatMoney, paymentTypes, paymentTypeLabel, toInputDate } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
-import { useToastStore } from '../stores/toast'
 import { useDialogStore } from '../stores/dialog'
+import { useLookupsStore } from '../stores/lookups'
 import { useFormValidation } from '../composables/useFormValidation'
+import { useEntityForm } from '../composables/useEntityForm'
 import { useIsMobile } from '../composables/useMediaQuery'
 import DateDisplay from '../components/DateDisplay.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
@@ -16,21 +18,32 @@ import PersonSelect from '../components/PersonSelect.vue'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import RowActions from '../components/RowActions.vue'
+import PageHeader from '../components/PageHeader.vue'
 
 const auth = useAuthStore()
-const toast = useToastStore()
 const dialog = useDialogStore()
+const lookups = useLookupsStore()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
+
 const items = ref([])
 const accounts = ref([])
 const costTypes = ref([])
-const showForm = ref(false)
+const loading = ref(false)
 const document = ref(null)
-const form = ref({
-  personId: '', accountId: '', amount: '', paymentType: 1,
-  costTypeId: '', trackingCode: '', description: '', transactionDate: toInputDate(new Date())
-})
+
+const { showForm, form, openCreate, closeForm } = useEntityForm(
+  () => ({
+    personId: '', accountId: '', amount: '', paymentType: 1,
+    costTypeId: '', trackingCode: '', description: '', transactionDate: toInputDate(new Date())
+  }),
+  {
+    onReset: () => {
+      document.value = null
+      clearErrors()
+    }
+  }
+)
 
 const rules = {
   personId: [{ type: 'required', msg: 'انتخاب شخص الزامی است' }],
@@ -40,15 +53,24 @@ const rules = {
   transactionDate: [{ type: 'required', msg: 'تاریخ الزامی است' }]
 }
 
+const pageTitle = computed(() =>
+  showForm.value && !isMobile.value ? 'ثبت درآمد جدید' : 'تراکنش‌های درآمد'
+)
+
 async function load() {
-  const [t, a, c] = await Promise.all([
-    api.get('/income-transactions'),
-    api.get('/accounts'),
-    api.get('/cost-types')
-  ])
-  items.value = t.data.items
-  accounts.value = a.data
-  costTypes.value = c.data
+  loading.value = true
+  try {
+    const [t, a, c] = await Promise.all([
+      api.get(ApiPaths.incomeTransactions),
+      lookups.getAccounts({ activeOnly: true }),
+      lookups.getCostTypes({ activeOnly: true })
+    ])
+    items.value = t.data.items
+    accounts.value = a
+    costTypes.value = c
+  } finally {
+    loading.value = false
+  }
 }
 
 async function submit() {
@@ -67,7 +89,7 @@ async function submit() {
   fd.append('data', data)
   if (document.value) fd.append('document', document.value)
   const ok = await trySubmit(async () => {
-    await api.post('/income-transactions', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    await api.post(ApiPaths.incomeTransactions, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
   }, { successMessage: 'درآمد با موفقیت ثبت شد' })
   if (!ok) return
   closeForm()
@@ -77,41 +99,25 @@ async function submit() {
 
 async function remove(id) {
   if (!(await dialog.confirmDelete('این تراکنش'))) return
-  await api.delete(`/income-transactions/${id}`)
-  toast.success('تراکنش حذف شد')
+  const ok = await trySubmit(async () => {
+    await api.delete(ApiPaths.incomeTransaction(id))
+  }, { successMessage: 'تراکنش حذف شد' })
+  if (!ok) return
   await load()
 }
 
-function openCreate() {
-  form.value = {
-    personId: '', accountId: '', amount: '', paymentType: 1,
-    costTypeId: '', trackingCode: '', description: '', transactionDate: toInputDate(new Date())
-  }
-  document.value = null
-  clearErrors()
-  showForm.value = true
-}
-
-function closeForm() {
-  showForm.value = false
-}
-
-onMounted(load)
+onMounted(() => load().catch(() => {}))
 </script>
 
 <template>
   <div>
-    <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
-      <h1 class="page-title">{{ showForm && !isMobile ? 'ثبت درآمد جدید' : 'تراکنش‌های درآمد' }}</h1>
-      <button
-        v-if="auth.hasPermission('income.create') && (!showForm || isMobile)"
-        class="btn btn-fab-mobile"
-        @click="openCreate"
-      >
-        <span aria-hidden="true">+</span>
-        <span class="btn-fab-label">ثبت درآمد</span>
-      </button>
-    </div>
+    <PageHeader
+      :title="pageTitle"
+      :form-mode="showForm && !isMobile"
+      :show-create="auth.hasPermission('income.create') && (!showForm || isMobile)"
+      create-label="ثبت درآمد"
+      @create="openCreate"
+    />
 
     <FormHost :show="showForm" :title="isMobile ? 'ثبت درآمد جدید' : ''" @close="closeForm">
       <div v-if="error" class="form-error">{{ error }}</div>
@@ -198,31 +204,34 @@ onMounted(load)
     </FormHost>
 
     <div v-show="!showForm || isMobile" class="card list-panel">
-      <table class="mobile-table">
-        <thead>
-          <tr>
-            <th>تاریخ</th><th>شخص</th><th>حساب</th><th>مبلغ</th><th>نوع پرداخت</th>
-            <th>نوع هزینه</th><th>کد رهگیری</th><th>توضیحات</th>
-            <th v-if="auth.hasPermission('income.delete')"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in items" :key="item.id">
-            <td data-label="تاریخ"><DateDisplay :value="item.transactionDate" /></td>
-            <td data-label="شخص">{{ item.personName }}</td>
-            <td data-label="حساب">{{ item.accountName }}</td>
-            <td class="text-success" data-label="مبلغ">{{ formatMoney(item.amount) }}</td>
-            <td data-label="نوع پرداخت">{{ paymentTypeLabel(item.paymentType) }}</td>
-            <td data-label="نوع هزینه">{{ item.costTypeName }}</td>
-            <td data-label="کد رهگیری">{{ item.trackingCode || '—' }}</td>
-            <td data-label="توضیحات">{{ item.description }}</td>
-            <td v-if="auth.hasPermission('income.delete')">
-              <RowActions show-delete @delete="remove(item.id)" />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div v-if="!items.length" class="empty-state">تراکنشی ثبت نشده</div>
+      <p v-if="loading" class="list-status">در حال بارگذاری…</p>
+      <template v-else>
+        <table class="mobile-table">
+          <thead>
+            <tr>
+              <th>تاریخ</th><th>شخص</th><th>حساب</th><th>مبلغ</th><th>نوع پرداخت</th>
+              <th>نوع هزینه</th><th>کد رهگیری</th><th>توضیحات</th>
+              <th v-if="auth.hasPermission('income.delete')"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in items" :key="item.id">
+              <td data-label="تاریخ"><DateDisplay :value="item.transactionDate" /></td>
+              <td data-label="شخص">{{ item.personName }}</td>
+              <td data-label="حساب">{{ item.accountName }}</td>
+              <td class="text-success" data-label="مبلغ">{{ formatMoney(item.amount) }}</td>
+              <td data-label="نوع پرداخت">{{ paymentTypeLabel(item.paymentType) }}</td>
+              <td data-label="نوع هزینه">{{ item.costTypeName }}</td>
+              <td data-label="کد رهگیری">{{ item.trackingCode || '—' }}</td>
+              <td data-label="توضیحات">{{ item.description }}</td>
+              <td v-if="auth.hasPermission('income.delete')">
+                <RowActions show-delete @delete="remove(item.id)" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-if="!items.length" class="empty-state">تراکنشی ثبت نشده</div>
+      </template>
     </div>
   </div>
 </template>

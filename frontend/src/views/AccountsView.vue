@@ -1,90 +1,93 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import api from '../api/client'
+import { ApiPaths } from '../api/paths'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
 import { useDialogStore } from '../stores/dialog'
+import { useLookupsStore } from '../stores/lookups'
 import { useFormValidation } from '../composables/useFormValidation'
+import { useEntityForm } from '../composables/useEntityForm'
+import { useAsyncList } from '../composables/useAsyncList'
 import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import AppCheckbox from '../components/AppCheckbox.vue'
 import RowActions from '../components/RowActions.vue'
+import PageHeader from '../components/PageHeader.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
 const dialog = useDialogStore()
+const lookups = useLookupsStore()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
-const items = ref([])
-const showForm = ref(false)
-const editing = ref(null)
-const form = ref({ name: '', description: '', isActive: true })
+
+const { showForm, editing, form, openCreate, openEdit, closeForm } = useEntityForm(
+  () => ({ name: '', description: '', isActive: true }),
+  { onReset: clearErrors }
+)
+
+const { items, loading, load } = useAsyncList(async () => {
+  return lookups.getAccounts({ activeOnly: false, force: true })
+})
 
 const rules = {
   name: [{ type: 'required', msg: 'نام حساب الزامی است' }]
 }
 
-async function load() {
-  const { data } = await api.get('/accounts', { params: { activeOnly: false } })
-  items.value = data
-}
+const pageTitle = computed(() => {
+  if (showForm.value && !isMobile.value) {
+    return editing.value ? 'ویرایش حساب' : 'حساب جدید'
+  }
+  return 'حساب‌های مالی'
+})
 
 async function submit() {
   if (!validate(rules, form.value)) return
   const ok = await trySubmit(async () => {
     if (editing.value) {
-      await api.put(`/accounts/${editing.value}`, form.value)
+      await api.put(ApiPaths.account(editing.value), form.value)
     } else {
-      await api.post('/accounts', form.value)
+      await api.post(ApiPaths.accounts, form.value)
     }
   }, { successMessage: editing.value ? 'حساب با موفقیت ویرایش شد' : 'حساب با موفقیت ایجاد شد' })
   if (!ok) return
+  lookups.invalidateAccounts()
   closeForm()
   await load()
 }
 
-function openCreate() {
-  editing.value = null
-  form.value = { name: '', description: '', isActive: true }
-  clearErrors()
-  showForm.value = true
-}
-
-function openEdit(item) {
-  editing.value = item.id
-  form.value = { name: item.name, description: item.description || '', isActive: item.isActive }
-  clearErrors()
-  showForm.value = true
-}
-
-function closeForm() {
-  showForm.value = false
+function startEdit(item) {
+  openEdit(item.id, {
+    name: item.name,
+    description: item.description || '',
+    isActive: item.isActive
+  })
 }
 
 async function remove(id) {
   if (!(await dialog.confirmDelete('این حساب'))) return
-  await api.delete(`/accounts/${id}`)
-  toast.success('حساب حذف شد')
+  const ok = await trySubmit(async () => {
+    await api.delete(ApiPaths.account(id))
+  }, { successMessage: 'حساب حذف شد' })
+  if (!ok) return
+  lookups.invalidateAccounts()
   await load()
 }
 
-onMounted(load)
+onMounted(() => load().catch(() => {}))
 </script>
 
 <template>
   <div>
-    <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
-      <h1 class="page-title">{{ showForm && !isMobile ? (editing ? 'ویرایش حساب' : 'حساب جدید') : 'حساب‌های مالی' }}</h1>
-      <button
-        v-if="auth.hasPermission('accounts.create') && (!showForm || isMobile)"
-        class="btn btn-fab-mobile"
-        @click="openCreate"
-      >
-        <span aria-hidden="true">+</span>
-        <span class="btn-fab-label">حساب جدید</span>
-      </button>
-    </div>
+    <PageHeader
+      :title="pageTitle"
+      :form-mode="showForm && !isMobile"
+      :show-create="auth.hasPermission('accounts.create') && (!showForm || isMobile)"
+      create-label="حساب جدید"
+      @create="openCreate"
+    />
 
     <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش حساب' : 'حساب جدید') : ''" @close="closeForm">
       <div v-if="error" class="form-error">{{ error }}</div>
@@ -113,7 +116,8 @@ onMounted(load)
     </FormHost>
 
     <div v-show="!showForm || isMobile" class="card list-panel">
-      <table class="mobile-table">
+      <p v-if="loading" class="list-status">در حال بارگذاری…</p>
+      <table v-else class="mobile-table">
         <thead>
           <tr>
             <th>نام</th>
@@ -135,7 +139,7 @@ onMounted(load)
               <RowActions
                 :show-edit="auth.hasPermission('accounts.update')"
                 :show-delete="auth.hasPermission('accounts.delete')"
-                @edit="openEdit(item)"
+                @edit="startEdit(item)"
                 @delete="remove(item.id)"
               />
             </td>
