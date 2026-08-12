@@ -3,6 +3,8 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { navItems } from '../config/navigation'
 import { useActiveFormPage } from '../composables/useFormPage'
+import AppBrandMark from './AppBrandMark.vue'
+import AppAccountChip from './AppAccountChip.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -40,19 +42,18 @@ function onBack() {
           aria-label="بازگشت"
           @click="onBack"
         >›</button>
-        <router-link
+        <AppBrandMark
+          v-if="!showBack"
           to="/"
-          class="brand-mark"
-          aria-label="موسسه جامعه جعفری"
-        >
-          <img src="/logo.png" alt="" width="36" height="36" />
-        </router-link>
+          size="sm"
+          tone="on-surface"
+        />
       </div>
 
       <h1 class="top-title">{{ title }}</h1>
 
       <div class="side side-end">
-        <slot />
+        <AppAccountChip variant="compact" />
       </div>
     </div>
   </header>
@@ -84,7 +85,7 @@ function onBack() {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  min-width: 76px;
+  min-width: 44px;
   z-index: 1;
 }
 .side-start { justify-content: flex-start; }
@@ -106,25 +107,10 @@ function onBack() {
   font: inherit;
   padding: 0;
 }
-.brand-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  overflow: hidden;
-  flex-shrink: 0;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent);
-  background: var(--bg-elevated);
-}
-.brand-mark img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
 .top-title {
   position: absolute;
-  left: 80px;
-  right: 80px;
+  left: 52px;
+  right: 52px;
   top: 50%;
   transform: translateY(-50%);
   margin: 0;
