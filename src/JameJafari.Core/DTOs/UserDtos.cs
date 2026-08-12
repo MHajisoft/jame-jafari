@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using JameJafari.Core.Validation;
 
 namespace JameJafari.Core.DTOs;
 
@@ -19,8 +20,7 @@ public record CreateUserRequest(
     string Username,
 
     [Required(ErrorMessage = "رمز عبور الزامی است")]
-    [StringLength(100, ErrorMessage = "رمز عبور حداکثر ۱۰۰ کاراکتر")]
-    [MinLength(4, ErrorMessage = "رمز عبور حداقل ۴ کاراکتر")]
+    [PasswordStrength]
     string Password,
 
     [EmailAddress(ErrorMessage = "فرمت ایمیل نامعتبر است")]
@@ -34,6 +34,11 @@ public record CreateUserRequest(
 
     IReadOnlyList<int> PermissionIds);
 
+public record ChangeUserPasswordRequest(
+    [Required(ErrorMessage = "رمز عبور جدید الزامی است")]
+    [PasswordStrength]
+    string NewPassword);
+
 public record UpdateUserRequest(
     [EmailAddress(ErrorMessage = "فرمت ایمیل نامعتبر است")]
     [StringLength(200, ErrorMessage = "ایمیل حداکثر ۲۰۰ کاراکتر")]
@@ -44,8 +49,4 @@ public record UpdateUserRequest(
 
     bool IsActive,
 
-    IReadOnlyList<int> PermissionIds,
-
-    [MinLength(4, ErrorMessage = "رمز عبور حداقل ۴ کاراکتر")]
-    [StringLength(100, ErrorMessage = "رمز عبور حداکثر ۱۰۰ کاراکتر")]
-    string? NewPassword);
+    IReadOnlyList<int> PermissionIds);

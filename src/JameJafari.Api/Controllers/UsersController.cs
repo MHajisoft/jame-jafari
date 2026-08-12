@@ -55,6 +55,21 @@ public class UsersController(UserService service) : ApiControllerBase
         }
     }
 
+    [HttpPut("{id:int}/password")]
+    [RequirePermission(PermissionCodes.UsersChangePassword)]
+    public async Task<ActionResult<UserDto>> ChangePassword(int id, [FromBody] ChangeUserPasswordRequest request)
+    {
+        try
+        {
+            var item = await service.ChangePasswordAsync(id, request, CurrentUserId);
+            return item is null ? NotFound() : Ok(item);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("{id:int}")]
     [RequirePermission(PermissionCodes.UsersDelete)]
     public async Task<IActionResult> Delete(int id)

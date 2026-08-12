@@ -1,5 +1,6 @@
 import { nextTick, reactive, toRefs } from 'vue'
 import { useToastStore } from '../stores/toast'
+import { validatePassword } from '../utils/passwordPolicy'
 
 function isBlank(v) {
   return v === undefined || v === null || (typeof v === 'string' && v.trim() === '')
@@ -19,7 +20,8 @@ const validators = {
   email: (v, _, msg) => {
     if (isBlank(v)) return null
     return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? (msg || 'فرمت ایمیل نامعتبر است') : null
-  }
+  },
+  passwordStrength: (v, allowEmpty) => validatePassword(v, { allowEmpty: !!allowEmpty })
 }
 
 function focusFirstInvalid() {

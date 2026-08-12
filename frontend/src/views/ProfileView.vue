@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
 import { useDialogStore } from '../stores/dialog'
 import { useFormValidation } from '../composables/useFormValidation'
+import { passwordFieldRules } from '../utils/passwordPolicy'
 import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
 
@@ -29,10 +30,7 @@ const profileRules = {
 
 const passwordRules = {
   currentPassword: [{ type: 'required', msg: 'رمز عبور فعلی الزامی است' }],
-  newPassword: [
-    { type: 'required', msg: 'رمز عبور جدید الزامی است' },
-    { type: 'minLength', param: 4, msg: 'رمز عبور حداقل ۴ کاراکتر' }
-  ],
+  newPassword: passwordFieldRules({ required: true }),
   confirmPassword: [
     (v, data) => {
       if (!v) return 'تکرار رمز عبور الزامی است'

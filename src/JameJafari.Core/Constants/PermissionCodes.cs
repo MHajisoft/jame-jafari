@@ -21,6 +21,7 @@ public static class PermissionCodes
     public const string UsersCreate = "users.create";
     public const string UsersUpdate = "users.update";
     public const string UsersDelete = "users.delete";
+    public const string UsersChangePassword = "users.changepassword";
 
     public const string PersonsView = "persons.view";
     public const string PersonsCreate = "persons.create";
@@ -49,7 +50,7 @@ public static class PermissionCodes
         AccountsView, AccountsCreate, AccountsUpdate, AccountsDelete,
         IncomeView, IncomeCreate, IncomeUpdate, IncomeDelete,
         CostView, CostCreate, CostUpdate, CostDelete,
-        UsersView, UsersCreate, UsersUpdate, UsersDelete,
+        UsersView, UsersCreate, UsersUpdate, UsersDelete, UsersChangePassword,
         PersonsView, PersonsCreate, PersonsUpdate, PersonsDelete,
         CostTypesView, CostTypesCreate, CostTypesUpdate, CostTypesDelete,
         FoodView, FoodCreate, FoodUpdate, FoodDelete,

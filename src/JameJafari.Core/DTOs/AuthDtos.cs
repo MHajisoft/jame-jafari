@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using JameJafari.Core.Validation;
 
 namespace JameJafari.Core.DTOs;
 
@@ -25,8 +26,7 @@ public record ChangePasswordRequest(
     string CurrentPassword,
 
     [Required(ErrorMessage = "رمز عبور جدید الزامی است")]
-    [MinLength(4, ErrorMessage = "رمز عبور حداقل ۴ کاراکتر")]
-    [StringLength(100, ErrorMessage = "رمز عبور حداکثر ۱۰۰ کاراکتر")]
+    [PasswordStrength]
     string NewPassword);
 
 public record ProfileDto(

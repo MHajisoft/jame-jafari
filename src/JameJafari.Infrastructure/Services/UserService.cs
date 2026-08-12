@@ -67,13 +67,24 @@ public class UserService(AppDbContext db, IAppPasswordHasher passwordHasher)
         entity.Mobile = request.Mobile;
         entity.IsActive = request.IsActive;
         entity.UpdatedById = userId;
-        if (!string.IsNullOrWhiteSpace(request.NewPassword))
-            entity.PasswordHash = passwordHasher.Hash(request.NewPassword);
 
         await ReplacePermissionsAsync(id, request.PermissionIds);
         await db.SaveChangesAsync();
         await tx.CommitAsync();
 
+        return await GetByIdAsync(id);
+    }
+
+    public async Task<UserDto?> ChangePasswordAsync(int id, ChangeUserPasswordRequest request, int userId)
+    {
+        var entity = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
+        if (entity is null) return null;
+        if (SystemUsers.IsSystemAdmin(entity.Username))
+            throw new InvalidOperationException("رمز مدیر اصلی فقط از صفحه پروفایل قابل تغییر است");
+
+        entity.PasswordHash = passwordHasher.Hash(request.NewPassword);
+        entity.UpdatedById = userId;
+        await db.SaveChangesAsync();
         return await GetByIdAsync(id);
     }
 

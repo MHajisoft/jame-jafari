@@ -6,8 +6,8 @@ import ClearableInput from '../components/ClearableInput.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
-const username = ref('admin')
-const password = ref('admin123')
+const username = ref('')
+const password = ref('')
 const error = ref('')
 const fieldErrors = ref({})
 const loading = ref(false)
