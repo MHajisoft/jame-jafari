@@ -44,7 +44,10 @@ function isMoreSection(path) {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  background: var(--surface);
+  min-height: calc(56px + env(safe-area-inset-bottom, 0));
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom, 0);
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
@@ -55,11 +58,16 @@ function isMoreSection(path) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.15rem;
-  padding: 0.5rem 0.25rem 0.6rem;
+  gap: 0.2rem;
+  min-height: 48px;
+  padding: 0.45rem 0.25rem 0.5rem;
   color: var(--text-muted);
-  transition: color 0.2s;
+  transition: color 0.2s, background 0.2s;
   -webkit-tap-highlight-color: transparent;
+  border-radius: 12px;
+}
+.nav-item:active {
+  background: var(--row-hover);
 }
 .nav-item.active {
   color: var(--primary);

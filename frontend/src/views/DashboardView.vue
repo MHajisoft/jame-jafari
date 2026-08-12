@@ -66,8 +66,33 @@ onMounted(async () => {
       </table>
     </div>
 
-    <div v-else class="card">
-      <p>از منوی کناری بخش‌های مختلف را انتخاب کنید.</p>
+    <div v-else-if="!summary" class="card dash-empty">
+      <p class="hide-mobile">از منوی کناری بخش‌های مختلف را انتخاب کنید.</p>
+      <div class="show-mobile">
+        <p>برای شروع، از نوار پایین به درآمد یا هزینه بروید، یا از «بیشتر» بخش‌های دیگر را باز کنید.</p>
+        <div class="dash-quick">
+          <router-link to="/income" class="btn">درآمد</router-link>
+          <router-link to="/cost" class="btn btn-outline">هزینه</router-link>
+          <router-link to="/more" class="btn btn-outline">بیشتر</router-link>
+        </div>
+      </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.dash-empty p { margin-bottom: 1rem; color: var(--text-muted); }
+.dash-quick {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+.dash-quick .btn {
+  width: 100%;
+  justify-content: center;
+  text-decoration: none;
+}
+@media (min-width: 420px) {
+  .dash-quick { grid-template-columns: repeat(3, 1fr); }
+}
+</style>

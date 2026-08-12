@@ -2,6 +2,7 @@
 import AppSidebar from '../components/AppSidebar.vue'
 import AppTopBar from '../components/AppTopBar.vue'
 import AppBottomNav from '../components/AppBottomNav.vue'
+import PwaInstallBanner from '../components/PwaInstallBanner.vue'
 </script>
 
 <template>
@@ -14,6 +15,7 @@ import AppBottomNav from '../components/AppBottomNav.vue'
     <div class="mobile-only">
       <AppBottomNav />
     </div>
+    <PwaInstallBanner />
   </div>
 </template>
 
@@ -42,11 +44,16 @@ import AppBottomNav from '../components/AppBottomNav.vue'
     margin-right: 0;
     padding: 1rem;
     padding-top: calc(56px + env(safe-area-inset-top, 0) + 1rem);
-    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0) + 1rem);
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0) + 1rem);
     height: 100%;
     min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+  }
+  :global(html.pwa-standalone) .main {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0) + 0.5rem);
   }
 }
 </style>

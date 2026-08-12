@@ -1,7 +1,19 @@
 <script setup>
 import { useThemeStore, THEME_OPTIONS } from '../stores/theme'
+import { usePwaInstall } from '../composables/usePwaInstall'
 
 const theme = useThemeStore()
+const {
+  standalone,
+  ios,
+  canPrompt,
+  showIosHint,
+  promptInstall
+} = usePwaInstall()
+
+async function installApp() {
+  await promptInstall()
+}
 </script>
 
 <template>
@@ -47,6 +59,40 @@ const theme = useThemeStore()
             <span class="theme-desc">{{ opt.description }}</span>
           </div>
         </button>
+      </div>
+    </div>
+
+    <div class="card pwa-card">
+      <div class="theme-card-head">
+        <h3>نصب روی موبایل (PWA)</h3>
+        <p class="text-muted">
+          برنامه را مثل اپلیکیشن اندروید/iOS روی صفحه اصلی گوشی نصب کنید.
+        </p>
+      </div>
+
+      <div v-if="standalone" class="pwa-status success">
+        در حال اجرا به‌صورت برنامه نصب‌شده هستید.
+      </div>
+      <div v-else class="pwa-install-block">
+        <button
+          v-if="canPrompt"
+          type="button"
+          class="btn"
+          @click="installApp"
+        >
+          نصب برنامه
+        </button>
+        <div v-else-if="showIosHint" class="pwa-ios-steps">
+          <ol>
+            <li>در Safari دکمه Share را بزنید.</li>
+            <li>گزینه <strong>Add to Home Screen</strong> را انتخاب کنید.</li>
+            <li>روی Add بزنید تا آیکون «جامعه جعفری» روی صفحه اصلی بیاید.</li>
+          </ol>
+        </div>
+        <p v-else class="text-muted pwa-fallback">
+          در Chrome اندروید از منوی مرورگر گزینه «Install app» / «Add to Home screen» را بزنید.
+          برای iOS از Safari استفاده کنید.
+        </p>
       </div>
     </div>
   </div>
@@ -140,5 +186,33 @@ const theme = useThemeStore()
   .theme-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.pwa-card {
+  margin-top: 1rem;
+}
+.pwa-status.success {
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  background: var(--success-soft);
+  color: var(--success-soft-text);
+  font-size: 0.9rem;
+}
+.pwa-install-block .btn {
+  width: 100%;
+  justify-content: center;
+  min-height: 44px;
+}
+.pwa-ios-steps ol {
+  margin: 0;
+  padding-right: 1.2rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.pwa-fallback {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0;
 }
 </style>

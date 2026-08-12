@@ -12,9 +12,8 @@ const items = computed(() => filterNavItems(navItems, auth.hasPermission))
 <template>
   <aside class="sidebar">
     <router-link to="/profile" class="brand" :class="{ active: route.path === '/profile' }">
-      <div class="brand-avatar">
-        <img v-if="auth.avatarUrl" :src="auth.avatarUrl" alt="" />
-        <span v-else>{{ auth.initials }}</span>
+      <div class="brand-logo" aria-hidden="true">
+        <img src="/logo.png" alt="" />
       </div>
       <div class="brand-text">
         <h1>موسسه جامعه جعفری</h1>
@@ -62,22 +61,20 @@ const items = computed(() => filterNavItems(navItems, auth.hasPermission))
 .brand.active {
   background: rgba(255,255,255,0.12);
 }
-.brand-avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+.brand-logo {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
   overflow: hidden;
   flex-shrink: 0;
-  background: rgba(255,255,255,0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.12);
 }
-.brand-avatar img {
+.brand-logo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 .brand-text { min-width: 0; }
 .brand h1 {

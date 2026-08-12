@@ -7,27 +7,82 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: [
+        'favicon.png',
+        'logo.png',
+        'icons/favicon-16.png',
+        'icons/favicon-32.png',
+        'icons/apple-touch-icon.png',
+        'icons/icon-192.png',
+        'icons/icon-512.png',
+        'icons/icon-512-maskable.png',
+        'icons/logo-512.png',
+        'icons/og-image.png'
+      ],
       manifest: {
+        id: '/',
         name: 'موسسه جامعه جعفری',
         short_name: 'جامعه جعفری',
-        description: 'سامانه مدیریت مالی موسسه جامعه جعفری',
+        description: 'سامانه مدیریت مالی موسسه جامعه جعفری — نسخه وب‌اپ موبایل',
         theme_color: '#1a5f4a',
-        background_color: '#f4f6f8',
+        background_color: '#1a5f4a',
         display: 'standalone',
-        orientation: 'portrait',
-        start_url: '/',
+        display_override: ['standalone', 'minimal-ui'],
+        orientation: 'portrait-primary',
+        start_url: '/?source=pwa',
         scope: '/',
         lang: 'fa',
         dir: 'rtl',
-        categories: ['finance', 'business'],
+        categories: ['finance', 'business', 'productivity'],
+        prefer_related_applications: false,
         icons: [
-          { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-          { src: 'favicon.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'maskable' }
+          {
+            src: 'icons/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'icons/icon-512-maskable.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          }
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,woff}'],
+        globIgnores: ['**/icon-1024.png', '**/og-image.png'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+            handler: 'NetworkOnly',
+            method: 'GET'
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/uploads/'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'uploads-cache',
+              expiration: {
+                maxEntries: 64,
+                maxAgeSeconds: 60 * 60 * 24 * 7
+              }
+            }
+          }
+        ]
+      },
+      devOptions: {
+        enabled: false
       }
     })
   ],

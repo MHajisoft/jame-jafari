@@ -44,10 +44,33 @@ const LEGACY_THEME_MAP = {
 
 const DEFAULT_THEME = 'emerald'
 
+/** Status-bar / PWA theme-color per theme */
+const THEME_COLORS = {
+  emerald: '#1a5f4a',
+  midnight: '#0b1220',
+  saffron: '#3b2a1d',
+  slate: '#1a2740'
+}
+
 function resolveTheme(raw) {
   if (!raw) return DEFAULT_THEME
   if (THEMES.includes(raw)) return raw
   return LEGACY_THEME_MAP[raw] || DEFAULT_THEME
+}
+
+function applyThemeColor(themeId) {
+  const color = THEME_COLORS[themeId] || THEME_COLORS[DEFAULT_THEME]
+  document.querySelectorAll('meta[name="theme-color"]').forEach((el) => {
+    el.setAttribute('content', color)
+  })
+}
+
+function applyStandaloneClass() {
+  const standalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true
+  document.documentElement.classList.toggle('pwa-standalone', standalone)
+  document.body.classList.toggle('pwa-standalone', standalone)
 }
 
 export const useThemeStore = defineStore('theme', {
@@ -55,7 +78,8 @@ export const useThemeStore = defineStore('theme', {
     theme: resolveTheme(localStorage.getItem('theme'))
   }),
   getters: {
-    currentMeta: (s) => THEME_OPTIONS.find((t) => t.id === s.theme) || THEME_OPTIONS[0]
+    currentMeta: (s) => THEME_OPTIONS.find((t) => t.id === s.theme) || THEME_OPTIONS[0],
+    themeColor: (s) => THEME_COLORS[s.theme] || THEME_COLORS[DEFAULT_THEME]
   },
   actions: {
     setTheme(theme) {
@@ -63,6 +87,7 @@ export const useThemeStore = defineStore('theme', {
       this.theme = next
       localStorage.setItem('theme', next)
       document.documentElement.setAttribute('data-theme', next)
+      applyThemeColor(next)
     },
     init() {
       const next = resolveTheme(this.theme)
@@ -73,6 +98,8 @@ export const useThemeStore = defineStore('theme', {
       document.documentElement.setAttribute('data-theme', next)
       document.documentElement.setAttribute('dir', 'rtl')
       document.documentElement.setAttribute('lang', 'fa')
+      applyThemeColor(next)
+      applyStandaloneClass()
     }
   }
 })

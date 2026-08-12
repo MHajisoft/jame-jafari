@@ -128,6 +128,27 @@ body {
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Installed PWA / standalone shell */
+html.pwa-standalone,
+html.pwa-standalone body {
+  height: 100%;
+  overflow: hidden;
+}
+html.pwa-standalone #app {
+  height: 100%;
+}
+
+/* Prevent iOS input zoom by keeping controls >= 16px on phones */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
 
 a { color: var(--primary); text-decoration: none; }
@@ -428,7 +449,7 @@ button.field-invalid:focus {
   }
   .btn-fab-mobile {
     position: fixed;
-    bottom: calc(64px + env(safe-area-inset-bottom, 0) + 1rem);
+    bottom: calc(72px + env(safe-area-inset-bottom, 0) + 1rem);
     left: 1rem;
     z-index: 150;
     box-sizing: border-box;

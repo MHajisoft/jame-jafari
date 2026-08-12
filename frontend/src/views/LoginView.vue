@@ -47,6 +47,7 @@ async function submit() {
 <template>
   <div class="login-page">
     <div class="login-card card">
+      <img class="login-logo" src="/logo.png" alt="موسسه جامعه جعفری" width="96" height="96" />
       <h1>موسسه جامعه جعفری</h1>
       <p class="subtitle">سامانه مدیریت مالی</p>
       <form @submit.prevent="submit">
@@ -96,6 +97,15 @@ async function submit() {
   width: 100%;
   max-width: 400px;
   text-align: center;
+}
+.login-logo {
+  width: 96px;
+  height: 96px;
+  border-radius: 22px;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto 1rem;
+  box-shadow: 0 8px 24px rgba(20, 36, 30, 0.18);
 }
 .login-card h1 { color: var(--primary); margin-bottom: 0.25rem; }
 .subtitle { color: var(--text-muted); margin-bottom: 1.5rem; }

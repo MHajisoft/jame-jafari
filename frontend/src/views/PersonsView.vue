@@ -309,7 +309,7 @@ onMounted(load)
   cursor: pointer;
   padding: 0;
 }
-<link-btn:hover { text-decoration: underline; }
+.link-btn:hover { text-decoration: underline; }
 
 .entity-cell {
   display: flex;
