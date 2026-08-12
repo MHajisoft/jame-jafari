@@ -1,32 +1,45 @@
 <script setup>
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { navItems } from '../config/navigation'
+import { useActiveFormPage } from '../composables/useFormPage'
 
 const route = useRoute()
+const router = useRouter()
+const { activeFormPage, isFormPageOpen } = useActiveFormPage()
 
-const title = computed(() => {
+const listTitle = computed(() => {
   if (route.path === '/more') return 'بیشتر'
   if (route.path === '/profile') return 'پروفایل'
   const item = navItems.find(n => n.to === route.path)
   return item?.title || 'جامعه جعفری'
 })
 
+const title = computed(() => activeFormPage.value?.title || listTitle.value)
+
 const primaryPaths = ['/', '/income', '/cost', '/more']
-const showBack = computed(() => !primaryPaths.includes(route.path))
+const showBack = computed(() => isFormPageOpen.value || !primaryPaths.includes(route.path))
+
+function onBack() {
+  if (activeFormPage.value) {
+    activeFormPage.value.close()
+    return
+  }
+  router.push('/more')
+}
 </script>
 
 <template>
   <header class="top-bar">
     <div class="top-bar-inner">
-      <!-- Leading side (right in RTL): back + fixed logo -->
       <div class="side side-start">
-        <router-link
+        <button
           v-if="showBack"
-          to="/more"
+          type="button"
           class="back-btn"
           aria-label="بازگشت"
-        >›</router-link>
+          @click="onBack"
+        >›</button>
         <router-link
           to="/"
           class="brand-mark"
@@ -36,10 +49,8 @@ const showBack = computed(() => !primaryPaths.includes(route.path))
         </router-link>
       </div>
 
-      <!-- True screen-centered title -->
       <h1 class="top-title">{{ title }}</h1>
 
-      <!-- Trailing side (left in RTL): keeps title optically centered -->
       <div class="side side-end">
         <slot />
       </div>
@@ -76,12 +87,8 @@ const showBack = computed(() => !primaryPaths.includes(route.path))
   min-width: 76px;
   z-index: 1;
 }
-.side-start {
-  justify-content: flex-start;
-}
-.side-end {
-  justify-content: flex-end;
-}
+.side-start { justify-content: flex-start; }
+.side-end { justify-content: flex-end; }
 .back-btn {
   display: flex;
   align-items: center;
@@ -93,6 +100,11 @@ const showBack = computed(() => !primaryPaths.includes(route.path))
   color: var(--primary);
   border-radius: 10px;
   flex-shrink: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
 }
 .brand-mark {
   width: 36px;

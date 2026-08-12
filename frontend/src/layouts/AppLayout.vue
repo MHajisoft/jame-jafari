@@ -3,19 +3,22 @@ import AppSidebar from '../components/AppSidebar.vue'
 import AppTopBar from '../components/AppTopBar.vue'
 import AppBottomNav from '../components/AppBottomNav.vue'
 import PwaInstallBanner from '../components/PwaInstallBanner.vue'
+import { useActiveFormPage } from '../composables/useFormPage'
+
+const { isFormPageOpen } = useActiveFormPage()
 </script>
 
 <template>
-  <div class="layout">
+  <div class="layout" :class="{ 'form-open': isFormPageOpen }">
     <AppSidebar class="desktop-only" />
     <AppTopBar class="mobile-only" />
     <main class="main">
       <router-view />
     </main>
-    <div class="mobile-only">
+    <div v-show="!isFormPageOpen" class="mobile-only">
       <AppBottomNav />
     </div>
-    <PwaInstallBanner />
+    <PwaInstallBanner v-if="!isFormPageOpen" />
   </div>
 </template>
 
@@ -54,6 +57,9 @@ import PwaInstallBanner from '../components/PwaInstallBanner.vue'
   }
   :global(html.pwa-standalone) .main {
     padding-bottom: calc(76px + env(safe-area-inset-bottom, 0) + 0.5rem);
+  }
+  .layout.form-open .main {
+    overflow: hidden;
   }
 }
 </style>
