@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
@@ -10,6 +10,8 @@ import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import AppCheckbox from '../components/AppCheckbox.vue'
+import PermissionMatrix from '../components/PermissionMatrix.vue'
+import { permissionTitle } from '../composables/usePermissionMatrix'
 import RowActions from '../components/RowActions.vue'
 import EntityAvatar from '../components/EntityAvatar.vue'
 import AvatarPicker from '../components/AvatarPicker.vue'
@@ -37,18 +39,7 @@ const avatarFile = ref(null)
 const avatarPath = ref('')
 const initialAvatarPath = ref('')
 const form = ref({ username: '', password: '', email: '', mobile: '', isActive: true, permissionIds: [] })
-
-const moduleLabels = {
-  accounts: 'حساب‌ها',
-  income: 'درآمد',
-  cost: 'هزینه',
-  users: 'کاربران',
-  persons: 'اشخاص',
-  costtypes: 'انواع هزینه',
-  food: 'تهیه غذا',
-  reports: 'گزارشات',
-  generaltypes: 'انواع عمومی'
-}
+const permMatrixRef = ref(null)
 
 function getRules() {
   const r = {
@@ -76,23 +67,6 @@ const passwordRules = {
     }
   ]
 }
-
-const groupedPermissions = computed(() => {
-  const order = { view: 1, create: 2, update: 3, delete: 4, changepassword: 5 }
-  const groups = {}
-  for (const p of permissions.value) {
-    (groups[p.module] ??= []).push(p)
-  }
-  return Object.entries(groups).map(([module, perms]) => ({
-    module,
-    label: moduleLabels[module] || module,
-    perms: [...perms].sort((a, b) => {
-      const aa = order[a.code.split('.')[1]] || 99
-      const bb = order[b.code.split('.')[1]] || 99
-      return aa - bb
-    })
-  }))
-})
 
 async function load() {
   const [u, p] = await Promise.all([
@@ -155,6 +129,7 @@ async function submit() {
     await syncUserAvatar(id)
   }, { successMessage: editing.value ? 'کاربر با موفقیت ویرایش شد' : 'کاربر با موفقیت ایجاد شد' })
   if (!ok) return
+  permMatrixRef.value?.markSaved?.()
   closeForm()
   await load()
 }
@@ -214,35 +189,6 @@ async function submitPasswordChange() {
   closePasswordForm()
 }
 
-function toggleGroup(group, on) {
-  const ids = group.perms.map(p => p.id)
-  if (on) {
-    form.value.permissionIds = [...new Set([...form.value.permissionIds, ...ids])]
-  } else {
-    form.value.permissionIds = form.value.permissionIds.filter(id => !ids.includes(id))
-  }
-}
-
-function groupState(group) {
-  const ids = group.perms.map(p => p.id)
-  const selected = form.value.permissionIds.filter(id => ids.includes(id)).length
-  if (selected === 0) return 'none'
-  if (selected === ids.length) return 'all'
-  return 'some'
-}
-
-function permLabel(code) {
-  const map = { view: 'مشاهده', create: 'ایجاد', update: 'ویرایش', delete: 'حذف', changepassword: 'تغییر رمز' }
-  const action = code.split('.')[1]
-  return map[action] || action
-}
-
-function permissionTitle(code) {
-  const [mod] = String(code).split('.')
-  const moduleName = moduleLabels[mod] || mod
-  return `${moduleName} · ${permLabel(code)}`
-}
-
 async function remove(id) {
   if (!(await dialog.confirmDelete('این کاربر'))) return
   await api.delete(`/users/${id}`)
@@ -269,7 +215,7 @@ onMounted(load)
 
     <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش کاربر' : 'کاربر جدید') : ''" @close="closeForm">
       <div v-if="error" class="form-error">{{ error }}</div>
-      <form class="form-layout-adaptive" @submit.prevent="submit">
+      <form class="form-layout-adaptive user-form" @submit.prevent="submit">
         <AvatarPicker
           v-model="avatarFile"
           v-model:path="avatarPath"
@@ -277,6 +223,9 @@ onMounted(load)
           label="تصویر کاربر"
           class="form-span-full"
         />
+        <div class="form-group user-active-row form-span-full">
+          <AppCheckbox v-model="form.isActive" label="فعال" />
+        </div>
         <div v-if="!editing" class="form-group">
           <label>نام کاربری *</label>
           <ClearableInput
@@ -311,36 +260,13 @@ onMounted(load)
           <label>موبایل</label>
           <ClearableInput v-model="form.mobile" />
         </div>
-        <div class="form-group form-span-full">
-          <label>دسترسی‌ها (هر مورد به‌صورت جداگانه)</label>
-          <div class="perm-groups">
-            <div v-for="group in groupedPermissions" :key="group.module" class="perm-group">
-              <div class="perm-group-head">
-                <AppCheckbox
-                  :model-value="groupState(group) === 'all'"
-                  :indeterminate="groupState(group) === 'some'"
-                  @change="toggleGroup(group, $event.target.checked)"
-                >
-                  <strong>{{ group.label }}</strong>
-                </AppCheckbox>
-              </div>
-              <div class="perm-group-items">
-                <AppCheckbox
-                  v-for="p in group.perms"
-                  :key="p.id"
-                  v-model="form.permissionIds"
-                  :value="p.id"
-                >
-                  {{ permLabel(p.code) }}
-                </AppCheckbox>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="form-group">
-          <AppCheckbox v-model="form.isActive" label="فعال" />
-        </div>
-        <div class="modal-actions">
+        <PermissionMatrix
+          ref="permMatrixRef"
+          v-model="form.permissionIds"
+          :permissions="permissions"
+          class="form-span-full"
+        />
+        <div class="modal-actions" :class="{ 'user-form-actions': isMobile }">
           <button type="button" class="btn btn-outline" @click="closeForm">انصراف</button>
           <button type="submit" class="btn">ذخیره</button>
         </div>
@@ -437,36 +363,6 @@ onMounted(load)
 </template>
 
 <style scoped>
-.perm-groups {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.65rem;
-}
-.perm-group {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.45rem 0.65rem;
-  margin: 0;
-  background: var(--bg);
-}
-.perm-group-head {
-  padding-bottom: 0.3rem;
-  margin-bottom: 0.3rem;
-  border-bottom: 1px solid var(--border);
-}
-.perm-group-items {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 1rem;
-  padding-right: 0.15rem;
-}
-.perm-group-items :deep(.app-checkbox) {
-  font-size: 0.85rem;
-  margin-bottom: 0;
-}
-.perm-group-head :deep(.app-checkbox) {
-  font-weight: 600;
-}
 .entity-cell {
   display: flex;
   align-items: center;
@@ -513,7 +409,18 @@ onMounted(load)
   font-size: 1.05rem;
   color: var(--primary);
 }
-@media (max-width: 900px) {
-  .perm-groups { grid-template-columns: 1fr; }
+
+.user-active-row {
+  margin-bottom: 0.5rem;
+}
+
+.user-form-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin-top: 1rem;
+  padding: 0.85rem 0 calc(0.15rem + env(safe-area-inset-bottom, 0));
+  background: linear-gradient(to top, var(--bg) 72%, color-mix(in srgb, var(--bg) 55%, transparent));
+  border-top: 1px solid var(--border);
 }
 </style>
