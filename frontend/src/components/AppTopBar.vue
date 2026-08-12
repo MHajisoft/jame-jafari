@@ -19,10 +19,28 @@ const showBack = computed(() => !primaryPaths.includes(route.path))
 <template>
   <header class="top-bar">
     <div class="top-bar-inner">
-      <router-link v-if="showBack" to="/more" class="back-btn" aria-label="بازگشت">›</router-link>
-      <div v-else class="back-spacer" />
+      <!-- Leading side (right in RTL): back + fixed logo -->
+      <div class="side side-start">
+        <router-link
+          v-if="showBack"
+          to="/more"
+          class="back-btn"
+          aria-label="بازگشت"
+        >›</router-link>
+        <router-link
+          to="/"
+          class="brand-mark"
+          aria-label="موسسه جامعه جعفری"
+        >
+          <img src="/logo.png" alt="" width="36" height="36" />
+        </router-link>
+      </div>
+
+      <!-- True screen-centered title -->
       <h1 class="top-title">{{ title }}</h1>
-      <div class="top-actions">
+
+      <!-- Trailing side (left in RTL): keeps title optically centered -->
+      <div class="side side-end">
         <slot />
       </div>
     </div>
@@ -36,41 +54,75 @@ const showBack = computed(() => !primaryPaths.includes(route.path))
   left: 0;
   right: 0;
   z-index: 200;
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   padding-top: env(safe-area-inset-top, 0);
 }
 .top-bar-inner {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
   height: 56px;
   padding: 0 0.75rem;
+  gap: 0.5rem;
+}
+.side {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 76px;
+  z-index: 1;
+}
+.side-start {
+  justify-content: flex-start;
+}
+.side-end {
+  justify-content: flex-end;
 }
 .back-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  font-size: 1.5rem;
+  width: 36px;
+  height: 36px;
+  font-size: 1.45rem;
   line-height: 1;
   color: var(--primary);
   border-radius: 10px;
+  flex-shrink: 0;
 }
-.back-spacer { width: 40px; flex-shrink: 0; }
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent);
+  background: var(--bg-elevated);
+}
+.brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 .top-title {
-  flex: 1;
-  font-size: 1.05rem;
+  position: absolute;
+  left: 80px;
+  right: 80px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  font-size: 1.02rem;
   font-weight: 700;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.top-actions {
-  min-width: 40px;
-  display: flex;
-  justify-content: flex-end;
+  line-height: 1.25;
+  pointer-events: none;
 }
 </style>

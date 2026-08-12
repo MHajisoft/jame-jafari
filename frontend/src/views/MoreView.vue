@@ -16,6 +16,14 @@ onMounted(() => {
 
 <template>
   <div class="more-page">
+    <div class="brand-hero card">
+      <img class="brand-hero-logo" src="/logo.png" alt="موسسه جامعه جعفری" width="64" height="64" />
+      <div class="brand-hero-text">
+        <strong>موسسه جامعه جعفری</strong>
+        <span class="text-muted">سامانه مدیریت مالی</span>
+      </div>
+    </div>
+
     <router-link to="/profile" class="user-card card">
       <div class="user-avatar">
         <img v-if="auth.avatarUrl" :src="auth.avatarUrl" alt="" />
@@ -44,6 +52,34 @@ onMounted(() => {
 
 <style scoped>
 .more-page { padding-bottom: 1rem; }
+.brand-hero {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+.brand-hero-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+.brand-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.brand-hero-text strong {
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+.brand-hero-text span {
+  font-size: 0.85rem;
+}
 .user-card {
   display: flex;
   align-items: center;
