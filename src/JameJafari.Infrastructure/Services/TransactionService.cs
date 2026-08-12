@@ -24,7 +24,10 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
         return new PagedResult<IncomeTransactionDto>(items, total, page, pageSize);
     }
 
-    public async Task<IncomeTransactionDto> CreateIncomeAsync(CreateIncomeTransactionRequest request, int userId, string? documentPath)
+    public async Task<IncomeTransactionDto> CreateIncomeAsync(
+        CreateIncomeTransactionRequest request,
+        int userId,
+        IReadOnlyList<string> documentPaths)
     {
         var entity = new IncomeTransaction
         {
@@ -36,17 +39,28 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
             TrackingCode = string.IsNullOrWhiteSpace(request.TrackingCode) ? null : request.TrackingCode.Trim(),
             Description = request.Description,
             TransactionDate = request.TransactionDate,
-            DocumentPath = documentPath,
             CreatedById = userId
         };
+
+        foreach (var path in documentPaths)
+        {
+            entity.Attachments.Add(new TransactionAttachment { Path = path });
+        }
+
         db.IncomeTransactions.Add(entity);
         await db.SaveChangesAsync();
         return await GetIncomeByIdAsync(entity.Id) ?? throw new InvalidOperationException();
     }
 
-    public async Task<IncomeTransactionDto?> UpdateIncomeAsync(int id, UpdateIncomeTransactionRequest request, int userId, string? documentPath)
+    public async Task<IncomeTransactionDto?> UpdateIncomeAsync(
+        int id,
+        UpdateIncomeTransactionRequest request,
+        int userId,
+        IReadOnlyList<string> newDocumentPaths)
     {
-        var entity = await db.IncomeTransactions.FirstOrDefaultAsync(t => t.Id == id);
+        var entity = await db.IncomeTransactions
+            .Include(t => t.Attachments)
+            .FirstOrDefaultAsync(t => t.Id == id);
         if (entity is null) return null;
 
         entity.PersonId = request.PersonId;
@@ -58,11 +72,25 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
         entity.Description = request.Description;
         entity.TransactionDate = request.TransactionDate;
         entity.UpdatedById = userId;
-        if (documentPath is not null)
-            entity.DocumentPath = documentPath;
+
+        foreach (var path in newDocumentPaths)
+        {
+            entity.Attachments.Add(new TransactionAttachment { Path = path });
+        }
 
         await db.SaveChangesAsync();
         return await GetIncomeByIdAsync(entity.Id);
+    }
+
+    public async Task<bool> DeleteIncomeAttachmentAsync(int transactionId, int attachmentId)
+    {
+        var attachment = await db.TransactionAttachments
+            .FirstOrDefaultAsync(a => a.Id == attachmentId && a.IncomeTransactionId == transactionId);
+        if (attachment is null) return false;
+
+        db.TransactionAttachments.Remove(attachment);
+        await db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> DeleteIncomeAsync(int id, int userId)
@@ -91,7 +119,10 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
         return new PagedResult<CostTransactionDto>(items, total, page, pageSize);
     }
 
-    public async Task<CostTransactionDto> CreateCostAsync(CreateCostTransactionRequest request, int userId, string? documentPath)
+    public async Task<CostTransactionDto> CreateCostAsync(
+        CreateCostTransactionRequest request,
+        int userId,
+        IReadOnlyList<string> documentPaths)
     {
         var entity = new CostTransaction
         {
@@ -101,18 +132,29 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
             TrackingCode = string.IsNullOrWhiteSpace(request.TrackingCode) ? null : request.TrackingCode.Trim(),
             Description = request.Description,
             TransactionDate = request.TransactionDate,
-            DocumentPath = documentPath,
             CreatedById = userId
         };
+
+        foreach (var path in documentPaths)
+        {
+            entity.Attachments.Add(new TransactionAttachment { Path = path });
+        }
+
         db.CostTransactions.Add(entity);
         await db.SaveChangesAsync();
         await LookupCache.InvalidateIngredientRecsAsync(cache);
         return await GetCostByIdAsync(entity.Id) ?? throw new InvalidOperationException();
     }
 
-    public async Task<CostTransactionDto?> UpdateCostAsync(int id, UpdateCostTransactionRequest request, int userId, string? documentPath)
+    public async Task<CostTransactionDto?> UpdateCostAsync(
+        int id,
+        UpdateCostTransactionRequest request,
+        int userId,
+        IReadOnlyList<string> newDocumentPaths)
     {
-        var entity = await db.CostTransactions.FirstOrDefaultAsync(t => t.Id == id);
+        var entity = await db.CostTransactions
+            .Include(t => t.Attachments)
+            .FirstOrDefaultAsync(t => t.Id == id);
         if (entity is null) return null;
 
         entity.AccountId = request.AccountId;
@@ -122,12 +164,26 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
         entity.Description = request.Description;
         entity.TransactionDate = request.TransactionDate;
         entity.UpdatedById = userId;
-        if (documentPath is not null)
-            entity.DocumentPath = documentPath;
+
+        foreach (var path in newDocumentPaths)
+        {
+            entity.Attachments.Add(new TransactionAttachment { Path = path });
+        }
 
         await db.SaveChangesAsync();
         await LookupCache.InvalidateIngredientRecsAsync(cache);
         return await GetCostByIdAsync(entity.Id);
+    }
+
+    public async Task<bool> DeleteCostAttachmentAsync(int transactionId, int attachmentId)
+    {
+        var attachment = await db.TransactionAttachments
+            .FirstOrDefaultAsync(a => a.Id == attachmentId && a.CostTransactionId == transactionId);
+        if (attachment is null) return false;
+
+        db.TransactionAttachments.Remove(attachment);
+        await db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> DeleteCostAsync(int id, int userId)
@@ -141,6 +197,18 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
         await LookupCache.InvalidateIngredientRecsAsync(cache);
         return true;
     }
+
+    public async Task<string?> GetIncomeAttachmentPathAsync(int transactionId, int attachmentId) =>
+        await db.TransactionAttachments.AsNoTracking()
+            .Where(a => a.Id == attachmentId && a.IncomeTransactionId == transactionId)
+            .Select(a => a.Path)
+            .FirstOrDefaultAsync();
+
+    public async Task<string?> GetCostAttachmentPathAsync(int transactionId, int attachmentId) =>
+        await db.TransactionAttachments.AsNoTracking()
+            .Where(a => a.Id == attachmentId && a.CostTransactionId == transactionId)
+            .Select(a => a.Path)
+            .FirstOrDefaultAsync();
 
     private async Task<IncomeTransactionDto?> GetIncomeByIdAsync(int id) =>
         await ProjectIncome(db.IncomeTransactions.AsNoTracking().Where(t => t.Id == id))
@@ -163,7 +231,10 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
             t.PaymentType,
             t.CostTypeId,
             t.CostType.Name,
-            t.DocumentPath,
+            t.Attachments
+                .OrderBy(a => a.Id)
+                .Select(a => new TransactionAttachmentDto(a.Id, a.Path))
+                .ToList(),
             t.TrackingCode,
             t.Description,
             t.TransactionDate,
@@ -181,7 +252,10 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
             t.Amount,
             t.CostTypeId,
             t.CostType.Name,
-            t.DocumentPath,
+            t.Attachments
+                .OrderBy(a => a.Id)
+                .Select(a => new TransactionAttachmentDto(a.Id, a.Path))
+                .ToList(),
             t.TrackingCode,
             t.Description,
             t.TransactionDate,

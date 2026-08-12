@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useIsMobile } from '../composables/useMediaQuery'
+import { hasActiveOverlay } from '../composables/useOverlayBack'
 import {
   registerFormPage,
   unregisterFormPage,
@@ -51,7 +52,9 @@ function syncMobileChrome(show, mobile) {
 }
 
 function onPopState() {
+  if (hasActiveOverlay()) return
   if (!props.show) return
+  if (history.state?.appForm) return
   closingFromPop = true
   pushed.value = false
   unregisterFormPage(requestClose)

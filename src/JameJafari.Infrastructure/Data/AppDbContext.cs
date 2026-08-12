@@ -14,6 +14,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<CostType> CostTypes => Set<CostType>();
     public DbSet<IncomeTransaction> IncomeTransactions => Set<IncomeTransaction>();
     public DbSet<CostTransaction> CostTransactions => Set<CostTransaction>();
+    public DbSet<TransactionAttachment> TransactionAttachments => Set<TransactionAttachment>();
     public DbSet<FoodGeneration> FoodGenerations => Set<FoodGeneration>();
     public DbSet<FoodIngredient> FoodIngredients => Set<FoodIngredient>();
 
@@ -88,6 +89,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasIndex(x => new { x.AccountId, x.TransactionDate });
             e.HasIndex(x => new { x.CostTypeId, x.TransactionDate });
             e.HasQueryFilter(x => !x.IsDeleted);
+        });
+
+        modelBuilder.Entity<TransactionAttachment>(e =>
+        {
+            e.Property(x => x.Path).HasMaxLength(500);
+            e.HasOne(x => x.IncomeTransaction)
+                .WithMany(x => x.Attachments)
+                .HasForeignKey(x => x.IncomeTransactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.CostTransaction)
+                .WithMany(x => x.Attachments)
+                .HasForeignKey(x => x.CostTransactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.IncomeTransactionId);
+            e.HasIndex(x => x.CostTransactionId);
         });
 
         modelBuilder.Entity<CostTransaction>(e =>

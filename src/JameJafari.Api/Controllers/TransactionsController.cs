@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using JameJafari.Api.Authorization;
 using JameJafari.Core.Constants;
 using JameJafari.Core.DTOs;
@@ -14,6 +15,12 @@ namespace JameJafari.Api.Controllers;
 [Route("api/income-transactions")]
 public class IncomeTransactionsController(TransactionService service, FileStorageService storage) : ApiControllerBase
 {
+    private static readonly JsonSerializerOptions FormJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     [HttpGet]
     [RequirePermission(PermissionCodes.IncomeView)]
     public async Task<ActionResult<PagedResult<IncomeTransactionDto>>> GetAll(
@@ -23,56 +30,89 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
 
     [HttpPost]
     [RequirePermission(PermissionCodes.IncomeCreate)]
-    public async Task<ActionResult<IncomeTransactionDto>> Create([FromForm] string data, [FromForm] IFormFile? document)
+    public async Task<ActionResult<IncomeTransactionDto>> Create([FromForm] string data, [FromForm] IFormFileCollection? documents)
     {
         if (string.IsNullOrWhiteSpace(data))
             return BadRequest("داده ارسالی نامعتبر است");
 
-        var request = JsonSerializer.Deserialize<CreateIncomeTransactionRequest>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var request = JsonSerializer.Deserialize<CreateIncomeTransactionRequest>(data, FormJsonOptions);
         if (request is null)
             return BadRequest("داده ارسالی نامعتبر است");
 
-        string? path = null;
-        if (document is not null)
-        {
-            try { path = await storage.SaveAsync(document, "transactions"); }
-            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
-        }
-        return Ok(await service.CreateIncomeAsync(request, CurrentUserId, path));
+        var paths = await SaveDocumentsAsync(documents);
+        if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
+
+        return Ok(await service.CreateIncomeAsync(request, CurrentUserId, paths));
     }
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.IncomeUpdate)]
-    public async Task<ActionResult<IncomeTransactionDto>> Update(int id, [FromForm] string data, [FromForm] IFormFile? document)
+    public async Task<ActionResult<IncomeTransactionDto>> Update(int id, [FromForm] string data, [FromForm] IFormFileCollection? documents)
     {
         if (string.IsNullOrWhiteSpace(data))
             return BadRequest("داده ارسالی نامعتبر است");
 
-        var request = JsonSerializer.Deserialize<UpdateIncomeTransactionRequest>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var request = JsonSerializer.Deserialize<UpdateIncomeTransactionRequest>(data, FormJsonOptions);
         if (request is null)
             return BadRequest("داده ارسالی نامعتبر است");
 
-        string? path = null;
-        if (document is not null)
-        {
-            try { path = await storage.SaveAsync(document, "transactions"); }
-            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
-        }
+        var paths = await SaveDocumentsAsync(documents);
+        if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
-        var updated = await service.UpdateIncomeAsync(id, request, CurrentUserId, path);
+        var updated = await service.UpdateIncomeAsync(id, request, CurrentUserId, paths);
         return updated is null ? NotFound() : Ok(updated);
+    }
+
+    [HttpDelete("{id:int}/attachments/{attachmentId:int}")]
+    [RequirePermission(PermissionCodes.IncomeUpdate)]
+    public async Task<IActionResult> DeleteAttachment(int id, int attachmentId)
+    {
+        var path = await service.GetIncomeAttachmentPathAsync(id, attachmentId);
+        if (path is null) return NotFound();
+
+        if (!await service.DeleteIncomeAttachmentAsync(id, attachmentId))
+            return NotFound();
+
+        storage.TryDelete(path);
+        return NoContent();
     }
 
     [HttpDelete("{id:int}")]
     [RequirePermission(PermissionCodes.IncomeDelete)]
     public async Task<IActionResult> Delete(int id)
         => await service.DeleteIncomeAsync(id, CurrentUserId) ? NoContent() : NotFound();
+
+    private async Task<IReadOnlyList<string>?> SaveDocumentsAsync(IFormFileCollection? documents)
+    {
+        if (documents is null || documents.Count == 0)
+            return Array.Empty<string>();
+
+        var paths = new List<string>(documents.Count);
+        foreach (var document in documents)
+        {
+            try
+            {
+                paths.Add(await storage.SaveAsync(document, "transactions"));
+            }
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
+        }
+        return paths;
+    }
 }
 
 [Authorize]
 [Route("api/cost-transactions")]
 public class CostTransactionsController(TransactionService service, FileStorageService storage) : ApiControllerBase
 {
+    private static readonly JsonSerializerOptions FormJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     [HttpGet]
     [RequirePermission(PermissionCodes.CostView)]
     public async Task<ActionResult<PagedResult<CostTransactionDto>>> GetAll(
@@ -82,48 +122,75 @@ public class CostTransactionsController(TransactionService service, FileStorageS
 
     [HttpPost]
     [RequirePermission(PermissionCodes.CostCreate)]
-    public async Task<ActionResult<CostTransactionDto>> Create([FromForm] string data, [FromForm] IFormFile? document)
+    public async Task<ActionResult<CostTransactionDto>> Create([FromForm] string data, [FromForm] IFormFileCollection? documents)
     {
         if (string.IsNullOrWhiteSpace(data))
             return BadRequest("داده ارسالی نامعتبر است");
 
-        var request = JsonSerializer.Deserialize<CreateCostTransactionRequest>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var request = JsonSerializer.Deserialize<CreateCostTransactionRequest>(data, FormJsonOptions);
         if (request is null)
             return BadRequest("داده ارسالی نامعتبر است");
 
-        string? path = null;
-        if (document is not null)
-        {
-            try { path = await storage.SaveAsync(document, "transactions"); }
-            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
-        }
-        return Ok(await service.CreateCostAsync(request, CurrentUserId, path));
+        var paths = await SaveDocumentsAsync(documents);
+        if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
+
+        return Ok(await service.CreateCostAsync(request, CurrentUserId, paths));
     }
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.CostUpdate)]
-    public async Task<ActionResult<CostTransactionDto>> Update(int id, [FromForm] string data, [FromForm] IFormFile? document)
+    public async Task<ActionResult<CostTransactionDto>> Update(int id, [FromForm] string data, [FromForm] IFormFileCollection? documents)
     {
         if (string.IsNullOrWhiteSpace(data))
             return BadRequest("داده ارسالی نامعتبر است");
 
-        var request = JsonSerializer.Deserialize<UpdateCostTransactionRequest>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var request = JsonSerializer.Deserialize<UpdateCostTransactionRequest>(data, FormJsonOptions);
         if (request is null)
             return BadRequest("داده ارسالی نامعتبر است");
 
-        string? path = null;
-        if (document is not null)
-        {
-            try { path = await storage.SaveAsync(document, "transactions"); }
-            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
-        }
+        var paths = await SaveDocumentsAsync(documents);
+        if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
-        var updated = await service.UpdateCostAsync(id, request, CurrentUserId, path);
+        var updated = await service.UpdateCostAsync(id, request, CurrentUserId, paths);
         return updated is null ? NotFound() : Ok(updated);
+    }
+
+    [HttpDelete("{id:int}/attachments/{attachmentId:int}")]
+    [RequirePermission(PermissionCodes.CostUpdate)]
+    public async Task<IActionResult> DeleteAttachment(int id, int attachmentId)
+    {
+        var path = await service.GetCostAttachmentPathAsync(id, attachmentId);
+        if (path is null) return NotFound();
+
+        if (!await service.DeleteCostAttachmentAsync(id, attachmentId))
+            return NotFound();
+
+        storage.TryDelete(path);
+        return NoContent();
     }
 
     [HttpDelete("{id:int}")]
     [RequirePermission(PermissionCodes.CostDelete)]
     public async Task<IActionResult> Delete(int id)
         => await service.DeleteCostAsync(id, CurrentUserId) ? NoContent() : NotFound();
+
+    private async Task<IReadOnlyList<string>?> SaveDocumentsAsync(IFormFileCollection? documents)
+    {
+        if (documents is null || documents.Count == 0)
+            return Array.Empty<string>();
+
+        var paths = new List<string>(documents.Count);
+        foreach (var document in documents)
+        {
+            try
+            {
+                paths.Add(await storage.SaveAsync(document, "transactions"));
+            }
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
+        }
+        return paths;
+    }
 }

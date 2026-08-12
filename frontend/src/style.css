@@ -704,8 +704,11 @@ button.field-invalid:focus {
   .mobile-table thead { display: none; }
   .mobile-table tbody tr {
     position: relative;
-    display: block;
-    padding: 0.95rem 1rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: 0.65rem;
+    padding: 0.85rem 1rem 1rem;
     margin-bottom: 0.75rem;
     background: var(--surface);
     border-radius: 16px;
@@ -722,17 +725,19 @@ button.field-invalid:focus {
     padding: 0;
   }
 
-  /* Primary title — reserve space for actions with logical inset */
+  /* Card header — date + actions share row 1 (grid, not absolute) */
   .mobile-table tbody td[data-label]:first-of-type {
+    grid-column: 1;
+    grid-row: 1;
     display: block;
-    padding: 0.05rem 0 0.7rem;
-    padding-inline-end: 4.6rem;
+    padding: 0;
+    margin: 0;
     border: none;
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
-    margin-bottom: 0.35rem;
     font-size: 1.02rem;
     font-weight: 700;
     line-height: 1.35;
+    min-width: 0;
+    align-self: center;
   }
   .mobile-table tbody td[data-label]:first-of-type::before { display: none; }
   .mobile-table tbody td[data-label]:first-of-type .entity-cell {
@@ -748,17 +753,40 @@ button.field-invalid:focus {
     text-wrap: pretty;
   }
 
-  /* Meta rows — compact, consistent RTL rows */
-  .mobile-table tbody td[data-label]:not(:first-of-type) {
+  /* Header divider on first meta row (reliable across browsers) */
+  .mobile-table tbody td:nth-child(2) {
+    border-top: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+    padding-top: 0.75rem !important;
+    margin-top: 0.75rem;
+  }
+
+  /* Actions — row 1, column 2 */
+  .mobile-table tbody td:not([data-label]) {
+    grid-column: 2;
+    grid-row: 1;
+    position: static;
     display: flex;
-    align-items: baseline;
+    align-self: center;
+    justify-content: flex-end;
+    padding: 0;
+    margin: 0;
+    border: none;
+    z-index: 1;
+  }
+  .mobile-table tbody td:empty { display: none; }
+
+  /* Meta rows — full width from row 3 onward */
+  .mobile-table tbody td[data-label]:not(:first-of-type) {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.38rem 0;
+    gap: 0.85rem;
+    padding: 0.45rem 0;
     border: none;
     font-size: 0.9rem;
     text-align: start;
-    min-height: 1.6rem;
+    min-height: 2.125rem;
   }
   .mobile-table tbody td[data-label]::before {
     content: attr(data-label);
@@ -766,25 +794,61 @@ button.field-invalid:focus {
     font-size: 0.78rem;
     color: var(--text-muted);
     flex: 0 0 auto;
-    max-width: 42%;
+    max-width: 38%;
     text-align: start;
+    line-height: 1.4;
   }
   .mobile-table tbody td[data-label]:not(:first-of-type) > * {
+    flex: 0 1 auto;
+    min-width: 0;
     text-align: end;
   }
 
-  /* Floating icon actions — always visible, touch-sized */
-  .mobile-table tbody td:not([data-label]) {
-    position: absolute;
-    top: 0.65rem;
-    inset-inline-end: 0.55rem;
-    display: flex;
-    padding: 0;
-    margin: 0;
-    border: none;
-    z-index: 2;
+  /* Status / tag badges — shrink-wrap, never stretch full row */
+  .mobile-table tbody td[data-label]:not(:first-of-type) > .badge {
+    flex: 0 0 auto;
+    padding: 0.22rem 0.7rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.35;
+    white-space: nowrap;
+    border-radius: 999px;
   }
-  .mobile-table tbody td:empty { display: none; }
+
+  .mobile-table tbody td[data-label]:not(:first-of-type) > .perm-badges,
+  .mobile-table tbody td[data-label]:not(:first-of-type) > .entity-cell {
+    flex: 1 1 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  /* Attachment row — label on top, chips below (no inline overlap) */
+  .mobile-table tbody td[data-label="پیوست"] {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.45rem;
+    padding-top: 0.55rem;
+    padding-bottom: 0.1rem;
+  }
+  .mobile-table tbody td[data-label="پیوست"]::before {
+    flex: none;
+    max-width: none;
+    font-size: 0.78rem;
+  }
+  .mobile-table tbody td[data-label="پیوست"] > * {
+    flex: none;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-start;
+  }
+  [dir="rtl"] .mobile-table tbody td[data-label="پیوست"] > * {
+    justify-content: flex-end;
+  }
 
   .page-toolbar {
     flex-direction: column;

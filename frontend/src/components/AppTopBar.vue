@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { navItems } from '../config/navigation'
+import { closeActiveOverlay, activeOverlay } from '../composables/useOverlayBack'
 import { useActiveFormPage } from '../composables/useFormPage'
 import AppBrandMark from './AppBrandMark.vue'
 import AppAccountChip from './AppAccountChip.vue'
@@ -20,9 +21,10 @@ const listTitle = computed(() => {
 const title = computed(() => activeFormPage.value?.title || listTitle.value)
 
 const primaryPaths = ['/', '/income', '/cost', '/more']
-const showBack = computed(() => isFormPageOpen.value || !primaryPaths.includes(route.path))
+const showBack = computed(() => isFormPageOpen.value || !!activeOverlay.value || !primaryPaths.includes(route.path))
 
 function onBack() {
+  if (closeActiveOverlay()) return
   if (activeFormPage.value) {
     activeFormPage.value.close()
     return

@@ -59,3 +59,33 @@ export function formatCurrencyInput(value) {
   if (!digits) return ''
   return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
+
+/** Server upload path → browser URL */
+export function documentUrl(path) {
+  const p = String(path || '').trim()
+  if (!p) return ''
+  if (p.startsWith('http://') || p.startsWith('https://') || p.startsWith('/')) return p
+  return `/uploads/${p}`
+}
+
+export function documentFileName(path) {
+  const p = String(path || '').trim()
+  if (!p) return 'پیوست'
+  return p.split('/').pop() || 'پیوست'
+}
+
+export function isImageDocument(path) {
+  return /\.(jpe?g|png|gif|webp)$/i.test(String(path || ''))
+}
+
+export function isPdfDocument(path, mime = '') {
+  if (mime === 'application/pdf') return true
+  return /\.pdf$/i.test(String(path || ''))
+}
+
+/** @returns {'image'|'pdf'|'file'} */
+export function documentKind(path, mime = '') {
+  if (mime.startsWith('image/') || isImageDocument(path)) return 'image'
+  if (isPdfDocument(path, mime)) return 'pdf'
+  return 'file'
+}

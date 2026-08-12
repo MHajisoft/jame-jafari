@@ -35,6 +35,22 @@ public class FileStorageService(IWebHostEnvironment env)
         return $"{safeFolder}/{fileName}".Replace('\\', '/');
     }
 
+    public bool TryDelete(string relativePath)
+    {
+        if (!TryResolvePath(relativePath, out var fullPath))
+            return false;
+
+        try
+        {
+            File.Delete(fullPath);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public bool TryResolvePath(string relativePath, out string fullPath)
     {
         fullPath = string.Empty;

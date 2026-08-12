@@ -106,9 +106,6 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("DocumentPath")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -393,9 +390,6 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("DocumentPath")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -435,6 +429,37 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.HasIndex("IsDeleted", "TransactionDate");
 
                     b.ToTable("IncomeTransactions");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.TransactionAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CostTransactionId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("IncomeTransactionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CostTransactionId");
+
+                    b.HasIndex("IncomeTransactionId");
+
+                    b.ToTable("TransactionAttachments");
                 });
 
             modelBuilder.Entity("JameJafari.Core.Entities.Permission", b =>
@@ -695,6 +720,23 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("JameJafari.Core.Entities.TransactionAttachment", b =>
+                {
+                    b.HasOne("JameJafari.Core.Entities.CostTransaction", "CostTransaction")
+                        .WithMany("Attachments")
+                        .HasForeignKey("CostTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("JameJafari.Core.Entities.IncomeTransaction", "IncomeTransaction")
+                        .WithMany("Attachments")
+                        .HasForeignKey("IncomeTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CostTransaction");
+
+                    b.Navigation("IncomeTransaction");
+                });
+
             modelBuilder.Entity("JameJafari.Core.Entities.CostType", b =>
                 {
                     b.HasOne("JameJafari.Core.Entities.User", "CreatedBy")
@@ -936,6 +978,11 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.Navigation("IncomeTransactions");
                 });
 
+            modelBuilder.Entity("JameJafari.Core.Entities.CostTransaction", b =>
+                {
+                    b.Navigation("Attachments");
+                });
+
             modelBuilder.Entity("JameJafari.Core.Entities.CostType", b =>
                 {
                     b.Navigation("CostTransactions");
@@ -948,6 +995,11 @@ namespace JameJafari.Infrastructure.Data.Migrations
             modelBuilder.Entity("JameJafari.Core.Entities.FoodGeneration", b =>
                 {
                     b.Navigation("Ingredients");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.IncomeTransaction", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("JameJafari.Core.Entities.Permission", b =>

@@ -1,30 +1,65 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { documentKind, documentUrl } from '../utils/format'
+import DocumentPreview from './DocumentPreview.vue'
 
-defineProps({
+const props = defineProps({
   modelValue: { type: File, default: null },
+  /** Existing server upload path */
+  path: { type: String, default: '' },
   accept: { type: String, default: 'image/*,application/pdf' }
 })
-const emit = defineEmits(['update:modelValue'])
 
-const preview = ref(null)
+const emit = defineEmits(['update:modelValue', 'update:path'])
+
+const blobUrl = ref('')
+const previewOpen = ref(false)
 const sheetOpen = ref(false)
 const isMobile = ref(false)
 const fileInput = ref(null)
 const cameraInput = ref(null)
 
+const hasAttachment = computed(() => !!props.modelValue || !!props.path)
+
+const previewSrc = computed(() => {
+  if (blobUrl.value) return blobUrl.value
+  if (props.path && !props.modelValue) return documentUrl(props.path)
+  return ''
+})
+
+const previewKind = computed(() => {
+  if (props.modelValue) return documentKind('', props.modelValue.type)
+  return documentKind(props.path)
+})
+
+const showImageThumb = computed(() => previewKind.value === 'image' && !!previewSrc.value)
+
 function checkMobile() {
   isMobile.value = window.matchMedia('(max-width: 768px)').matches
 }
 
+function revokeBlob() {
+  if (blobUrl.value) {
+    URL.revokeObjectURL(blobUrl.value)
+    blobUrl.value = ''
+  }
+}
+
+watch(
+  () => props.modelValue,
+  (file) => {
+    revokeBlob()
+    if (!file) return
+    if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+      blobUrl.value = URL.createObjectURL(file)
+    }
+  },
+  { immediate: true }
+)
+
 function handleFile(file) {
   if (!file) return
   emit('update:modelValue', file)
-  if (file.type.startsWith('image/')) {
-    preview.value = URL.createObjectURL(file)
-  } else {
-    preview.value = null
-  }
   sheetOpen.value = false
 }
 
@@ -38,7 +73,6 @@ function openAttach() {
     sheetOpen.value = true
     return
   }
-  // Web: act as a normal file uploader
   fileInput.value?.click()
 }
 
@@ -54,9 +88,18 @@ function openCamera() {
   cameraInput.value?.click()
 }
 
+function openPreview() {
+  if (previewSrc.value) previewOpen.value = true
+}
+
 function clear() {
-  emit('update:modelValue', null)
-  preview.value = null
+  sheetOpen.value = false
+  previewOpen.value = false
+  if (props.modelValue) {
+    emit('update:modelValue', null)
+    return
+  }
+  if (props.path) emit('update:path', '')
 }
 
 onMounted(() => {
@@ -66,15 +109,37 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', checkMobile)
+  revokeBlob()
 })
 </script>
 
 <template>
   <div class="file-upload">
-    <div v-if="modelValue" class="preview">
-      <img v-if="preview" :src="preview" alt="preview" />
-      <div v-else class="file-name">{{ modelValue.name }}</div>
-      <button type="button" class="btn btn-sm btn-danger" @click="clear">حذف</button>
+    <div v-if="hasAttachment" class="preview">
+      <button type="button" class="preview-open" aria-label="مشاهده پیوست" @click="openPreview">
+        <img
+          v-if="showImageThumb"
+          :src="previewSrc"
+          alt="پیش‌نمایش پیوست"
+          class="preview-thumb"
+        />
+        <span v-else class="preview-icon" :class="`preview-icon--${previewKind}`" aria-hidden="true">
+          <svg v-if="previewKind === 'pdf'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+          </svg>
+        </span>
+        <span class="preview-hint">مشاهده</span>
+      </button>
+      <div class="preview-actions">
+        <button type="button" class="btn btn-sm btn-outline" @click="openAttach">جایگزینی</button>
+        <button type="button" class="btn btn-sm btn-danger" @click="clear">حذف</button>
+      </div>
     </div>
     <button v-else type="button" class="attach-btn" @click="openAttach">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -82,6 +147,12 @@ onBeforeUnmount(() => {
       </svg>
       <span>{{ isMobile ? 'افزودن پیوست' : 'آپلود فایل' }}</span>
     </button>
+
+    <DocumentPreview
+      v-model:show="previewOpen"
+      :src="previewSrc"
+      :kind="previewKind"
+    />
 
     <input ref="fileInput" type="file" :accept="accept" hidden @change="onFileChange" />
     <input ref="cameraInput" type="file" accept="image/*" capture="environment" hidden @change="onFileChange" />
@@ -142,18 +213,58 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 .attach-btn:active { opacity: 0.85; }
-.preview img {
-  max-width: 200px;
-  max-height: 150px;
-  border-radius: 8px;
-  display: block;
-  margin-bottom: 0.5rem;
+
+.preview-open {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary) 5%, var(--bg));
+  cursor: pointer;
 }
-.file-name {
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  word-break: break-all;
+
+.preview-open:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.preview-thumb {
+  max-width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.preview-icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  color: var(--primary);
+}
+
+.preview-icon svg {
+  width: 1.65rem;
+  height: 1.65rem;
+}
+
+.preview-hint {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .attach-overlay {

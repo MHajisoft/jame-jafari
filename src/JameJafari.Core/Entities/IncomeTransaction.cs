@@ -12,7 +12,7 @@ public class IncomeTransaction : AuditableEntity
     public PaymentType PaymentType { get; set; }
     public int CostTypeId { get; set; }
     public CostType CostType { get; set; } = null!;
-    public string? DocumentPath { get; set; }
+    public ICollection<TransactionAttachment> Attachments { get; set; } = [];
     public string? TrackingCode { get; set; }
     public string? Description { get; set; }
     public DateTime TransactionDate { get; set; } = DateTime.UtcNow;

@@ -80,12 +80,13 @@ npm run dev
 |-----|---------|
 | `views/` | صفحات CRUD + گزارش (الگوی FormHost) |
 | `components/` | UI مشترک (ClearableInput، AppSelect، PersianDatePicker، …) |
-| `composables/` | `useEntityForm`، `useFormValidation`، `useFormPage` |
+| `composables/` | `useEntityForm`، `useFormValidation`، `useFormPage`، **`useOverlayBack`** |
 | `stores/` | auth، lookups، theme، toast، dialog |
 | `api/` | axios client + `ApiPaths` |
 
 **الگوهای کلیدی:**
 - Desktop: فرم inline در `FormHost`؛ Mobile: full-page + back در top bar
+- Mobile overlay (پیش‌نمایش پیوست، …): **`useOverlayBack`** — دکمه/ژesture back ابتدا overlay را می‌بندد
 - دسترسی UI: `auth.hasPermission('module.action')`
 - تاریخ: نمایش شمسی، ذخیره ISO میلادی
 - فرم‌ها: `form-layout-adaptive` (۲ ستون / ۳ ستون در عرض زیاد)، `form-span-full` برای textarea/پیوست
@@ -93,12 +94,16 @@ npm run dev
 ## قابلیت‌ها
 
 ### تراکنش‌ها
-- **درآمد:** شخص، حساب، مبلغ، نوع پرداخت، نوع هزینه، تاریخ، کد رهگیری، پیوست، توضیحات
-- **هزینه:** حساب، مبلغ، نوع هزینه، تاریخ، کد رهگیری، پیوست، توضیحات
-- پیوست: تصویر/PDF؛ multipart upload
+- **درآمد:** شخص، حساب، مبلغ، نوع پرداخت، نوع هزینه، تاریخ، کد رهگیری، **چند پیوست**، توضیحات
+- **هزینه:** حساب، مبلغ، نوع هزینه، تاریخ، کد رهگیری، **چند پیوست**، توضیحات
+- **پیوست‌ها:** چند فایل تصویر/PDF per تراکنش (`TransactionAttachment`)
+  - **ایجاد/ویرایش:** `TransactionAttachmentsField` — افزودن چند فایل؛ حذف تکی (در ویرایش: فوری via API)
+  - **لیست:** آیکون per پیوست → پیش‌نمایش درون‌برنامه (`DocumentPreview`)
+  - **API:** `POST/PUT` multipart — فیلد JSON `data` + چند فایل `documents`؛ `DELETE .../attachments/{attachmentId}` (نیاز به `*.update`)
+  - پیش‌نمایش موبایل: back (top bar / gesture) overlay را می‌بندد، نه خروج از صفحه
 
 ### مدیریت
-- **کاربران:** ایجاد/ویرایش، آواتار، دسترسی‌های granular، تغییر رمز جدا (`users.changepassword`)
+- **کاربران:** ایجاد/ویرایش، آواتار، **ماتریس دسترسی** (`PermissionMatrix`)، تغییر رمز جدا (`users.changepassword`)
 - **اشخاص:** درخت خانوادگی (پدر/مادر)، پیشوند نام، آواتار
 - **حساب‌ها، انواع هزینه، انواع عمومی** (واحد، پیشوند نام)
 
@@ -159,11 +164,13 @@ cd frontend && npm run build
 
 | Rule | محدوده |
 |------|--------|
-| `project-overview.mdc` | همیشه — اهداف و مرزهای پروژه |
+| `project-overview.mdc` | همیشه — اهداف، مرزهای پروژه، **نگهداری مستندات** |
 | `backend-dotnet.mdc` | `src/**/*.cs` |
 | `frontend-vue.mdc` | `frontend/**/*` |
 | `permissions-auth.mdc` | auth + permissions |
-| `forms-ui-patterns.mdc` | فرم‌ها و UI |
+| `forms-ui-patterns.mdc` | فرم‌ها، UI، overlay back، پیوست‌ها |
 | `jame-jafari-theming` skill | `.cursor/skills/jame-jafari-theming/` — توکن رنگ و تم |
 
-هنگام افزودن feature جدید: permission در `PermissionCodes`، seed خودکار، route + `meta.permission`، `[RequirePermission]` در API، و الگوی FormHost در frontend.
+**الزام:** هر تغییر معنادار در رفتار یا معماری → به‌روزرسانی **`README.md`** و rule مرتبط در **همان تغییر**.
+
+هنگام افزودن feature جدید: permission در `PermissionCodes`، seed خودکار، route + `meta.permission`، `[RequirePermission]` در API، الگوی FormHost در frontend، و **به‌روزرسانی README + rules**.

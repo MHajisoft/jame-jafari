@@ -3,6 +3,8 @@ import { computed, ref, onMounted } from 'vue'
 import api from '../api/client'
 import { ApiPaths } from '../api/paths'
 import { formatMoney, paymentTypes, paymentTypeLabel, toInputDate } from '../utils/format'
+import DocumentAttachmentList from '../components/DocumentAttachmentList.vue'
+import { enumValue } from '../utils/enums'
 import { useAuthStore } from '../stores/auth'
 import { useDialogStore } from '../stores/dialog'
 import { useLookupsStore } from '../stores/lookups'
@@ -11,7 +13,7 @@ import { useEntityForm } from '../composables/useEntityForm'
 import { useIsMobile } from '../composables/useMediaQuery'
 import DateDisplay from '../components/DateDisplay.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
-import FileUpload from '../components/FileUpload.vue'
+import TransactionAttachmentsField from '../components/TransactionAttachmentsField.vue'
 import CurrencyInput from '../components/CurrencyInput.vue'
 import AppSelect from '../components/AppSelect.vue'
 import PersonSelect from '../components/PersonSelect.vue'
@@ -30,7 +32,8 @@ const items = ref([])
 const accounts = ref([])
 const costTypes = ref([])
 const loading = ref(false)
-const document = ref(null)
+const pendingDocuments = ref([])
+const existingAttachments = ref([])
 
 function blankForm() {
   return {
@@ -41,7 +44,8 @@ function blankForm() {
 
 const { showForm, editing, form, openCreate, openEdit, closeForm } = useEntityForm(blankForm, {
   onReset: () => {
-    document.value = null
+    pendingDocuments.value = []
+    if (!editing.value) existingAttachments.value = []
     clearErrors()
   }
 })
@@ -79,17 +83,30 @@ async function load() {
   }
 }
 
+function onExistingAttachmentsChange(list) {
+  existingAttachments.value = list
+  syncListAttachments(list)
+}
+
+function syncListAttachments(list) {
+  if (!editing.value) return
+  const item = items.value.find(i => i.id === editing.value)
+  if (item) item.attachments = list
+}
+
 function startEdit(item) {
   openEdit(item.id, {
     personId: item.personId,
     accountId: item.accountId,
     amount: item.amount,
-    paymentType: item.paymentType,
+    paymentType: enumValue(paymentTypes, item.paymentType, 1),
     costTypeId: item.costTypeId,
     trackingCode: item.trackingCode || '',
     description: item.description || '',
     transactionDate: toInputDate(item.transactionDate)
   })
+  existingAttachments.value = [...(item.attachments || [])]
+  pendingDocuments.value = []
 }
 
 async function submit() {
@@ -98,7 +115,7 @@ async function submit() {
     personId: +form.value.personId,
     accountId: +form.value.accountId,
     amount: +form.value.amount,
-    paymentType: +form.value.paymentType,
+    paymentType: enumValue(paymentTypes, form.value.paymentType, 1),
     costTypeId: +form.value.costTypeId,
     trackingCode: form.value.trackingCode || null,
     description: form.value.description || null,
@@ -106,7 +123,9 @@ async function submit() {
   })
   const fd = new FormData()
   fd.append('data', data)
-  if (document.value) fd.append('document', document.value)
+  for (const file of pendingDocuments.value) {
+    fd.append('documents', file)
+  }
   const ok = await trySubmit(async () => {
     if (editing.value) {
       await api.put(ApiPaths.incomeTransaction(editing.value), fd, {
@@ -122,7 +141,8 @@ async function submit() {
   })
   if (!ok) return
   closeForm()
-  document.value = null
+  pendingDocuments.value = []
+  existingAttachments.value = []
   await load()
 }
 
@@ -220,8 +240,17 @@ onMounted(() => load().catch(() => {}))
           <ClearableInput v-model="form.description" type="textarea" :rows="2" />
         </div>
         <div class="form-group form-span-full">
-          <label>پیوست (فاکتور/رسید){{ editing ? ' — در صورت انتخاب، جایگزین می‌شود' : '' }}</label>
-          <FileUpload v-model="document" />
+          <label>پیوست‌ها (فاکتور/رسید)</label>
+          <p v-if="editing && existingAttachments.length" class="text-muted" style="margin: 0 0 0.5rem; font-size: 0.85rem">
+            برای حذف هر پیوست، روی دکمه حذف (×) آن کلیک کنید.
+          </p>
+          <TransactionAttachmentsField
+            v-model:pending="pendingDocuments"
+            :existing="existingAttachments"
+            :transaction-id="editing"
+            :delete-attachment-path="ApiPaths.incomeTransactionAttachment"
+            @update:existing="onExistingAttachmentsChange"
+          />
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" @click="closeForm">انصراف</button>
@@ -237,7 +266,7 @@ onMounted(() => load().catch(() => {}))
           <thead>
             <tr>
               <th>تاریخ</th><th>شخص</th><th>حساب</th><th>مبلغ</th><th>نوع پرداخت</th>
-              <th>نوع هزینه</th><th>کد رهگیری</th><th>توضیحات</th>
+              <th>نوع هزینه</th><th>کد رهگیری</th><th>توضیحات</th><th>پیوست</th>
               <th v-if="auth.hasAnyPermission('income.update', 'income.delete')"></th>
             </tr>
           </thead>
@@ -251,6 +280,9 @@ onMounted(() => load().catch(() => {}))
               <td data-label="نوع هزینه">{{ item.costTypeName || '—' }}</td>
               <td data-label="کد رهگیری">{{ item.trackingCode || '—' }}</td>
               <td data-label="توضیحات">{{ item.description || '—' }}</td>
+              <td data-label="پیوست">
+                <DocumentAttachmentList :attachments="item.attachments" />
+              </td>
               <td v-if="auth.hasAnyPermission('income.update', 'income.delete')">
                 <RowActions
                   :show-edit="auth.hasPermission('income.update')"

@@ -96,7 +96,7 @@ defineEmits(['edit', 'delete', 'change-password'])
 .row-actions {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.35rem;
 }
 .icon-btn {
   display: inline-flex;
@@ -149,25 +149,33 @@ defineEmits(['edit', 'delete', 'change-password'])
 /* Mobile / touch: always visible chrome (no hover dependency) */
 @media (max-width: 768px), (hover: none), (pointer: coarse) {
   .icon-btn {
-    width: 2.5rem;
-    height: 2.5rem;
-    background: var(--bg-elevated);
+    width: 2.625rem;
+    height: 2.625rem;
+    border-radius: 12px;
+    background: var(--surface);
     border-color: var(--border);
-    color: var(--text);
+    color: var(--text-muted);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
   .icon-btn svg {
-    width: 1.15rem;
-    height: 1.15rem;
+    width: 1.125rem;
+    height: 1.125rem;
   }
   .icon-btn:active {
-    background: color-mix(in srgb, var(--primary) 14%, var(--bg-elevated));
+    transform: scale(0.96);
+    background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+    border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
     color: var(--primary);
+    box-shadow: none;
   }
   .icon-btn-danger {
-    color: var(--danger);
+    color: var(--danger-soft-text, var(--danger));
+    background: var(--danger-soft, color-mix(in srgb, var(--danger) 10%, var(--surface)));
+    border-color: color-mix(in srgb, var(--danger) 22%, var(--border));
   }
   .icon-btn-danger:active {
-    background: color-mix(in srgb, var(--danger) 12%, var(--bg-elevated));
+    background: color-mix(in srgb, var(--danger) 16%, var(--danger-soft, var(--surface)));
+    border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
     color: var(--danger);
   }
 }
