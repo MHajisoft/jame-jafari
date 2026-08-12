@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
+import { useDialogStore } from '../stores/dialog'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
@@ -10,6 +11,7 @@ import ClearableInput from '../components/ClearableInput.vue'
 const router = useRouter()
 const auth = useAuthStore()
 const toast = useToastStore()
+const dialog = useDialogStore()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 
@@ -119,7 +121,7 @@ async function onAvatarChange(e) {
 async function removeAvatar() {
   if (!auth.avatarPath) return
   sheetOpen.value = false
-  if (!confirm('حذف تصویر پروفایل؟')) return
+  if (!(await dialog.confirmDelete('تصویر پروفایل'))) return
   avatarBusy.value = true
   clearErrors()
   try {

@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
+import { useDialogStore } from '../stores/dialog'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import AppSelect from '../components/AppSelect.vue'
@@ -14,6 +15,7 @@ import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
+const dialog = useDialogStore()
 const router = useRouter()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -103,7 +105,7 @@ function closeForm() {
 }
 
 async function remove(id) {
-  if (!confirm('حذف این نوع هزینه؟')) return
+  if (!(await dialog.confirmDelete('این نوع هزینه'))) return
   await api.delete(`/cost-types/${id}`)
   toast.success('نوع هزینه حذف شد')
   await load()

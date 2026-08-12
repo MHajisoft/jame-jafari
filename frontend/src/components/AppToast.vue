@@ -1,13 +1,50 @@
 <script setup>
+import { ref } from 'vue'
 import { useToastStore } from '../stores/toast'
 
 const toast = useToastStore()
+const copiedId = ref(null)
 
+/** Status icons — avoid bare ✕ for errors (reads as “close”). */
 const icons = {
-  success: 'M5 13l4 4L19 7',
-  error: 'M6 18L18 6M6 6l12 12',
-  warning: 'M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z',
-  info: 'M12 16v-4m0-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z'
+  success: [{ d: 'M5 13l4 4L19 7' }],
+  error: [
+    { d: 'M12 8v4m0 4h.01' },
+    { circle: true }
+  ],
+  warning: [
+    { d: 'M12 9v4m0 4h.01' },
+    { d: 'M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z' }
+  ],
+  info: [
+    { d: 'M12 16v-4m0-4h.01' },
+    { circle: true }
+  ]
+}
+
+async function copyMessage(item) {
+  const text = item.message
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      ta.setAttribute('readonly', '')
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
+    copiedId.value = item.id
+    window.setTimeout(() => {
+      if (copiedId.value === item.id) copiedId.value = null
+    }, 1600)
+  } catch {
+    /* ignore clipboard failures */
+  }
 }
 </script>
 
@@ -18,25 +55,45 @@ const icons = {
         v-for="item in toast.items"
         :key="item.id"
         class="toast"
-        :class="`toast-${item.type}`"
+        :class="[`toast-${item.type}`, { copied: copiedId === item.id }]"
         role="status"
       >
         <span class="toast-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path :d="icons[item.type] || icons.info" />
+            <template v-for="(part, i) in (icons[item.type] || icons.info)" :key="i">
+              <circle v-if="part.circle" cx="12" cy="12" r="9" />
+              <path v-else :d="part.d" />
+            </template>
           </svg>
         </span>
         <p class="toast-message">{{ item.message }}</p>
-        <button
-          type="button"
-          class="toast-close"
-          aria-label="بستن"
-          @click="toast.dismiss(item.id)"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div class="toast-actions">
+          <button
+            type="button"
+            class="toast-copy"
+            :aria-label="copiedId === item.id ? 'کپی شد' : 'کپی پیام'"
+            :title="copiedId === item.id ? 'کپی شد' : 'کپی'"
+            @click="copyMessage(item)"
+          >
+            <svg v-if="copiedId !== item.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="toast-close"
+            aria-label="بستن"
+            @click="toast.dismiss(item.id)"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
     </TransitionGroup>
   </div>
@@ -93,8 +150,18 @@ const icons = {
   font-size: 0.9rem;
   line-height: 1.55;
   font-weight: 500;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
+.toast-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-shrink: 0;
+}
+
+.toast-copy,
 .toast-close {
   flex-shrink: 0;
   width: 1.75rem;
@@ -109,14 +176,46 @@ const icons = {
   padding: 0;
 }
 
+.toast-copy svg,
 .toast-close svg {
   width: 1rem;
   height: 1rem;
 }
 
+.toast-copy:hover,
 .toast-close:hover {
   background: color-mix(in srgb, var(--text) 8%, transparent);
   color: var(--text);
+}
+
+.toast.copied .toast-copy {
+  color: var(--success);
+  opacity: 1 !important;
+}
+
+/* Desktop: copy only on hover / focus */
+@media (hover: hover) and (pointer: fine) {
+  .toast-copy {
+    opacity: 0;
+    transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+  .toast:hover .toast-copy,
+  .toast:focus-within .toast-copy {
+    opacity: 1;
+  }
+}
+
+/* Mobile / touch: always available (no hover) */
+@media (hover: none), (pointer: coarse) {
+  .toast-copy {
+    opacity: 0.9;
+    width: 2rem;
+    height: 2rem;
+  }
+  .toast-close {
+    width: 2rem;
+    height: 2rem;
+  }
 }
 
 .toast-success {

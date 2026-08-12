@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
+import { useDialogStore } from '../stores/dialog'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
@@ -14,6 +15,7 @@ import AvatarPicker from '../components/AvatarPicker.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
+const dialog = useDialogStore()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
@@ -205,7 +207,7 @@ function permissionTitle(code) {
 }
 
 async function remove(id) {
-  if (!confirm('حذف این کاربر؟')) return
+  if (!(await dialog.confirmDelete('این کاربر'))) return
   await api.delete(`/users/${id}`)
   toast.success('کاربر حذف شد')
   await load()

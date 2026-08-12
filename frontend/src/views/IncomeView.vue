@@ -4,6 +4,7 @@ import api from '../api/client'
 import { formatMoney, paymentTypes, paymentTypeLabel, toInputDate } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
+import { useDialogStore } from '../stores/dialog'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import DateDisplay from '../components/DateDisplay.vue'
@@ -18,6 +19,7 @@ import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
+const dialog = useDialogStore()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
@@ -74,7 +76,7 @@ async function submit() {
 }
 
 async function remove(id) {
-  if (!confirm('حذف این تراکنش؟')) return
+  if (!(await dialog.confirmDelete('این تراکنش'))) return
   await api.delete(`/income-transactions/${id}`)
   toast.success('تراکنش حذف شد')
   await load()

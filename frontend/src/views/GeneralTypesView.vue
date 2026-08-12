@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
+import { useDialogStore } from '../stores/dialog'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import AppCheckbox from '../components/AppCheckbox.vue'
@@ -18,6 +19,7 @@ const CATEGORIES = [
 
 const auth = useAuthStore()
 const toast = useToastStore()
+const dialog = useDialogStore()
 const route = useRoute()
 const router = useRouter()
 const isMobile = useIsMobile()
@@ -113,7 +115,7 @@ function closeForm() {
 }
 
 async function remove(id) {
-  if (!confirm(`حذف این ${currentMeta.value.singular}؟`)) return
+  if (!(await dialog.confirmDelete(`این ${currentMeta.value.singular}`))) return
   await api.delete(`/general-types/${id}`)
   toast.success(`${currentMeta.value.singular} حذف شد`)
   await load()

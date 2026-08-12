@@ -5,6 +5,7 @@ import api from '../api/client'
 import { genders, genderLabel, enumValue } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
+import { useDialogStore } from '../stores/dialog'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
 import AppSelect from '../components/AppSelect.vue'
@@ -18,6 +19,7 @@ import AvatarPicker from '../components/AvatarPicker.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
+const dialog = useDialogStore()
 const router = useRouter()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -132,7 +134,7 @@ function closeForm() {
 }
 
 async function remove(id) {
-  if (!confirm('حذف این شخص؟')) return
+  if (!(await dialog.confirmDelete('این شخص'))) return
   await api.delete(`/persons/${id}`)
   toast.success('شخص حذف شد')
   await load()
