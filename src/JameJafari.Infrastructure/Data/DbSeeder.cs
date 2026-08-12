@@ -25,7 +25,7 @@ public static class DbSeeder
             var allPerms = await db.Permissions.ToListAsync();
             var admin = new User
             {
-                Username = "admin",
+                Username = SystemUsers.AdminUsername,
                 PasswordHash = passwordHasher.Hash("admin@123"),
                 IsActive = true,
                 Email = "admin@jame-jafari.local"
@@ -35,7 +35,7 @@ public static class DbSeeder
 
             db.UserPermissions.AddRange(allPerms.Select(p => new UserPermission { UserId = admin.Id, PermissionId = p.Id }));
             await db.SaveChangesAsync();
-            logger.LogInformation("Default admin user created: admin / admin123 (all permissions)");
+            logger.LogInformation("Default admin user created: {Username} / admin@123 (all permissions)", SystemUsers.AdminUsername);
         }
 
         if (!await db.GeneralTypes.AnyAsync())
@@ -62,45 +62,99 @@ public static class DbSeeder
     /// <summary>
     /// Keeps the Permissions table aligned with <see cref="PermissionCodes.All"/>.
     /// Adds new codes; removes obsolete codes and their user assignments.
-    /// Does not auto-assign new permissions to existing users.
+    /// New catalog permissions are assigned only to the system admin user.
     /// </summary>
     private static async Task SyncPermissionsAsync(AppDbContext db, ILogger logger)
     {
         var desired = PermissionCodes.All.ToHashSet(StringComparer.Ordinal);
         var existing = await db.Permissions.ToListAsync();
 
-        var missing = desired.Except(existing.Select(p => p.Code), StringComparer.Ordinal).ToList();
-        if (missing.Count > 0)
+        var missingCodes = desired.Except(existing.Select(p => p.Code), StringComparer.Ordinal).ToList();
+        var addedPermissionIds = new List<int>();
+
+        if (missingCodes.Count > 0)
         {
-            db.Permissions.AddRange(missing.Select(code => new Permission
+            foreach (var code in missingCodes)
             {
-                Code = code,
-                Name = code,
-                Description = code
-            }));
+                var permission = new Permission { Code = code, Name = code, Description = code };
+                db.Permissions.Add(permission);
+                existing.Add(permission);
+            }
             await db.SaveChangesAsync();
-            logger.LogInformation("Added permissions: {Codes}", string.Join(", ", missing));
+            addedPermissionIds = existing
+                .Where(p => missingCodes.Contains(p.Code, StringComparer.Ordinal))
+                .Select(p => p.Id)
+                .ToList();
+            logger.LogInformation("Added permissions: {Codes}", string.Join(", ", missingCodes));
         }
 
         var obsolete = existing.Where(p => !desired.Contains(p.Code)).ToList();
-        if (obsolete.Count == 0) return;
-
-        var obsoleteIds = obsolete.Select(p => p.Id).ToList();
-        var assignments = await db.UserPermissions
-            .Where(up => obsoleteIds.Contains(up.PermissionId))
-            .ToListAsync();
-        if (assignments.Count > 0)
+        if (obsolete.Count > 0)
         {
-            db.UserPermissions.RemoveRange(assignments);
+            var obsoleteIds = obsolete.Select(p => p.Id).ToList();
+            var assignments = await db.UserPermissions
+                .Where(up => obsoleteIds.Contains(up.PermissionId))
+                .ToListAsync();
+            if (assignments.Count > 0)
+            {
+                db.UserPermissions.RemoveRange(assignments);
+                logger.LogInformation(
+                    "Removed {Count} user-permission assignments for obsolete permissions",
+                    assignments.Count);
+            }
+
+            db.Permissions.RemoveRange(obsolete);
+            await db.SaveChangesAsync();
             logger.LogInformation(
-                "Removed {Count} user-permission assignments for obsolete permissions",
-                assignments.Count);
+                "Removed obsolete permissions: {Codes}",
+                string.Join(", ", obsolete.Select(p => p.Code)));
         }
 
-        db.Permissions.RemoveRange(obsolete);
+        await EnsureAdminHasAllPermissionsAsync(db, logger, addedPermissionIds);
+    }
+
+    private static async Task EnsureAdminHasAllPermissionsAsync(
+        AppDbContext db,
+        ILogger logger,
+        IReadOnlyList<int> newlyAddedPermissionIds)
+    {
+        var admin = await db.Users
+            .FirstOrDefaultAsync(u => u.Username.ToLower() == SystemUsers.AdminUsername);
+        if (admin is null) return;
+
+        var allPermissionIds = await db.Permissions.Select(p => p.Id).ToListAsync();
+        var adminPermissionIds = await db.UserPermissions
+            .Where(up => up.UserId == admin.Id)
+            .Select(up => up.PermissionId)
+            .ToListAsync();
+
+        var missingForAdmin = allPermissionIds.Except(adminPermissionIds).ToList();
+        if (missingForAdmin.Count == 0) return;
+
+        db.UserPermissions.AddRange(missingForAdmin.Select(permissionId => new UserPermission
+        {
+            UserId = admin.Id,
+            PermissionId = permissionId
+        }));
         await db.SaveChangesAsync();
-        logger.LogInformation(
-            "Removed obsolete permissions: {Codes}",
-            string.Join(", ", obsolete.Select(p => p.Code)));
+
+        if (newlyAddedPermissionIds.Count > 0)
+        {
+            var syncedNew = missingForAdmin.Intersect(newlyAddedPermissionIds).ToList();
+            if (syncedNew.Count > 0)
+            {
+                logger.LogInformation(
+                    "Assigned {Count} new permissions to system admin only",
+                    syncedNew.Count);
+            }
+        }
+
+        var backfilled = missingForAdmin.Except(newlyAddedPermissionIds).ToList();
+        if (backfilled.Count > 0)
+        {
+            logger.LogInformation(
+                "Backfilled {Count} permissions for system admin",
+                backfilled.Count);
+        }
     }
 }

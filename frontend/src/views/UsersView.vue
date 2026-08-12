@@ -161,6 +161,7 @@ function openCreate() {
 }
 
 function openEdit(item) {
+  if (item.isSystemAdmin) return
   editing.value = item.id
   form.value = {
     username: item.username, password: '', email: item.email || '',
@@ -320,11 +321,14 @@ onMounted(load)
             <td data-label="نام کاربری">
               <div class="entity-cell">
                 <EntityAvatar :src="item.avatarPath" :name="item.username" />
-                <strong>{{ item.username }}</strong>
+                <div class="entity-names">
+                  <strong>{{ item.username }}</strong>
+                  <span v-if="item.isSystemAdmin" class="badge badge-system">مدیر اصلی</span>
+                </div>
               </div>
             </td>
-            <td data-label="ایمیل">{{ item.email }}</td>
-            <td data-label="موبایل">{{ item.mobile }}</td>
+            <td data-label="ایمیل">{{ item.email || '—' }}</td>
+            <td data-label="موبایل">{{ item.mobile || '—' }}</td>
             <td data-label="دسترسی‌ها">
               <div class="perm-badges">
                 <span v-for="p in item.permissions" :key="p" class="badge badge-perm">{{ permissionTitle(p) }}</span>
@@ -338,6 +342,7 @@ onMounted(load)
             </td>
             <td v-if="auth.hasAnyPermission('users.update', 'users.delete')">
               <RowActions
+                v-if="!item.isSystemAdmin"
                 :show-edit="auth.hasPermission('users.update')"
                 :show-delete="auth.hasPermission('users.delete')"
                 @edit="openEdit(item)"
@@ -392,6 +397,21 @@ onMounted(load)
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.entity-names {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.badge-system {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+  color: var(--primary);
 }
 @media (max-width: 900px) {
   .perm-groups { grid-template-columns: 1fr; }

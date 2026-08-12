@@ -9,6 +9,7 @@ public record UserDto(
     string? Mobile,
     string? AvatarPath,
     bool IsActive,
+    bool IsSystemAdmin,
     IReadOnlyList<string> Permissions,
     AuditInfoDto Audit);
 

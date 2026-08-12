@@ -29,20 +29,45 @@ public class UsersController(UserService service) : ApiControllerBase
     [HttpPost]
     [RequirePermission(PermissionCodes.UsersCreate)]
     public async Task<ActionResult<UserDto>> Create([FromBody] CreateUserRequest request)
-        => Ok(await service.CreateAsync(request, CurrentUserId));
+    {
+        try
+        {
+            return Ok(await service.CreateAsync(request, CurrentUserId));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.UsersUpdate)]
     public async Task<ActionResult<UserDto>> Update(int id, [FromBody] UpdateUserRequest request)
     {
-        var item = await service.UpdateAsync(id, request, CurrentUserId);
-        return item is null ? NotFound() : Ok(item);
+        try
+        {
+            var item = await service.UpdateAsync(id, request, CurrentUserId);
+            return item is null ? NotFound() : Ok(item);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpDelete("{id:int}")]
     [RequirePermission(PermissionCodes.UsersDelete)]
     public async Task<IActionResult> Delete(int id)
-        => await service.DeleteAsync(id, CurrentUserId) ? NoContent() : NotFound();
+    {
+        try
+        {
+            return await service.DeleteAsync(id, CurrentUserId) ? NoContent() : NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
     [HttpPost("{id:int}/avatar")]
     [RequirePermission(PermissionCodes.UsersUpdate, PermissionCodes.UsersCreate)]
@@ -64,7 +89,14 @@ public class UsersController(UserService service) : ApiControllerBase
     [RequirePermission(PermissionCodes.UsersUpdate)]
     public async Task<ActionResult<UserDto>> RemoveAvatar(int id)
     {
-        var user = await service.UpdateAvatarAsync(id, null, CurrentUserId);
-        return user is null ? NotFound() : Ok(user);
+        try
+        {
+            var user = await service.UpdateAvatarAsync(id, null, CurrentUserId);
+            return user is null ? NotFound() : Ok(user);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

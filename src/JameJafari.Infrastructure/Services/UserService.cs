@@ -1,3 +1,4 @@
+using JameJafari.Core.Constants;
 using JameJafari.Core.DTOs;
 using JameJafari.Core.Entities;
 using JameJafari.Infrastructure.Data;
@@ -27,6 +28,9 @@ public class UserService(AppDbContext db, IAppPasswordHasher passwordHasher)
 
     public async Task<UserDto> CreateAsync(CreateUserRequest request, int userId)
     {
+        if (SystemUsers.IsSystemAdmin(request.Username))
+            throw new InvalidOperationException("این نام کاربری رزرو شده است");
+
         if (await db.Users.AnyAsync(u => u.Username == request.Username))
             throw new InvalidOperationException("نام کاربری تکراری است");
 
@@ -54,6 +58,8 @@ public class UserService(AppDbContext db, IAppPasswordHasher passwordHasher)
     {
         var entity = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (entity is null) return null;
+        if (SystemUsers.IsSystemAdmin(entity.Username))
+            throw new InvalidOperationException("مدیر اصلی فقط از صفحه پروفایل قابل ویرایش است");
 
         await using var tx = await db.Database.BeginTransactionAsync();
 
@@ -75,6 +81,9 @@ public class UserService(AppDbContext db, IAppPasswordHasher passwordHasher)
     {
         var entity = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (entity is null) return false;
+        if (SystemUsers.IsSystemAdmin(entity.Username))
+            throw new InvalidOperationException("مدیر اصلی قابل حذف نیست");
+
         entity.IsDeleted = true;
         entity.DeletedAt = DateTime.UtcNow;
         entity.DeletedById = userId;
@@ -86,6 +95,9 @@ public class UserService(AppDbContext db, IAppPasswordHasher passwordHasher)
     {
         var entity = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (entity is null) return null;
+        if (SystemUsers.IsSystemAdmin(entity.Username))
+            throw new InvalidOperationException("تصویر مدیر اصلی فقط از صفحه پروفایل قابل تغییر است");
+
         entity.AvatarPath = path;
         entity.UpdatedById = userId;
         await db.SaveChangesAsync();
@@ -108,6 +120,7 @@ public class UserService(AppDbContext db, IAppPasswordHasher passwordHasher)
             u.Mobile,
             u.AvatarPath,
             u.IsActive,
+            u.Username.ToLower() == SystemUsers.AdminUsername,
             u.UserPermissions.Select(up => up.Permission.Code).ToList(),
             new AuditInfoDto(
                 u.CreatedAt,
