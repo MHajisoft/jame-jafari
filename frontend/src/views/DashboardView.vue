@@ -71,8 +71,16 @@ onMounted(async () => {
       <div class="show-mobile">
         <p>برای شروع، از نوار پایین به درآمد یا هزینه بروید، یا از «بیشتر» بخش‌های دیگر را باز کنید.</p>
         <div class="dash-quick">
-          <router-link to="/income" class="btn">درآمد</router-link>
-          <router-link to="/cost" class="btn btn-outline">هزینه</router-link>
+          <router-link
+            v-if="auth.hasAnyPermission('income.view', 'income.create', 'income.update')"
+            to="/income"
+            class="btn"
+          >درآمد</router-link>
+          <router-link
+            v-if="auth.hasAnyPermission('cost.view', 'cost.create', 'cost.update')"
+            to="/cost"
+            class="btn btn-outline"
+          >هزینه</router-link>
           <router-link to="/more" class="btn btn-outline">بیشتر</router-link>
         </div>
       </div>

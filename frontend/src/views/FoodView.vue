@@ -24,6 +24,8 @@ const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = use
 const items = ref([])
 const ingredients = ref([])
 const recommendations = ref([])
+const loading = ref(false)
+const formLookupsReady = ref(false)
 const cookDate = ref(todayGregorian())
 
 function blankForm() {
@@ -97,14 +99,24 @@ function recommendedTotal(row) {
 }
 
 async function load() {
-  const [f, ing, rec] = await Promise.all([
-    api.get(ApiPaths.food, { params: { date: new Date(cookDate.value).toISOString() } }),
-    lookups.getCostTypes({ isIngredient: true, activeOnly: true }),
-    api.get(ApiPaths.foodRecommendations)
-  ])
-  items.value = f.data
-  ingredients.value = ing
-  recommendations.value = rec.data
+  loading.value = true
+  formLookupsReady.value = false
+  try {
+    const [f, rec] = await Promise.all([
+      api.get(ApiPaths.food, { params: { date: new Date(cookDate.value).toISOString() } }),
+      api.get(ApiPaths.foodRecommendations)
+    ])
+    items.value = f.data
+    recommendations.value = rec.data
+    try {
+      ingredients.value = await lookups.getCostTypes({ isIngredient: true, activeOnly: true })
+      formLookupsReady.value = true
+    } catch {
+      ingredients.value = []
+    }
+  } finally {
+    loading.value = false
+  }
 }
 
 function addRow() {
@@ -187,7 +199,7 @@ onMounted(load)
           @change="load"
         />
         <button
-          v-if="auth.hasPermission('food.create')"
+          v-if="auth.hasPermission('food.create') && formLookupsReady"
           type="button"
           class="btn btn-fab-mobile"
           @click="handleOpenCreate"
@@ -197,6 +209,13 @@ onMounted(load)
         </button>
       </div>
     </div>
+
+    <p
+      v-if="auth.hasPermission('food.create') && !loading && !formLookupsReady"
+      class="form-error list-lookup-hint"
+    >
+      بارگذاری لیست مواد اولیه ممکن نشد؛ ثبت غذای جدید غیرفعال است.
+    </p>
 
     <FormHost :show="showForm" :title="isMobile ? formTitle : ''" @close="closeForm">
       <div v-if="error" class="form-error">{{ error }}</div>

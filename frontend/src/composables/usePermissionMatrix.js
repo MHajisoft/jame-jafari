@@ -37,8 +37,11 @@ const MODULE_ORDER = [
 
 const moduleIcons = Object.fromEntries(
   navItems
-    .filter(n => n.permission)
-    .map(n => [n.permission.split('.')[0], n.icon])
+    .filter(n => n.permission || n.permissionsAny?.length)
+    .map(n => {
+      const code = n.permission || n.permissionsAny[0]
+      return [code.split('.')[0], n.icon]
+    })
 )
 
 export function permActionLabel(code) {

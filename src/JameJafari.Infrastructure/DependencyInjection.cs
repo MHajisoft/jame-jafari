@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<UserService>();
         services.AddScoped<PersonService>();
         services.AddScoped<AccountService>();
+        services.AddScoped<LookupService>();
         services.AddScoped<GeneralTypeService>();
         services.AddScoped<CostTypeService>();
         services.AddScoped<PermissionService>();

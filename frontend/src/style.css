@@ -411,6 +411,9 @@ tr:hover td { background: var(--row-hover); }
   font-size: 0.85rem;
   margin-bottom: 0.75rem;
 }
+.list-lookup-hint {
+  margin-top: 0;
+}
 .field-error {
   color: var(--danger);
   font-size: 0.75rem;

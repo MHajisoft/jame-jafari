@@ -22,11 +22,17 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
     };
 
     [HttpGet]
-    [RequirePermission(PermissionCodes.IncomeView)]
+    [RequirePermission(
+        PermissionCodes.IncomeView,
+        PermissionCodes.IncomeCreate,
+        PermissionCodes.IncomeUpdate)]
     public async Task<ActionResult<PagedResult<IncomeTransactionDto>>> GetAll(
         [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int? accountId,
         [FromQuery, Range(1, 100)] int page = 1, [FromQuery, Range(1, 200)] int pageSize = 20)
-        => Ok(await service.GetIncomePagedAsync(from, to, accountId, page, pageSize));
+    {
+        int? ownOnly = OwnRecordsFilter(PermissionCodes.IncomeView);
+        return Ok(await service.GetIncomePagedAsync(from, to, accountId, page, pageSize, ownOnly));
+    }
 
     [HttpPost]
     [RequirePermission(PermissionCodes.IncomeCreate)]
@@ -59,7 +65,8 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
         var paths = await SaveDocumentsAsync(documents);
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
-        var updated = await service.UpdateIncomeAsync(id, request, CurrentUserId, paths);
+        var updated = await service.UpdateIncomeAsync(
+            id, request, CurrentUserId, paths, OwnRecordsFilter(PermissionCodes.IncomeView));
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -67,10 +74,11 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
     [RequirePermission(PermissionCodes.IncomeUpdate)]
     public async Task<IActionResult> DeleteAttachment(int id, int attachmentId)
     {
-        var path = await service.GetIncomeAttachmentPathAsync(id, attachmentId);
+        var ownOnly = OwnRecordsFilter(PermissionCodes.IncomeView);
+        var path = await service.GetIncomeAttachmentPathAsync(id, attachmentId, ownOnly);
         if (path is null) return NotFound();
 
-        if (!await service.DeleteIncomeAttachmentAsync(id, attachmentId))
+        if (!await service.DeleteIncomeAttachmentAsync(id, attachmentId, ownOnly))
             return NotFound();
 
         storage.TryDelete(path);
@@ -80,7 +88,9 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
     [HttpDelete("{id:int}")]
     [RequirePermission(PermissionCodes.IncomeDelete)]
     public async Task<IActionResult> Delete(int id)
-        => await service.DeleteIncomeAsync(id, CurrentUserId) ? NoContent() : NotFound();
+        => await service.DeleteIncomeAsync(id, CurrentUserId, OwnRecordsFilter(PermissionCodes.IncomeView))
+            ? NoContent()
+            : NotFound();
 
     private async Task<IReadOnlyList<string>?> SaveDocumentsAsync(IFormFileCollection? documents)
     {
@@ -114,11 +124,17 @@ public class CostTransactionsController(TransactionService service, FileStorageS
     };
 
     [HttpGet]
-    [RequirePermission(PermissionCodes.CostView)]
+    [RequirePermission(
+        PermissionCodes.CostView,
+        PermissionCodes.CostCreate,
+        PermissionCodes.CostUpdate)]
     public async Task<ActionResult<PagedResult<CostTransactionDto>>> GetAll(
         [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int? accountId,
         [FromQuery, Range(1, 100)] int page = 1, [FromQuery, Range(1, 200)] int pageSize = 20)
-        => Ok(await service.GetCostPagedAsync(from, to, accountId, page, pageSize));
+    {
+        int? ownOnly = OwnRecordsFilter(PermissionCodes.CostView);
+        return Ok(await service.GetCostPagedAsync(from, to, accountId, page, pageSize, ownOnly));
+    }
 
     [HttpPost]
     [RequirePermission(PermissionCodes.CostCreate)]
@@ -151,7 +167,8 @@ public class CostTransactionsController(TransactionService service, FileStorageS
         var paths = await SaveDocumentsAsync(documents);
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
-        var updated = await service.UpdateCostAsync(id, request, CurrentUserId, paths);
+        var updated = await service.UpdateCostAsync(
+            id, request, CurrentUserId, paths, OwnRecordsFilter(PermissionCodes.CostView));
         return updated is null ? NotFound() : Ok(updated);
     }
 
@@ -159,10 +176,11 @@ public class CostTransactionsController(TransactionService service, FileStorageS
     [RequirePermission(PermissionCodes.CostUpdate)]
     public async Task<IActionResult> DeleteAttachment(int id, int attachmentId)
     {
-        var path = await service.GetCostAttachmentPathAsync(id, attachmentId);
+        var ownOnly = OwnRecordsFilter(PermissionCodes.CostView);
+        var path = await service.GetCostAttachmentPathAsync(id, attachmentId, ownOnly);
         if (path is null) return NotFound();
 
-        if (!await service.DeleteCostAttachmentAsync(id, attachmentId))
+        if (!await service.DeleteCostAttachmentAsync(id, attachmentId, ownOnly))
             return NotFound();
 
         storage.TryDelete(path);
@@ -172,7 +190,9 @@ public class CostTransactionsController(TransactionService service, FileStorageS
     [HttpDelete("{id:int}")]
     [RequirePermission(PermissionCodes.CostDelete)]
     public async Task<IActionResult> Delete(int id)
-        => await service.DeleteCostAsync(id, CurrentUserId) ? NoContent() : NotFound();
+        => await service.DeleteCostAsync(id, CurrentUserId, OwnRecordsFilter(PermissionCodes.CostView))
+            ? NoContent()
+            : NotFound();
 
     private async Task<IReadOnlyList<string>?> SaveDocumentsAsync(IFormFileCollection? documents)
     {

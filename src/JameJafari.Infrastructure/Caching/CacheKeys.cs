@@ -12,6 +12,14 @@ public static class CacheKeys
 
     public static string Accounts(bool activeOnly) => $"accounts:{activeOnly}";
 
+    public static string LookupAccounts(bool activeOnly) => $"lookups:accounts:{activeOnly}";
+
     public static string CostTypes(bool? isIngredient, bool activeOnly) =>
         $"cost-types:{(isIngredient.HasValue ? isIngredient.Value.ToString() : "all")}:{activeOnly}";
+
+    public static string LookupCostTypes(bool? isIngredient, bool activeOnly) =>
+        $"lookups:cost-types:{(isIngredient.HasValue ? isIngredient.Value.ToString() : "all")}:{activeOnly}";
+
+    public static string LookupGeneralTypes(GeneralTypeCategory category) =>
+        $"lookups:general-types:{(int)category}";
 }

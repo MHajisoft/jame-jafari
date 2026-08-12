@@ -145,6 +145,8 @@ npm run dev
 | reports | `view` |
 | generaltypes | `view`, `create`, `update`, `delete` |
 
+**Lookups (فرم‌ها):** کاربر با `income.create` / `cost.create` بدون `accounts.view` می‌تواند از `GET /api/lookups/accounts` و `GET /api/lookups/cost-types` برای dropdown استفاده کند؛ APIهای مدیریت (`/api/accounts`, …) همچنان نیاز به `*.view` دارند.
+
 کاتالوگ در `PermissionCodes.All` نگه‌داری می‌شود؛ `DbSeeder` کدهای جدید را sync و به admin اختصاص می‌دهد.
 
 **مدیر اصلی:** username=`admin` — `SystemUsers.IsSystemAdmin()`؛ فقط از پروفایل قابل تغییر رمز/آواتار.

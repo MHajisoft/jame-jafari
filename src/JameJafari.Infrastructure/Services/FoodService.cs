@@ -17,18 +17,32 @@ public class FoodService(AppDbContext db, IFusionCache cache)
             options => options.SetDuration(LookupCache.IngredientRecsDuration));
     }
 
-    public async Task<IReadOnlyList<FoodGenerationDto>> GetByDateAsync(DateTime date)
+    public async Task<IReadOnlyList<FoodGenerationDto>> GetByDateAsync(DateTime date, int? createdByUserId = null)
     {
         var start = date.Date;
         var end = start.AddDays(1);
-        var items = await db.FoodGenerations
+        var query = db.FoodGenerations
             .AsNoTracking()
             .Include(f => f.Ingredients).ThenInclude(i => i.CostType).ThenInclude(c => c!.Unit)
             .Include(f => f.CreatedBy).Include(f => f.UpdatedBy)
-            .Where(f => f.CookDate >= start && f.CookDate < end)
-            .OrderBy(f => f.Name)
-            .ToListAsync();
+            .Where(f => f.CookDate >= start && f.CookDate < end);
+        if (createdByUserId.HasValue)
+            query = query.Where(f => f.CreatedById == createdByUserId.Value);
+        var items = await query.OrderBy(f => f.Name).ToListAsync();
         return items.Select(Map).ToList();
+    }
+
+    public async Task<FoodGenerationDto?> GetByIdAsync(int id, int? createdByUserId = null)
+    {
+        var query = db.FoodGenerations
+            .AsNoTracking()
+            .Include(f => f.Ingredients).ThenInclude(i => i.CostType).ThenInclude(c => c!.Unit)
+            .Include(f => f.CreatedBy).Include(f => f.UpdatedBy)
+            .Where(f => f.Id == id);
+        if (createdByUserId.HasValue)
+            query = query.Where(f => f.CreatedById == createdByUserId.Value);
+        var item = await query.FirstOrDefaultAsync();
+        return item is null ? null : Map(item);
     }
 
     public async Task<FoodGenerationDto> CreateAsync(CreateFoodGenerationRequest request, int userId)
@@ -66,12 +80,15 @@ public class FoodService(AppDbContext db, IFusionCache cache)
         return (await GetByIdAsync(entity.Id))!;
     }
 
-    public async Task<FoodGenerationDto?> UpdateAsync(int id, UpdateFoodGenerationRequest request, int userId)
+    public async Task<FoodGenerationDto?> UpdateAsync(
+        int id, UpdateFoodGenerationRequest request, int userId, int? requireCreatedByUserId = null)
     {
         var entity = await db.FoodGenerations
             .Include(f => f.Ingredients)
             .FirstOrDefaultAsync(f => f.Id == id);
         if (entity is null) return null;
+        if (requireCreatedByUserId.HasValue && entity.CreatedById != requireCreatedByUserId.Value)
+            return null;
 
         var totalCost = request.Ingredients.Sum(i => i.Units * i.Price);
         var costPerUnit = request.TotalCount > 0 ? totalCost / request.TotalCount : 0;
@@ -102,16 +119,6 @@ public class FoodService(AppDbContext db, IFusionCache cache)
         await db.SaveChangesAsync();
         await LookupCache.InvalidateIngredientRecsAsync(cache);
         return await GetByIdAsync(id);
-    }
-
-    public async Task<FoodGenerationDto?> GetByIdAsync(int id)
-    {
-        var f = await db.FoodGenerations
-            .AsNoTracking()
-            .Include(x => x.Ingredients).ThenInclude(i => i.CostType).ThenInclude(c => c!.Unit)
-            .Include(x => x.CreatedBy).Include(x => x.UpdatedBy)
-            .FirstOrDefaultAsync(x => x.Id == id);
-        return f is null ? null : Map(f);
     }
 
     private async Task<IReadOnlyList<IngredientPriceRecommendationDto>> ComputeRecommendationsAsync()

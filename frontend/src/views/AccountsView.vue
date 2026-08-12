@@ -29,7 +29,7 @@ const { showForm, editing, form, openCreate, openEdit, closeForm } = useEntityFo
 )
 
 const { items, loading, load } = useAsyncList(async () => {
-  return lookups.getAccounts({ activeOnly: false, force: true })
+  return lookups.getAccounts({ activeOnly: false, force: true, admin: true })
 })
 
 const rules = {

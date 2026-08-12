@@ -12,4 +12,8 @@ public abstract class ApiControllerBase : ControllerBase
 
     protected bool HasPermission(string permission) =>
         User.HasClaim("permission", permission);
+
+    /// <summary>Null = all records (has view). Otherwise restrict to current user's creations.</summary>
+    protected int? OwnRecordsFilter(string viewPermission) =>
+        HasPermission(viewPermission) ? null : CurrentUserId;
 }

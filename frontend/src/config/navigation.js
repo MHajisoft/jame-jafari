@@ -1,12 +1,17 @@
+/** Module entry: show page if user can view or operate (create/update). */
+const incomeAccess = ['income.view', 'income.create', 'income.update']
+const costAccess = ['cost.view', 'cost.create', 'cost.update']
+const foodAccess = ['food.view', 'food.create', 'food.update']
+
 export const navItems = [
   { to: '/', label: 'داشبورد', title: 'داشبورد', icon: '🏠', tab: 'home' },
-  { to: '/income', label: 'درآمد', title: 'تراکنش‌های درآمد', permission: 'income.view', icon: '💰', tab: 'income' },
-  { to: '/cost', label: 'هزینه', title: 'تراکنش‌های هزینه', permission: 'cost.view', icon: '💸', tab: 'cost' },
+  { to: '/income', label: 'درآمد', title: 'تراکنش‌های درآمد', permissionsAny: incomeAccess, icon: '💰', tab: 'income' },
+  { to: '/cost', label: 'هزینه', title: 'تراکنش‌های هزینه', permissionsAny: costAccess, icon: '💸', tab: 'cost' },
   { to: '/persons', label: 'اشخاص', title: 'اشخاص', permission: 'persons.view', icon: '👥', section: 'more' },
   { to: '/accounts', label: 'حساب‌ها', title: 'حساب‌ها', permission: 'accounts.view', icon: '🏦', section: 'more' },
   { to: '/cost-types', label: 'انواع هزینه', title: 'انواع هزینه', permission: 'costtypes.view', icon: '📋', section: 'more' },
   { to: '/general-types', label: 'انواع عمومی', title: 'انواع عمومی', permission: 'generaltypes.view', icon: '🏷️', section: 'more' },
-  { to: '/food', label: 'تهیه غذا', title: 'تهیه غذا', permission: 'food.view', icon: '🍲', section: 'more' },
+  { to: '/food', label: 'تهیه غذا', title: 'تهیه غذا', permissionsAny: foodAccess, icon: '🍲', section: 'more' },
   { to: '/reports', label: 'گزارشات', title: 'گزارشات', permission: 'reports.view', icon: '📊', section: 'more' },
   { to: '/users', label: 'کاربران', title: 'کاربران', permission: 'users.view', icon: '👤', section: 'more' },
   { to: '/settings', label: 'تنظیمات', title: 'تنظیمات', icon: '⚙️', section: 'more' }
@@ -14,8 +19,8 @@ export const navItems = [
 
 export const bottomTabs = [
   { to: '/', label: 'خانه', icon: '🏠', tab: 'home' },
-  { to: '/income', label: 'درآمد', icon: '💰', tab: 'income', permission: 'income.view' },
-  { to: '/cost', label: 'هزینه', icon: '💸', tab: 'cost', permission: 'cost.view' },
+  { to: '/income', label: 'درآمد', icon: '💰', tab: 'income', permissionsAny: incomeAccess },
+  { to: '/cost', label: 'هزینه', icon: '💸', tab: 'cost', permissionsAny: costAccess },
   { to: '/more', label: 'بیشتر', icon: '☰', tab: 'more' }
 ]
 

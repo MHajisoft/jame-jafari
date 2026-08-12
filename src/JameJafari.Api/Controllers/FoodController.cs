@@ -12,20 +12,31 @@ namespace JameJafari.Api.Controllers;
 public class FoodController(FoodService service) : ApiControllerBase
 {
     [HttpGet("recommendations")]
-    [RequirePermission(PermissionCodes.FoodView)]
+    [RequirePermission(
+        PermissionCodes.FoodView,
+        PermissionCodes.FoodCreate,
+        PermissionCodes.FoodUpdate)]
     public async Task<ActionResult<IReadOnlyList<IngredientPriceRecommendationDto>>> GetRecommendations()
         => Ok(await service.GetRecommendationsAsync());
 
     [HttpGet]
-    [RequirePermission(PermissionCodes.FoodView)]
+    [RequirePermission(
+        PermissionCodes.FoodView,
+        PermissionCodes.FoodCreate,
+        PermissionCodes.FoodUpdate)]
     public async Task<ActionResult<IReadOnlyList<FoodGenerationDto>>> GetByDate([FromQuery] DateTime date)
-        => Ok(await service.GetByDateAsync(date));
+    {
+        return Ok(await service.GetByDateAsync(date, OwnRecordsFilter(PermissionCodes.FoodView)));
+    }
 
     [HttpGet("{id:int}")]
-    [RequirePermission(PermissionCodes.FoodView)]
+    [RequirePermission(
+        PermissionCodes.FoodView,
+        PermissionCodes.FoodCreate,
+        PermissionCodes.FoodUpdate)]
     public async Task<ActionResult<FoodGenerationDto>> GetById(int id)
     {
-        var item = await service.GetByIdAsync(id);
+        var item = await service.GetByIdAsync(id, OwnRecordsFilter(PermissionCodes.FoodView));
         return item is null ? NotFound() : Ok(item);
     }
 
@@ -38,7 +49,7 @@ public class FoodController(FoodService service) : ApiControllerBase
     [RequirePermission(PermissionCodes.FoodUpdate)]
     public async Task<ActionResult<FoodGenerationDto>> Update(int id, [FromBody] UpdateFoodGenerationRequest request)
     {
-        var item = await service.UpdateAsync(id, request, CurrentUserId);
+        var item = await service.UpdateAsync(id, request, CurrentUserId, OwnRecordsFilter(PermissionCodes.FoodView));
         return item is null ? NotFound() : Ok(item);
     }
 }

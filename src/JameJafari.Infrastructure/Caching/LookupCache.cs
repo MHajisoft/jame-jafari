@@ -17,6 +17,8 @@ public static class LookupCache
     {
         await cache.RemoveAsync(CacheKeys.Accounts(true), token: ct);
         await cache.RemoveAsync(CacheKeys.Accounts(false), token: ct);
+        await cache.RemoveAsync(CacheKeys.LookupAccounts(true), token: ct);
+        await cache.RemoveAsync(CacheKeys.LookupAccounts(false), token: ct);
     }
 
     public static async Task InvalidateGeneralTypesAsync(IFusionCache cache, CancellationToken ct = default)
@@ -25,6 +27,7 @@ public static class LookupCache
         {
             await cache.RemoveAsync(CacheKeys.GeneralTypes(category, true), token: ct);
             await cache.RemoveAsync(CacheKeys.GeneralTypes(category, false), token: ct);
+            await cache.RemoveAsync(CacheKeys.LookupGeneralTypes(category), token: ct);
         }
     }
 
@@ -34,6 +37,8 @@ public static class LookupCache
         {
             await cache.RemoveAsync(CacheKeys.CostTypes(ingredient, true), token: ct);
             await cache.RemoveAsync(CacheKeys.CostTypes(ingredient, false), token: ct);
+            await cache.RemoveAsync(CacheKeys.LookupCostTypes(ingredient, true), token: ct);
+            await cache.RemoveAsync(CacheKeys.LookupCostTypes(ingredient, false), token: ct);
         }
 
         await InvalidateIngredientRecsAsync(cache, ct);

@@ -30,6 +30,7 @@ const items = ref([])
 const accounts = ref([])
 const costTypes = ref([])
 const loading = ref(false)
+const formLookupsReady = ref(false)
 const pendingDocuments = ref([])
 const existingAttachments = ref([])
 
@@ -65,15 +66,22 @@ const formTitle = computed(() => (editing.value ? 'ویرایش هزینه' : '�
 
 async function load() {
   loading.value = true
+  formLookupsReady.value = false
   try {
-    const [t, a, c] = await Promise.all([
-      api.get(ApiPaths.costTransactions),
-      lookups.getAccounts({ activeOnly: true }),
-      lookups.getCostTypes({ activeOnly: true })
-    ])
+    const t = await api.get(ApiPaths.costTransactions)
     items.value = t.data.items
-    accounts.value = a
-    costTypes.value = c
+    try {
+      const [a, c] = await Promise.all([
+        lookups.getAccounts({ activeOnly: true }),
+        lookups.getCostTypes({ activeOnly: true })
+      ])
+      accounts.value = a
+      costTypes.value = c
+      formLookupsReady.value = true
+    } catch {
+      accounts.value = []
+      costTypes.value = []
+    }
   } finally {
     loading.value = false
   }
@@ -155,10 +163,17 @@ onMounted(() => load().catch(() => {}))
     <PageHeader
       :title="pageTitle"
       :form-mode="showForm && !isMobile"
-      :show-create="auth.hasPermission('cost.create') && (!showForm || isMobile)"
+      :show-create="auth.hasPermission('cost.create') && formLookupsReady && (!showForm || isMobile)"
       create-label="ثبت هزینه"
       @create="openCreate"
     />
+
+    <p
+      v-if="auth.hasPermission('cost.create') && !loading && !formLookupsReady"
+      class="form-error list-lookup-hint"
+    >
+      بارگذاری لیست حساب‌ها یا انواع هزینه ممکن نشد؛ ثبت هزینه جدید غیرفعال است.
+    </p>
 
     <FormHost :show="showForm" :title="isMobile ? formTitle : ''" @close="closeForm">
       <div v-if="error" class="form-error">{{ error }}</div>

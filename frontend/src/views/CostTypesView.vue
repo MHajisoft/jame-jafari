@@ -55,8 +55,8 @@ function rules() {
 
 async function load() {
   const [c, u] = await Promise.all([
-    lookups.getCostTypes({ activeOnly: false, force: true }),
-    lookups.getGeneralTypes('Unit', { includeInactive: true })
+    lookups.getCostTypes({ activeOnly: false, force: true, admin: true }),
+    lookups.getGeneralTypes('Unit', { includeInactive: true, admin: true })
   ])
   items.value = c
   units.value = u

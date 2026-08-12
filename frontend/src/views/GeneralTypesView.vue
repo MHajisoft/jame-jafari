@@ -52,7 +52,8 @@ function resolveInitialCategory() {
 async function load() {
   items.value = await lookups.getGeneralTypes(category.value, {
     includeInactive: true,
-    force: true
+    force: true,
+    admin: true
   })
 }
 

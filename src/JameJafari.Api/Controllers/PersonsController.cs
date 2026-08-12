@@ -15,7 +15,11 @@ namespace JameJafari.Api.Controllers;
 public class PersonsController(PersonService service) : ApiControllerBase
 {
     [HttpGet]
-    [RequirePermission(PermissionCodes.PersonsView)]
+    [RequirePermission(
+        PermissionCodes.PersonsView,
+        PermissionCodes.IncomeView,
+        PermissionCodes.IncomeCreate,
+        PermissionCodes.IncomeUpdate)]
     public async Task<ActionResult<PagedResult<PersonDto>>> GetAll(
         [FromQuery] string? search,
         [FromQuery] Gender? gender,
@@ -24,7 +28,11 @@ public class PersonsController(PersonService service) : ApiControllerBase
         => Ok(await service.GetPagedAsync(search, gender, page, pageSize));
 
     [HttpGet("{id:int}")]
-    [RequirePermission(PermissionCodes.PersonsView)]
+    [RequirePermission(
+        PermissionCodes.PersonsView,
+        PermissionCodes.IncomeView,
+        PermissionCodes.IncomeCreate,
+        PermissionCodes.IncomeUpdate)]
     public async Task<ActionResult<PersonDto>> GetById(int id)
     {
         var item = await service.GetByIdAsync(id);
