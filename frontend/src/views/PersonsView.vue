@@ -278,9 +278,9 @@ onMounted(load)
                 </div>
               </td>
               <td data-label="جنسیت">{{ genderLabel(item.gender) }}</td>
-              <td data-label="موبایل">{{ item.mobile }}</td>
-              <td data-label="پدر">{{ item.fatherName }}</td>
-              <td data-label="مادر">{{ item.motherName }}</td>
+              <td data-label="موبایل">{{ item.mobile || '—' }}</td>
+              <td data-label="پدر">{{ item.fatherName || '—' }}</td>
+              <td data-label="مادر">{{ item.motherName || '—' }}</td>
               <td data-label="وضعیت">
                 <span v-if="item.isDead" class="badge badge-danger">فوت شده</span>
                 <span v-else class="badge badge-success">فعال</span>

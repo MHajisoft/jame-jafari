@@ -41,6 +41,28 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
         return Ok(await service.CreateIncomeAsync(request, CurrentUserId, path));
     }
 
+    [HttpPut("{id:int}")]
+    [RequirePermission(PermissionCodes.IncomeUpdate)]
+    public async Task<ActionResult<IncomeTransactionDto>> Update(int id, [FromForm] string data, [FromForm] IFormFile? document)
+    {
+        if (string.IsNullOrWhiteSpace(data))
+            return BadRequest("داده ارسالی نامعتبر است");
+
+        var request = JsonSerializer.Deserialize<UpdateIncomeTransactionRequest>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        if (request is null)
+            return BadRequest("داده ارسالی نامعتبر است");
+
+        string? path = null;
+        if (document is not null)
+        {
+            try { path = await storage.SaveAsync(document, "transactions"); }
+            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+        }
+
+        var updated = await service.UpdateIncomeAsync(id, request, CurrentUserId, path);
+        return updated is null ? NotFound() : Ok(updated);
+    }
+
     [HttpDelete("{id:int}")]
     [RequirePermission(PermissionCodes.IncomeDelete)]
     public async Task<IActionResult> Delete(int id)
@@ -76,6 +98,28 @@ public class CostTransactionsController(TransactionService service, FileStorageS
             catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
         }
         return Ok(await service.CreateCostAsync(request, CurrentUserId, path));
+    }
+
+    [HttpPut("{id:int}")]
+    [RequirePermission(PermissionCodes.CostUpdate)]
+    public async Task<ActionResult<CostTransactionDto>> Update(int id, [FromForm] string data, [FromForm] IFormFile? document)
+    {
+        if (string.IsNullOrWhiteSpace(data))
+            return BadRequest("داده ارسالی نامعتبر است");
+
+        var request = JsonSerializer.Deserialize<UpdateCostTransactionRequest>(data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        if (request is null)
+            return BadRequest("داده ارسالی نامعتبر است");
+
+        string? path = null;
+        if (document is not null)
+        {
+            try { path = await storage.SaveAsync(document, "transactions"); }
+            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+        }
+
+        var updated = await service.UpdateCostAsync(id, request, CurrentUserId, path);
+        return updated is null ? NotFound() : Ok(updated);
     }
 
     [HttpDelete("{id:int}")]

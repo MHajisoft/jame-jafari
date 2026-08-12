@@ -543,10 +543,19 @@ button.field-invalid:focus {
   }
   .mobile-table tbody tr:last-child { margin-bottom: 0; }
 
-  /* Primary title */
+  /* Outer list shell shouldn't look like a nested card on mobile */
+  .list-panel.card {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  /* Primary title — reserve space for actions with logical inset */
   .mobile-table tbody td[data-label]:first-of-type {
     display: block;
-    padding: 0.05rem 3.4rem 0.7rem 0;
+    padding: 0.05rem 0 0.7rem;
+    padding-inline-end: 4.6rem;
     border: none;
     border-bottom: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
     margin-bottom: 0.35rem;
@@ -568,35 +577,41 @@ button.field-invalid:focus {
     text-wrap: pretty;
   }
 
-  /* Meta rows */
+  /* Meta rows — compact, consistent RTL rows */
   .mobile-table tbody td[data-label]:not(:first-of-type) {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
-    gap: 0.85rem;
-    padding: 0.32rem 0;
+    gap: 1rem;
+    padding: 0.38rem 0;
     border: none;
     font-size: 0.9rem;
-    text-align: left;
+    text-align: start;
+    min-height: 1.6rem;
   }
   .mobile-table tbody td[data-label]::before {
     content: attr(data-label);
     font-weight: 500;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     color: var(--text-muted);
-    flex-shrink: 0;
-    text-align: right;
+    flex: 0 0 auto;
+    max-width: 42%;
+    text-align: start;
+  }
+  .mobile-table tbody td[data-label]:not(:first-of-type) > * {
+    text-align: end;
   }
 
-  /* Floating icon actions */
+  /* Floating icon actions — always visible, touch-sized */
   .mobile-table tbody td:not([data-label]) {
     position: absolute;
-    top: 0.7rem;
+    top: 0.65rem;
     inset-inline-end: 0.55rem;
     display: flex;
     padding: 0;
     margin: 0;
     border: none;
+    z-index: 2;
   }
   .mobile-table tbody td:empty { display: none; }
 

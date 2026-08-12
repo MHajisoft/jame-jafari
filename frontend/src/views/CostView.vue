@@ -31,17 +31,18 @@ const costTypes = ref([])
 const loading = ref(false)
 const document = ref(null)
 
-const { showForm, form, openCreate, closeForm } = useEntityForm(
-  () => ({
+function blankForm() {
+  return {
     accountId: '', amount: '', costTypeId: '', trackingCode: '', description: '', transactionDate: toInputDate(new Date())
-  }),
-  {
-    onReset: () => {
-      document.value = null
-      clearErrors()
-    }
   }
-)
+}
+
+const { showForm, editing, form, openCreate, openEdit, closeForm } = useEntityForm(blankForm, {
+  onReset: () => {
+    document.value = null
+    clearErrors()
+  }
+})
 
 const rules = {
   accountId: [{ type: 'required', msg: 'انتخاب حساب الزامی است' }],
@@ -50,9 +51,14 @@ const rules = {
   transactionDate: [{ type: 'required', msg: 'تاریخ الزامی است' }]
 }
 
-const pageTitle = computed(() =>
-  showForm.value && !isMobile.value ? 'ثبت هزینه جدید' : 'تراکنش‌های هزینه'
-)
+const pageTitle = computed(() => {
+  if (showForm.value && !isMobile.value) {
+    return editing.value ? 'ویرایش هزینه' : 'ثبت هزینه جدید'
+  }
+  return 'تراکنش‌های هزینه'
+})
+
+const formTitle = computed(() => (editing.value ? 'ویرایش هزینه' : 'ثبت هزینه جدید'))
 
 async function load() {
   loading.value = true
@@ -70,6 +76,17 @@ async function load() {
   }
 }
 
+function startEdit(item) {
+  openEdit(item.id, {
+    accountId: item.accountId,
+    amount: item.amount,
+    costTypeId: item.costTypeId,
+    trackingCode: item.trackingCode || '',
+    description: item.description || '',
+    transactionDate: toInputDate(item.transactionDate)
+  })
+}
+
 async function submit() {
   if (!validate(rules, form.value)) return
   const data = JSON.stringify({
@@ -84,8 +101,18 @@ async function submit() {
   fd.append('data', data)
   if (document.value) fd.append('document', document.value)
   const ok = await trySubmit(async () => {
-    await api.post(ApiPaths.costTransactions, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-  }, { successMessage: 'هزینه با موفقیت ثبت شد' })
+    if (editing.value) {
+      await api.put(ApiPaths.costTransaction(editing.value), fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    } else {
+      await api.post(ApiPaths.costTransactions, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    }
+  }, {
+    successMessage: editing.value ? 'هزینه ویرایش شد' : 'هزینه با موفقیت ثبت شد'
+  })
   if (!ok) return
   closeForm()
   document.value = null
@@ -114,7 +141,7 @@ onMounted(() => load().catch(() => {}))
       @create="openCreate"
     />
 
-    <FormHost :show="showForm" :title="isMobile ? 'ثبت هزینه جدید' : ''" @close="closeForm">
+    <FormHost :show="showForm" :title="isMobile ? formTitle : ''" @close="closeForm">
       <div v-if="error" class="form-error">{{ error }}</div>
       <form @submit.prevent="submit">
         <div class="form-group">
@@ -166,12 +193,12 @@ onMounted(() => load().catch(() => {}))
           <ClearableInput v-model="form.description" type="textarea" :rows="2" />
         </div>
         <div class="form-group">
-          <label>پیوست (فاکتور/رسید)</label>
+          <label>پیوست (فاکتور/رسید){{ editing ? ' — در صورت انتخاب، جایگزین می‌شود' : '' }}</label>
           <FileUpload v-model="document" />
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" @click="closeForm">انصراف</button>
-          <button type="submit" class="btn">ثبت</button>
+          <button type="submit" class="btn">{{ editing ? 'ذخیره' : 'ثبت' }}</button>
         </div>
       </form>
     </FormHost>
@@ -183,19 +210,24 @@ onMounted(() => load().catch(() => {}))
           <thead>
             <tr>
               <th>تاریخ</th><th>حساب</th><th>مبلغ</th><th>نوع هزینه</th><th>کد رهگیری</th><th>توضیحات</th>
-              <th v-if="auth.hasPermission('cost.delete')"></th>
+              <th v-if="auth.hasAnyPermission('cost.update', 'cost.delete')"></th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in items" :key="item.id">
               <td data-label="تاریخ"><DateDisplay :value="item.transactionDate" /></td>
-              <td data-label="حساب">{{ item.accountName }}</td>
+              <td data-label="حساب">{{ item.accountName || '—' }}</td>
               <td class="text-danger" data-label="مبلغ">{{ formatMoney(item.amount) }}</td>
-              <td data-label="نوع هزینه">{{ item.costTypeName }}</td>
+              <td data-label="نوع هزینه">{{ item.costTypeName || '—' }}</td>
               <td data-label="کد رهگیری">{{ item.trackingCode || '—' }}</td>
-              <td data-label="توضیحات">{{ item.description }}</td>
-              <td v-if="auth.hasPermission('cost.delete')">
-                <RowActions show-delete @delete="remove(item.id)" />
+              <td data-label="توضیحات">{{ item.description || '—' }}</td>
+              <td v-if="auth.hasAnyPermission('cost.update', 'cost.delete')">
+                <RowActions
+                  :show-edit="auth.hasPermission('cost.update')"
+                  :show-delete="auth.hasPermission('cost.delete')"
+                  @edit="startEdit(item)"
+                  @delete="remove(item.id)"
+                />
               </td>
             </tr>
           </tbody>

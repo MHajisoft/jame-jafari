@@ -9,10 +9,12 @@ public static class PermissionCodes
 
     public const string IncomeView = "income.view";
     public const string IncomeCreate = "income.create";
+    public const string IncomeUpdate = "income.update";
     public const string IncomeDelete = "income.delete";
 
     public const string CostView = "cost.view";
     public const string CostCreate = "cost.create";
+    public const string CostUpdate = "cost.update";
     public const string CostDelete = "cost.delete";
 
     public const string UsersView = "users.view";
@@ -45,8 +47,8 @@ public static class PermissionCodes
     public static readonly string[] All =
     [
         AccountsView, AccountsCreate, AccountsUpdate, AccountsDelete,
-        IncomeView, IncomeCreate, IncomeDelete,
-        CostView, CostCreate, CostDelete,
+        IncomeView, IncomeCreate, IncomeUpdate, IncomeDelete,
+        CostView, CostCreate, CostUpdate, CostDelete,
         UsersView, UsersCreate, UsersUpdate, UsersDelete,
         PersonsView, PersonsCreate, PersonsUpdate, PersonsDelete,
         CostTypesView, CostTypesCreate, CostTypesUpdate, CostTypesDelete,

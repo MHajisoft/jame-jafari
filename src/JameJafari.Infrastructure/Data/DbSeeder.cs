@@ -1,7 +1,6 @@
 using JameJafari.Core.Constants;
 using JameJafari.Core.Entities;
 using JameJafari.Core.Enums;
-using JameJafari.Infrastructure.Data;
 using JameJafari.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,17 +18,7 @@ public static class DbSeeder
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
 
         await db.Database.MigrateAsync();
-
-        if (!await db.Permissions.AnyAsync())
-        {
-            db.Permissions.AddRange(PermissionCodes.All.Select(code => new Permission
-            {
-                Code = code,
-                Name = code,
-                Description = code
-            }));
-            await db.SaveChangesAsync();
-        }
+        await SyncPermissionsAsync(db, logger);
 
         if (!await db.Users.AnyAsync())
         {
@@ -37,7 +26,7 @@ public static class DbSeeder
             var admin = new User
             {
                 Username = "admin",
-                PasswordHash = passwordHasher.Hash("admin123"),
+                PasswordHash = passwordHasher.Hash("admin@123"),
                 IsActive = true,
                 Email = "admin@jame-jafari.local"
             };
@@ -68,5 +57,50 @@ public static class DbSeeder
             db.Accounts.Add(new Account { Name = "صندوق اصلی", Description = "صندوق مرکزی موسسه", IsActive = true });
             await db.SaveChangesAsync();
         }
+    }
+
+    /// <summary>
+    /// Keeps the Permissions table aligned with <see cref="PermissionCodes.All"/>.
+    /// Adds new codes; removes obsolete codes and their user assignments.
+    /// Does not auto-assign new permissions to existing users.
+    /// </summary>
+    private static async Task SyncPermissionsAsync(AppDbContext db, ILogger logger)
+    {
+        var desired = PermissionCodes.All.ToHashSet(StringComparer.Ordinal);
+        var existing = await db.Permissions.ToListAsync();
+
+        var missing = desired.Except(existing.Select(p => p.Code), StringComparer.Ordinal).ToList();
+        if (missing.Count > 0)
+        {
+            db.Permissions.AddRange(missing.Select(code => new Permission
+            {
+                Code = code,
+                Name = code,
+                Description = code
+            }));
+            await db.SaveChangesAsync();
+            logger.LogInformation("Added permissions: {Codes}", string.Join(", ", missing));
+        }
+
+        var obsolete = existing.Where(p => !desired.Contains(p.Code)).ToList();
+        if (obsolete.Count == 0) return;
+
+        var obsoleteIds = obsolete.Select(p => p.Id).ToList();
+        var assignments = await db.UserPermissions
+            .Where(up => obsoleteIds.Contains(up.PermissionId))
+            .ToListAsync();
+        if (assignments.Count > 0)
+        {
+            db.UserPermissions.RemoveRange(assignments);
+            logger.LogInformation(
+                "Removed {Count} user-permission assignments for obsolete permissions",
+                assignments.Count);
+        }
+
+        db.Permissions.RemoveRange(obsolete);
+        await db.SaveChangesAsync();
+        logger.LogInformation(
+            "Removed obsolete permissions: {Codes}",
+            string.Join(", ", obsolete.Select(p => p.Code)));
     }
 }

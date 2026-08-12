@@ -17,7 +17,7 @@ defineEmits(['edit', 'delete'])
       class="icon-btn"
       :aria-label="editLabel"
       :title="editLabel"
-      @click="$emit('edit')"
+      @click.stop="$emit('edit')"
     >
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path
@@ -41,7 +41,7 @@ defineEmits(['edit', 'delete'])
       class="icon-btn icon-btn-danger"
       :aria-label="deleteLabel"
       :title="deleteLabel"
-      @click="$emit('delete')"
+      @click.stop="$emit('delete')"
     >
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path
@@ -67,7 +67,7 @@ defineEmits(['edit', 'delete'])
 .row-actions {
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.25rem;
 }
 .icon-btn {
   display: inline-flex;
@@ -76,14 +76,16 @@ defineEmits(['edit', 'delete'])
   width: 2.15rem;
   height: 2.15rem;
   padding: 0;
-  border: none;
-  border-radius: 9px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   transition:
     background-color 0.15s ease-out,
     color 0.15s ease-out,
+    border-color 0.15s ease-out,
     transform 0.12s ease-out;
 }
 .icon-btn svg {
@@ -91,10 +93,19 @@ defineEmits(['edit', 'delete'])
   height: 1.05rem;
   display: block;
 }
-.icon-btn:hover {
-  background: color-mix(in srgb, var(--primary) 12%, transparent);
-  color: var(--primary);
+
+/* Desktop: subtle until hover/focus */
+@media (hover: hover) and (pointer: fine) {
+  .icon-btn:hover {
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    color: var(--primary);
+  }
+  .icon-btn-danger:hover {
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    color: var(--danger);
+  }
 }
+
 .icon-btn:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
@@ -102,24 +113,33 @@ defineEmits(['edit', 'delete'])
 .icon-btn:active {
   transform: scale(0.96);
 }
-.icon-btn-danger:hover {
-  background: color-mix(in srgb, var(--danger) 12%, transparent);
-  color: var(--danger);
-}
 .icon-btn-danger:focus-visible {
   outline-color: var(--danger);
 }
 
-@media (max-width: 768px) {
+/* Mobile / touch: always visible chrome (no hover dependency) */
+@media (max-width: 768px), (hover: none), (pointer: coarse) {
   .icon-btn {
-    width: 2.4rem;
-    height: 2.4rem;
-    background: color-mix(in srgb, var(--surface) 70%, var(--bg));
-    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+    width: 2.5rem;
+    height: 2.5rem;
+    background: var(--bg-elevated);
+    border-color: var(--border);
+    color: var(--text);
   }
   .icon-btn svg {
-    width: 1.1rem;
-    height: 1.1rem;
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+  .icon-btn:active {
+    background: color-mix(in srgb, var(--primary) 14%, var(--bg-elevated));
+    color: var(--primary);
+  }
+  .icon-btn-danger {
+    color: var(--danger);
+  }
+  .icon-btn-danger:active {
+    background: color-mix(in srgb, var(--danger) 12%, var(--bg-elevated));
+    color: var(--danger);
   }
 }
 </style>

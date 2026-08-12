@@ -32,18 +32,19 @@ const costTypes = ref([])
 const loading = ref(false)
 const document = ref(null)
 
-const { showForm, form, openCreate, closeForm } = useEntityForm(
-  () => ({
+function blankForm() {
+  return {
     personId: '', accountId: '', amount: '', paymentType: 1,
     costTypeId: '', trackingCode: '', description: '', transactionDate: toInputDate(new Date())
-  }),
-  {
-    onReset: () => {
-      document.value = null
-      clearErrors()
-    }
   }
-)
+}
+
+const { showForm, editing, form, openCreate, openEdit, closeForm } = useEntityForm(blankForm, {
+  onReset: () => {
+    document.value = null
+    clearErrors()
+  }
+})
 
 const rules = {
   personId: [{ type: 'required', msg: 'انتخاب شخص الزامی است' }],
@@ -53,9 +54,14 @@ const rules = {
   transactionDate: [{ type: 'required', msg: 'تاریخ الزامی است' }]
 }
 
-const pageTitle = computed(() =>
-  showForm.value && !isMobile.value ? 'ثبت درآمد جدید' : 'تراکنش‌های درآمد'
-)
+const pageTitle = computed(() => {
+  if (showForm.value && !isMobile.value) {
+    return editing.value ? 'ویرایش درآمد' : 'ثبت درآمد جدید'
+  }
+  return 'تراکنش‌های درآمد'
+})
+
+const formTitle = computed(() => (editing.value ? 'ویرایش درآمد' : 'ثبت درآمد جدید'))
 
 async function load() {
   loading.value = true
@@ -71,6 +77,19 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+function startEdit(item) {
+  openEdit(item.id, {
+    personId: item.personId,
+    accountId: item.accountId,
+    amount: item.amount,
+    paymentType: item.paymentType,
+    costTypeId: item.costTypeId,
+    trackingCode: item.trackingCode || '',
+    description: item.description || '',
+    transactionDate: toInputDate(item.transactionDate)
+  })
 }
 
 async function submit() {
@@ -89,8 +108,18 @@ async function submit() {
   fd.append('data', data)
   if (document.value) fd.append('document', document.value)
   const ok = await trySubmit(async () => {
-    await api.post(ApiPaths.incomeTransactions, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-  }, { successMessage: 'درآمد با موفقیت ثبت شد' })
+    if (editing.value) {
+      await api.put(ApiPaths.incomeTransaction(editing.value), fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    } else {
+      await api.post(ApiPaths.incomeTransactions, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    }
+  }, {
+    successMessage: editing.value ? 'درآمد ویرایش شد' : 'درآمد با موفقیت ثبت شد'
+  })
   if (!ok) return
   closeForm()
   document.value = null
@@ -119,19 +148,19 @@ onMounted(() => load().catch(() => {}))
       @create="openCreate"
     />
 
-    <FormHost :show="showForm" :title="isMobile ? 'ثبت درآمد جدید' : ''" @close="closeForm">
+    <FormHost :show="showForm" :title="isMobile ? formTitle : ''" @close="closeForm">
       <div v-if="error" class="form-error">{{ error }}</div>
       <form @submit.prevent="submit">
-          <div class="form-group">
-            <label>شخص *</label>
-            <PersonSelect
-              v-model="form.personId"
-              placeholder="انتخاب شخص"
-              :invalid="!!errors.personId"
-              @change="clearFieldError('personId')"
-            />
-            <div v-if="errors.personId" class="field-error">{{ errors.personId }}</div>
-          </div>
+        <div class="form-group">
+          <label>شخص *</label>
+          <PersonSelect
+            v-model="form.personId"
+            placeholder="انتخاب شخص"
+            :invalid="!!errors.personId"
+            @change="clearFieldError('personId')"
+          />
+          <div v-if="errors.personId" class="field-error">{{ errors.personId }}</div>
+        </div>
         <div class="form-group">
           <label>حساب *</label>
           <AppSelect
@@ -193,12 +222,12 @@ onMounted(() => load().catch(() => {}))
           <ClearableInput v-model="form.description" type="textarea" :rows="2" />
         </div>
         <div class="form-group">
-          <label>پیوست (فاکتور/رسید)</label>
+          <label>پیوست (فاکتور/رسید){{ editing ? ' — در صورت انتخاب، جایگزین می‌شود' : '' }}</label>
           <FileUpload v-model="document" />
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" @click="closeForm">انصراف</button>
-          <button type="submit" class="btn">ثبت</button>
+          <button type="submit" class="btn">{{ editing ? 'ذخیره' : 'ثبت' }}</button>
         </div>
       </form>
     </FormHost>
@@ -211,21 +240,26 @@ onMounted(() => load().catch(() => {}))
             <tr>
               <th>تاریخ</th><th>شخص</th><th>حساب</th><th>مبلغ</th><th>نوع پرداخت</th>
               <th>نوع هزینه</th><th>کد رهگیری</th><th>توضیحات</th>
-              <th v-if="auth.hasPermission('income.delete')"></th>
+              <th v-if="auth.hasAnyPermission('income.update', 'income.delete')"></th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in items" :key="item.id">
               <td data-label="تاریخ"><DateDisplay :value="item.transactionDate" /></td>
-              <td data-label="شخص">{{ item.personName }}</td>
-              <td data-label="حساب">{{ item.accountName }}</td>
+              <td data-label="شخص">{{ item.personName || '—' }}</td>
+              <td data-label="حساب">{{ item.accountName || '—' }}</td>
               <td class="text-success" data-label="مبلغ">{{ formatMoney(item.amount) }}</td>
               <td data-label="نوع پرداخت">{{ paymentTypeLabel(item.paymentType) }}</td>
-              <td data-label="نوع هزینه">{{ item.costTypeName }}</td>
+              <td data-label="نوع هزینه">{{ item.costTypeName || '—' }}</td>
               <td data-label="کد رهگیری">{{ item.trackingCode || '—' }}</td>
-              <td data-label="توضیحات">{{ item.description }}</td>
-              <td v-if="auth.hasPermission('income.delete')">
-                <RowActions show-delete @delete="remove(item.id)" />
+              <td data-label="توضیحات">{{ item.description || '—' }}</td>
+              <td v-if="auth.hasAnyPermission('income.update', 'income.delete')">
+                <RowActions
+                  :show-edit="auth.hasPermission('income.update')"
+                  :show-delete="auth.hasPermission('income.delete')"
+                  @edit="startEdit(item)"
+                  @delete="remove(item.id)"
+                />
               </td>
             </tr>
           </tbody>

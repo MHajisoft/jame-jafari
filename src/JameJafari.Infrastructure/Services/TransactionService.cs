@@ -44,6 +44,27 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
         return await GetIncomeByIdAsync(entity.Id) ?? throw new InvalidOperationException();
     }
 
+    public async Task<IncomeTransactionDto?> UpdateIncomeAsync(int id, UpdateIncomeTransactionRequest request, int userId, string? documentPath)
+    {
+        var entity = await db.IncomeTransactions.FirstOrDefaultAsync(t => t.Id == id);
+        if (entity is null) return null;
+
+        entity.PersonId = request.PersonId;
+        entity.AccountId = request.AccountId;
+        entity.Amount = request.Amount;
+        entity.PaymentType = request.PaymentType;
+        entity.CostTypeId = request.CostTypeId;
+        entity.TrackingCode = string.IsNullOrWhiteSpace(request.TrackingCode) ? null : request.TrackingCode.Trim();
+        entity.Description = request.Description;
+        entity.TransactionDate = request.TransactionDate;
+        entity.UpdatedById = userId;
+        if (documentPath is not null)
+            entity.DocumentPath = documentPath;
+
+        await db.SaveChangesAsync();
+        return await GetIncomeByIdAsync(entity.Id);
+    }
+
     public async Task<bool> DeleteIncomeAsync(int id, int userId)
     {
         var entity = await db.IncomeTransactions.FirstOrDefaultAsync(t => t.Id == id);
@@ -87,6 +108,26 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
         await db.SaveChangesAsync();
         await LookupCache.InvalidateIngredientRecsAsync(cache);
         return await GetCostByIdAsync(entity.Id) ?? throw new InvalidOperationException();
+    }
+
+    public async Task<CostTransactionDto?> UpdateCostAsync(int id, UpdateCostTransactionRequest request, int userId, string? documentPath)
+    {
+        var entity = await db.CostTransactions.FirstOrDefaultAsync(t => t.Id == id);
+        if (entity is null) return null;
+
+        entity.AccountId = request.AccountId;
+        entity.Amount = request.Amount;
+        entity.CostTypeId = request.CostTypeId;
+        entity.TrackingCode = string.IsNullOrWhiteSpace(request.TrackingCode) ? null : request.TrackingCode.Trim();
+        entity.Description = request.Description;
+        entity.TransactionDate = request.TransactionDate;
+        entity.UpdatedById = userId;
+        if (documentPath is not null)
+            entity.DocumentPath = documentPath;
+
+        await db.SaveChangesAsync();
+        await LookupCache.InvalidateIngredientRecsAsync(cache);
+        return await GetCostByIdAsync(entity.Id);
     }
 
     public async Task<bool> DeleteCostAsync(int id, int userId)
