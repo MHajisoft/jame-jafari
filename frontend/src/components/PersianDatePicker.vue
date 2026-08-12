@@ -261,8 +261,10 @@ onBeforeUnmount(() => {
         v-if="hasValue"
         type="button"
         class="field-clear"
-        aria-label="پاک کردن"
+        tabindex="-1"
+        aria-hidden="true"
         title="پاک کردن"
+        @mousedown.prevent
         @click="clearDate"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
@@ -464,6 +466,9 @@ onBeforeUnmount(() => {
 .field-clear:hover {
   background: color-mix(in srgb, var(--danger) 18%, transparent);
   color: var(--danger);
+}
+.field-clear:focus {
+  outline: none;
 }
 .calendar-icon {
   position: absolute;

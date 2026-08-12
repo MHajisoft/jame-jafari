@@ -66,6 +66,44 @@ public class FoodService(AppDbContext db, IFusionCache cache)
         return (await GetByIdAsync(entity.Id))!;
     }
 
+    public async Task<FoodGenerationDto?> UpdateAsync(int id, UpdateFoodGenerationRequest request, int userId)
+    {
+        var entity = await db.FoodGenerations
+            .Include(f => f.Ingredients)
+            .FirstOrDefaultAsync(f => f.Id == id);
+        if (entity is null) return null;
+
+        var totalCost = request.Ingredients.Sum(i => i.Units * i.Price);
+        var costPerUnit = request.TotalCount > 0 ? totalCost / request.TotalCount : 0;
+
+        var recommendations = await GetRecommendationsAsync();
+        var requestedIds = request.Ingredients.Select(i => i.CostTypeId).ToHashSet();
+        var recDict = recommendations
+            .Where(r => requestedIds.Contains(r.CostTypeId))
+            .ToDictionary(r => r.CostTypeId, r => r.RecommendedPrice);
+
+        entity.Name = request.Name;
+        entity.CookDate = request.CookDate;
+        entity.TotalCount = request.TotalCount;
+        entity.TotalCost = totalCost;
+        entity.CostPerUnit = costPerUnit;
+        entity.Description = request.Description;
+        entity.UpdatedById = userId;
+
+        db.FoodIngredients.RemoveRange(entity.Ingredients);
+        entity.Ingredients = request.Ingredients.Select(i => new FoodIngredient
+        {
+            CostTypeId = i.CostTypeId,
+            Units = i.Units,
+            Price = i.Price,
+            RecommendedPrice = recDict.GetValueOrDefault(i.CostTypeId)
+        }).ToList();
+
+        await db.SaveChangesAsync();
+        await LookupCache.InvalidateIngredientRecsAsync(cache);
+        return await GetByIdAsync(id);
+    }
+
     public async Task<FoodGenerationDto?> GetByIdAsync(int id)
     {
         var f = await db.FoodGenerations

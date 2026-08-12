@@ -150,7 +150,7 @@ onMounted(() => load().catch(() => {}))
 
     <FormHost :show="showForm" :title="isMobile ? formTitle : ''" @close="closeForm">
       <div v-if="error" class="form-error">{{ error }}</div>
-      <form @submit.prevent="submit">
+      <form class="form-layout-adaptive" @submit.prevent="submit">
         <div class="form-group">
           <label>شخص *</label>
           <PersonSelect
@@ -174,27 +174,25 @@ onMounted(() => load().catch(() => {}))
           />
           <div v-if="errors.accountId" class="field-error">{{ errors.accountId }}</div>
         </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label>مبلغ *</label>
-            <CurrencyInput
-              v-model="form.amount"
-              :invalid="!!errors.amount"
-              placeholder="مثلاً 1,500,000"
-              @input="clearFieldError('amount')"
-            />
-            <div v-if="errors.amount" class="field-error">{{ errors.amount }}</div>
-          </div>
-          <div class="form-group">
-            <label>نوع پرداخت</label>
-            <AppSelect
-              v-model="form.paymentType"
-              :options="paymentTypes"
-              placeholder="نوع پرداخت"
-              :allow-empty="false"
-              :searchable="false"
-            />
-          </div>
+        <div class="form-group">
+          <label>مبلغ *</label>
+          <CurrencyInput
+            v-model="form.amount"
+            :invalid="!!errors.amount"
+            placeholder="مثلاً 1,500,000"
+            @input="clearFieldError('amount')"
+          />
+          <div v-if="errors.amount" class="field-error">{{ errors.amount }}</div>
+        </div>
+        <div class="form-group">
+          <label>نوع پرداخت</label>
+          <AppSelect
+            v-model="form.paymentType"
+            :options="paymentTypes"
+            placeholder="نوع پرداخت"
+            :allow-empty="false"
+            :searchable="false"
+          />
         </div>
         <div class="form-group">
           <label>نوع هزینه *</label>
@@ -213,15 +211,15 @@ onMounted(() => load().catch(() => {}))
           <label>تاریخ</label>
           <PersianDatePicker v-model="form.transactionDate" />
         </div>
-        <div class="form-group">
+        <div class="form-group form-span-full">
           <label>کد رهگیری <span class="optional">(اختیاری)</span></label>
           <ClearableInput v-model="form.trackingCode" placeholder="شماره فاکتور / سریال POS / ..." :maxlength="100" />
         </div>
-        <div class="form-group">
+        <div class="form-group form-span-full">
           <label>توضیحات</label>
           <ClearableInput v-model="form.description" type="textarea" :rows="2" />
         </div>
-        <div class="form-group">
+        <div class="form-group form-span-full">
           <label>پیوست (فاکتور/رسید){{ editing ? ' — در صورت انتخاب، جایگزین می‌شود' : '' }}</label>
           <FileUpload v-model="document" />
         </div>

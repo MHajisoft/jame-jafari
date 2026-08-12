@@ -161,43 +161,40 @@ onMounted(load)
 
     <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش شخص' : 'شخص جدید') : ''" @close="closeForm">
       <div v-if="error" class="form-error">{{ error }}</div>
-      <form @submit.prevent="submit">
+      <form class="form-layout-adaptive" @submit.prevent="submit">
         <AvatarPicker
           v-model="avatarFile"
           v-model:path="avatarPath"
           :name="avatarName"
           label="تصویر شخص"
+          class="form-span-full"
         />
-        <div class="grid-2">
-          <div class="form-group">
-            <label>نام *</label>
-            <ClearableInput
-              v-model="form.firstName"
-              :invalid="!!errors.firstName"
-              @input="clearFieldError('firstName')"
-            />
-            <div v-if="errors.firstName" class="field-error">{{ errors.firstName }}</div>
-          </div>
-          <div class="form-group">
-            <label>نام خانوادگی</label>
-            <ClearableInput v-model="form.lastName" />
-          </div>
+        <div class="form-group">
+          <label>نام *</label>
+          <ClearableInput
+            v-model="form.firstName"
+            :invalid="!!errors.firstName"
+            @input="clearFieldError('firstName')"
+          />
+          <div v-if="errors.firstName" class="field-error">{{ errors.firstName }}</div>
         </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label>نام مستعار</label>
-            <ClearableInput v-model="form.nickName" />
-          </div>
-          <div class="form-group">
-            <label>جنسیت</label>
-            <AppSelect
-              v-model="form.gender"
-              :options="genders"
-              placeholder="جنسیت"
-              :allow-empty="false"
-              :searchable="false"
-            />
-          </div>
+        <div class="form-group">
+          <label>نام خانوادگی</label>
+          <ClearableInput v-model="form.lastName" />
+        </div>
+        <div class="form-group">
+          <label>نام مستعار</label>
+          <ClearableInput v-model="form.nickName" />
+        </div>
+        <div class="form-group">
+          <label>جنسیت</label>
+          <AppSelect
+            v-model="form.gender"
+            :options="genders"
+            placeholder="جنسیت"
+            :allow-empty="false"
+            :searchable="false"
+          />
         </div>
         <div class="form-group">
           <label>پیشوند نام</label>
@@ -217,26 +214,24 @@ onMounted(load)
             مدیریت پیشوندها
           </button>
         </div>
-          <div class="grid-2">
-            <div class="form-group">
-              <label>پدر</label>
-              <PersonSelect
-                v-model="form.fatherId"
-                placeholder="انتخاب پدر"
-                :gender="1"
-                :exclude-id="editing"
-              />
-            </div>
-            <div class="form-group">
-              <label>مادر</label>
-              <PersonSelect
-                v-model="form.motherId"
-                placeholder="انتخاب مادر"
-                :gender="2"
-                :exclude-id="editing"
-              />
-            </div>
-          </div>
+        <div class="form-group">
+          <label>پدر</label>
+          <PersonSelect
+            v-model="form.fatherId"
+            placeholder="انتخاب پدر"
+            :gender="1"
+            :exclude-id="editing"
+          />
+        </div>
+        <div class="form-group">
+          <label>مادر</label>
+          <PersonSelect
+            v-model="form.motherId"
+            placeholder="انتخاب مادر"
+            :gender="2"
+            :exclude-id="editing"
+          />
+        </div>
         <div class="form-group">
           <label>موبایل</label>
           <ClearableInput
@@ -247,11 +242,11 @@ onMounted(load)
           <div v-if="errors.mobile" class="field-error">{{ errors.mobile }}</div>
         </div>
         <div class="form-group">
+          <AppCheckbox v-model="form.isDead" label="فوت شده" />
+        </div>
+        <div class="form-group form-span-full">
           <label>آدرس</label>
           <ClearableInput v-model="form.address" type="textarea" :rows="2" />
-        </div>
-        <div class="form-group">
-          <AppCheckbox v-model="form.isDead" label="فوت شده" />
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" @click="closeForm">انصراف</button>

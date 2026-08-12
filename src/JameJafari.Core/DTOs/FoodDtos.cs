@@ -48,6 +48,22 @@ public record CreateFoodGenerationRequest(
     [MinLength(1, ErrorMessage = "حداقل یک ماده اولیه الزامی است")]
     IReadOnlyList<FoodIngredientInput> Ingredients);
 
+public record UpdateFoodGenerationRequest(
+    [Required(ErrorMessage = "نام غذا الزامی است")]
+    [StringLength(200, ErrorMessage = "نام غذا حداکثر ۲۰۰ کاراکتر")]
+    string Name,
+
+    DateTime CookDate,
+
+    [Range(1, int.MaxValue, ErrorMessage = "تعداد باید حداقل ۱ باشد")]
+    int TotalCount,
+
+    [StringLength(500, ErrorMessage = "توضیحات حداکثر ۵۰۰ کاراکتر")]
+    string? Description,
+
+    [MinLength(1, ErrorMessage = "حداقل یک ماده اولیه الزامی است")]
+    IReadOnlyList<FoodIngredientInput> Ingredients);
+
 public record IngredientPriceRecommendationDto(
     int CostTypeId,
     string CostTypeName,

@@ -151,7 +151,7 @@ onMounted(load)
           />
           <div v-if="errors.name" class="field-error">{{ errors.name }}</div>
         </div>
-        <div class="form-group">
+        <div class="form-group form-span-full">
           <label>توضیحات</label>
           <ClearableInput v-model="form.description" type="textarea" :rows="2" />
         </div>

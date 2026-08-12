@@ -193,7 +193,7 @@ function logout() {
           <h3 class="section-title">اطلاعات حساب</h3>
           <div v-if="error" class="form-error">{{ error }}</div>
           <form @submit.prevent="saveProfile">
-            <div class="form-group">
+            <div class="form-group form-span-full">
               <label>نام کاربری</label>
               <input class="form-control" :value="auth.username" disabled />
             </div>
@@ -227,7 +227,7 @@ function logout() {
         <section class="card form-panel">
           <h3 class="section-title">تغییر رمز عبور</h3>
           <form @submit.prevent="savePassword">
-            <div class="form-group">
+            <div class="form-group form-span-full">
               <label>رمز عبور فعلی *</label>
               <ClearableInput
                 v-model="passwordForm.currentPassword"

@@ -59,6 +59,11 @@ function onCompositionEnd(e) {
 }
 
 function onKeydown(e) {
+  if (e.key === 'Escape' && hasValue.value) {
+    e.preventDefault()
+    clear()
+    return
+  }
   // Block shortcuts that insert non-digits; allow editing/navigation
   if (e.ctrlKey || e.metaKey || e.altKey) return
   const nav = new Set([
@@ -110,8 +115,10 @@ function clear(e) {
       v-if="hasValue"
       type="button"
       class="clear-btn"
-      aria-label="پاک کردن"
-      title="پاک کردن"
+      tabindex="-1"
+      aria-hidden="true"
+      title="پاک کردن (Esc)"
+      @mousedown.prevent
       @click="clear"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
@@ -150,5 +157,8 @@ function clear(e) {
 .clear-btn:hover {
   background: color-mix(in srgb, var(--danger) 18%, transparent);
   color: var(--danger);
+}
+.clear-btn:focus {
+  outline: none;
 }
 </style>

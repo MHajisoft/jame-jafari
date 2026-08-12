@@ -190,15 +190,13 @@ onMounted(load)
           />
           <div v-if="errors.name" class="field-error">{{ errors.name }}</div>
         </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label>کد <span class="optional">(اختیاری)</span></label>
-            <ClearableInput v-model="form.code" />
-          </div>
-          <div class="form-group">
-            <label>ترتیب</label>
-            <ClearableInput v-model="form.sortOrder" inputmode="numeric" />
-          </div>
+        <div class="form-group">
+          <label>کد <span class="optional">(اختیاری)</span></label>
+          <ClearableInput v-model="form.code" />
+        </div>
+        <div class="form-group">
+          <label>ترتیب</label>
+          <ClearableInput v-model="form.sortOrder" inputmode="numeric" />
         </div>
         <div class="form-group">
           <AppCheckbox v-model="form.isActive" label="فعال" />

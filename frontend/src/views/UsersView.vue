@@ -269,12 +269,13 @@ onMounted(load)
 
     <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش کاربر' : 'کاربر جدید') : ''" @close="closeForm">
       <div v-if="error" class="form-error">{{ error }}</div>
-      <form @submit.prevent="submit">
+      <form class="form-layout-adaptive" @submit.prevent="submit">
         <AvatarPicker
           v-model="avatarFile"
           v-model:path="avatarPath"
           :name="form.username || 'کاربر'"
           label="تصویر کاربر"
+          class="form-span-full"
         />
         <div v-if="!editing" class="form-group">
           <label>نام کاربری *</label>
@@ -296,23 +297,21 @@ onMounted(load)
           />
           <div v-if="errors.password" class="field-error">{{ errors.password }}</div>
         </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label>ایمیل</label>
-            <ClearableInput
-              v-model="form.email"
-              inputmode="email"
-              :invalid="!!errors.email"
-              @input="clearFieldError('email')"
-            />
-            <div v-if="errors.email" class="field-error">{{ errors.email }}</div>
-          </div>
-          <div class="form-group">
-            <label>موبایل</label>
-            <ClearableInput v-model="form.mobile" />
-          </div>
+        <div class="form-group">
+          <label>ایمیل</label>
+          <ClearableInput
+            v-model="form.email"
+            inputmode="email"
+            :invalid="!!errors.email"
+            @input="clearFieldError('email')"
+          />
+          <div v-if="errors.email" class="field-error">{{ errors.email }}</div>
         </div>
         <div class="form-group">
+          <label>موبایل</label>
+          <ClearableInput v-model="form.mobile" />
+        </div>
+        <div class="form-group form-span-full">
           <label>دسترسی‌ها (هر مورد به‌صورت جداگانه)</label>
           <div class="perm-groups">
             <div v-for="group in groupedPermissions" :key="group.module" class="perm-group">

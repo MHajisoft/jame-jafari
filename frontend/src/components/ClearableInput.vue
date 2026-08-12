@@ -35,6 +35,17 @@ function clear(e) {
   emit('update:modelValue', '')
   emit('input')
 }
+
+function onKeydown(e) {
+  if (e.key === 'Escape' && hasValue.value && !props.disabled) {
+    e.preventDefault()
+    clear()
+  }
+}
+
+function onKeyup(e) {
+  emit('keyup', e)
+}
 </script>
 
 <template>
@@ -49,6 +60,8 @@ function clear(e) {
       :rows="rows"
       :maxlength="maxlength"
       @input="onInput"
+      @keydown="onKeydown"
+      @keyup="onKeyup"
     />
     <input
       v-else
@@ -65,14 +78,17 @@ function clear(e) {
       :inputmode="inputmode"
       :autocomplete="autocomplete"
       @input="onInput"
-      @keyup="emit('keyup', $event)"
+      @keydown="onKeydown"
+      @keyup="onKeyup"
     />
     <button
       v-if="hasValue && !disabled"
       type="button"
       class="clear-btn"
-      aria-label="پاک کردن"
-      title="پاک کردن"
+      tabindex="-1"
+      aria-hidden="true"
+      title="پاک کردن (Esc)"
+      @mousedown.prevent
       @click="clear"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
@@ -115,5 +131,8 @@ function clear(e) {
 .clear-btn:hover {
   background: color-mix(in srgb, var(--danger) 18%, transparent);
   color: var(--danger);
+}
+.clear-btn:focus {
+  outline: none;
 }
 </style>

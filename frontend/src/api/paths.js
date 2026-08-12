@@ -15,6 +15,7 @@ export const ApiPaths = {
   users: '/users',
   user: (id) => `/users/${id}`,
   food: '/food',
+  foodItem: (id) => `/food/${id}`,
   foodRecommendations: '/food/recommendations',
   reports: {
     accountBalances: '/reports/account-balances',

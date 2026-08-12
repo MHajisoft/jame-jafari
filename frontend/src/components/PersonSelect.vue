@@ -328,7 +328,10 @@ onBeforeUnmount(() => {
         v-if="canClear"
         type="button"
         class="clear-btn"
-        aria-label="پاک کردن"
+        tabindex="-1"
+        aria-hidden="true"
+        title="پاک کردن"
+        @mousedown.prevent
         @click="clearSelection"
       >
         ×
@@ -496,6 +499,9 @@ onBeforeUnmount(() => {
   z-index: 1;
   font-size: 1rem;
   line-height: 1;
+}
+.clear-btn:focus {
+  outline: none;
 }
 
 .select-layer { position: fixed; inset: 0; z-index: 1200; }

@@ -33,4 +33,12 @@ public class FoodController(FoodService service) : ApiControllerBase
     [RequirePermission(PermissionCodes.FoodCreate)]
     public async Task<ActionResult<FoodGenerationDto>> Create([FromBody] CreateFoodGenerationRequest request)
         => Ok(await service.CreateAsync(request, CurrentUserId));
+
+    [HttpPut("{id:int}")]
+    [RequirePermission(PermissionCodes.FoodUpdate)]
+    public async Task<ActionResult<FoodGenerationDto>> Update(int id, [FromBody] UpdateFoodGenerationRequest request)
+    {
+        var item = await service.UpdateAsync(id, request, CurrentUserId);
+        return item is null ? NotFound() : Ok(item);
+    }
 }
