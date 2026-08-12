@@ -1,0 +1,41 @@
+---
+description: Jame-Jafari project scope, stack, and cross-cutting rules
+alwaysApply: true
+---
+
+# Jame-Jafari — Project Overview
+
+Persian RTL financial PWA for a religious organization (جامعه جعفری).
+
+## Stack
+- **Backend:** ASP.NET Core 10, EF Core, SQL Server, JWT, FusionCache
+- **Frontend:** Vue 3 (Composition API), Vite, Pinia, Vue Router, Axios PWA
+
+## Layer boundaries
+- `JameJafari.Core` — entities, DTOs, constants, validation; no infra deps
+- `JameJafari.Infrastructure` — DbContext, services, migrations, caching
+- `JameJafari.Api` — controllers, filters, file storage
+
+## Non-negotiables
+- UI copy and validation messages: **Persian (fa)**
+- Dates: **Jalali display**, **Gregorian ISO** storage/API
+- Auth: **per-user permissions** (`module.action`), not fixed roles
+- System admin username: `admin` (`SystemUsers.AdminUsername`) — protect in services
+- Default seeded admin password: `admin@123` (meets `PasswordPolicy`)
+- Do not pre-fill login form credentials
+- Minimize diff scope; match existing patterns before introducing abstractions
+
+## Documentation maintenance (required)
+When a change affects behavior, architecture, or conventions, **update docs in the same PR/change**:
+- **`README.md`** — user-facing capabilities, setup, API/UX behavior summaries
+- **`.cursor/rules/*.mdc`** — agent conventions (pick the rule file matching the area changed)
+
+Skip doc updates only for trivial fixes (typo, comment-only) with no behavior change.
+
+## Adding a feature checklist
+1. `PermissionCodes` + entry in `All` array (DbSeeder syncs)
+2. Service method in Infrastructure + DTO in Core
+3. Controller action with `[RequirePermission]`
+4. Frontend route `meta.permission`, `auth.hasPermission`, `ApiPaths` helper
+5. CRUD view: `FormHost` + `useEntityForm` + `useFormValidation`
+6. **Update `README.md` + relevant `.cursor/rules/*.mdc`**

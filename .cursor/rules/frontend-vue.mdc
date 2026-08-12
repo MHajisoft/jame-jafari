@@ -1,0 +1,64 @@
+---
+description: Vue 3 frontend conventions for Jame-Jafari PWA
+globs: frontend/**/*
+alwaysApply: false
+---
+
+# Frontend Conventions
+
+## Structure
+- Views in `frontend/src/views/` — one feature per `*View.vue`
+- Shared UI in `components/`; logic in `composables/`
+- API paths only via `ApiPaths` in `api/paths.js` — no scattered strings
+
+## CRUD page pattern
+```js
+const { showForm, editing, form, openCreate, openEdit, closeForm } = useEntityForm(blankForm, { onReset: clearErrors })
+```
+- Wrap form in `<FormHost :show="showForm" @close="closeForm">`
+- Desktop: hide list when form open (`v-show="!showForm || isMobile"`)
+- Page title switches in desktop form mode via computed `pageTitle`
+
+## API
+- `api/client.js` attaches Bearer token; 401 → logout redirect
+- Use `trySubmit` from `useFormValidation` for field-level API errors
+- **Form selects:** `useLookupsStore().getAccounts()` / `getCostTypes()` → `/api/lookups/*` by default
+- **Admin CRUD lists:** pass `{ admin: true }` to hit full `/accounts` / `/cost-types` APIs
+- Transaction attachments: `ApiPaths.incomeTransactionAttachment(id, attachmentId)` / `costTransactionAttachment(...)`
+
+## Transaction attachments (income/cost)
+- Permissions (no nav): `attachments.view` (list + preview), `attachments.add` (upload), `attachments.delete` (remove saved)
+- **List:** `DocumentAttachmentList` only when `attachments.view`
+- **Form:** `TransactionAttachmentsField` with `canView` / `canAdd` / `canDelete`
+- **Preview:** `DocumentPreview` — image/PDF in modal (desktop) / bottom sheet (mobile)
+- Edit mode: load `item.attachments` **after** `openEdit()` (not before — `onReset` clears them)
+- Delete saved attachment in edit: immediate `DELETE` API; sync list row via `onExistingAttachmentsChange`
+- Pending files: removed locally until form save
+- Paths: `ApiPaths.incomeTransactionAttachment(id, attachmentId)` / `costTransactionAttachment(...)`
+
+## Mobile overlay back (required for overlays)
+Any mobile full-screen overlay, sheet, or preview **must** handle hardware/gesture back and top-bar back:
+- Use `useOverlayBack(isOpen, requestClose, { enabled, stateKey })` from `composables/useOverlayBack.js`
+- `AppTopBar` calls `closeActiveOverlay()` before form back
+- `FormHost` `onPopState`: skip if `hasActiveOverlay()`; only close form when `!history.state?.appForm`
+- Register overlay in `activeOverlay` so top bar shows back on primary tabs when preview is open
+
+## Auth & permissions
+```js
+auth.hasPermission('accounts.create')
+auth.hasAnyPermission('users.update', 'users.delete')
+```
+Router: `meta: { permission: 'food.view' }`
+
+## RTL & i18n
+- `dir="rtl"` `lang="fa"`; use logical CSS (`inline-start`, `margin-inline`)
+- Money: `formatMoney()`; digits in inputs: Persian allowed, store ASCII numbers
+- Never pre-fill login credentials
+
+## Lookups
+- Use `useLookupsStore()` for accounts/cost-types/general-types dropdowns
+- Call `invalidate*` after mutating lookup data
+
+## PWA
+- Themes via `data-theme` on `<html>` (emerald, midnight, saffron, slate)
+- Mobile breakpoint: 768px (`useIsMobile`)

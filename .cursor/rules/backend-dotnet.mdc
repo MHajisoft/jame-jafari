@@ -1,0 +1,54 @@
+---
+description: ASP.NET Core backend conventions for Jame-Jafari
+globs: src/**/*.cs
+alwaysApply: false
+---
+
+# Backend Conventions
+
+## Services
+- Concrete scoped classes in `Infrastructure/Services/` (no interfaces unless required)
+- Inject `AppDbContext`; use `AsNoTracking()` for reads
+- Map to DTOs via LINQ projection or static `Map()` helpers
+- Business rule failures: `throw new InvalidOperationException("پیام فارسی")` → controller returns `BadRequest`
+- Stamp `CreatedById` / `UpdatedById` from caller's user id
+- Respect soft delete — do not hard-delete auditable entities
+
+## DTOs (Core)
+- Use `record` types with DataAnnotations; Persian `ErrorMessage`
+- Password fields: `[PasswordStrength]` → `PasswordPolicy` (min 6, letter, digit, symbol)
+- Optional password on update: `[PasswordStrength(AllowEmpty = true)]`
+
+## Controllers (Api)
+- Extend `ApiControllerBase`; keep thin — delegate to services
+- Gate with `[RequirePermission(PermissionCodes.X)]` (OR logic for multiple codes)
+- `[Authorize]` on controller; `[AllowAnonymous]` only on login
+- Multipart transactions: JSON in `data` form field + optional **`documents`** files (same field name, multiple files)
+- Per-attachment delete: `DELETE {income|cost}-transactions/{id}/attachments/{attachmentId}` — requires `attachments.delete` **and** module `*.update`; delete file via `FileStorageService.TryDelete`
+
+## Transaction attachments
+- Entity: `TransactionAttachment` (`Path`, FK to income or cost transaction)
+- DTO: `attachments: [{ id, path }]` — stripped when caller lacks `attachments.view`
+- Permissions (no menu): `attachments.view` | `attachments.add` | `attachments.delete`
+- Uploading `documents` on create/update requires `attachments.add`
+- FK delete behavior: **`Restrict`** (not Cascade) — SQL Server multiple-cascade-path limitation
+- Attachments removed individually in service; soft-deleted transactions keep attachment rows
+
+## System admin guards
+```csharp
+if (SystemUsers.IsSystemAdmin(entity.Username))
+    throw new InvalidOperationException("...");
+```
+Apply on user delete/update/password/avatar for admin account.
+
+## Caching
+- Lookup reads: FusionCache via `LookupCache` TTLs; call invalidation helpers after writes
+
+## Lookups API (form reference data)
+- **`GET /api/lookups/accounts`** — `{ id, name }[]`; allowed with `accounts.view` **or** any income/cost view/create/update
+- **`GET /api/lookups/cost-types`** — `{ id, name, unitName? }[]`; allowed with `costtypes.view` **or** income/cost/food view/create/update
+- Admin list APIs (`/api/accounts`, `/api/cost-types`) stay behind module `*.view` for CRUD pages only
+- `LookupService` + separate cache keys; invalidated with account/cost-type writes
+
+## Migrations
+- Add EF migration in Infrastructure; applied automatically at startup via `DbSeeder`

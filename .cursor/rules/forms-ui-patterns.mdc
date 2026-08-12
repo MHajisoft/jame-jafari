@@ -1,0 +1,74 @@
+---
+description: Form layout, validation, and input UX patterns
+globs: "{frontend/src/views/**,frontend/src/components/**,frontend/src/composables/useFormValidation.js,frontend/src/composables/useOverlayBack.js,frontend/src/utils/passwordPolicy.js,src/**/Validation/**}"
+alwaysApply: false
+---
+
+# Forms & UI Patterns
+
+## Layout (desktop)
+- Forms in `.form-panel form` or `class="form-layout-adaptive"`
+- 2 columns ≥769px; 3 columns ≥1280px for complex forms
+- `form-span-full` — textarea, file upload, permission grids, section blocks
+- `form-span-2` — wide optional fields in 3-col layout
+- Checkbox in grid: auto-aligned via `.form-group:has(> .app-checkbox)` CSS
+
+## Layout (mobile)
+- Single column; FormHost full-page; FAB for create
+- Ingredient/compact rows: stack in bordered cards
+- **Back navigation stack:** form (`FormHost` / `appForm`) → overlay (`useOverlayBack` / `appOverlay`, `appDocPreview`, …) — back closes top layer first
+
+## Mobile overlay back (mandatory)
+- New overlays/sheets/previews on mobile: wire **`useOverlayBack`**
+- Do not rely on `@click.self` alone — PWA back must close overlay, not navigate away
+- Nested case (form + preview): FormHost ignores popstate while overlay active; form closes only when its history entry is popped
+
+## Transaction attachments
+- Use **`TransactionAttachmentsField`** (not single `FileUpload`) for income/cost forms
+- Gate with `attachments.view` / `attachments.add` / `attachments.delete` (`canView` / `canAdd` / `canDelete`)
+- `form-span-full`; multipart sends multiple `documents`
+- In `useEntityForm` `onReset`: clear `existingAttachments` only when `!editing` (create mode)
+- `startEdit`: call `openEdit(...)` first, then set `existingAttachments` from `item.attachments`
+
+## Document preview
+- **`DocumentPreview`**: in-app preview (image iframe/PDF); download link secondary
+- List rows: **`DocumentAttachmentList`** + **`DocumentAttachmentButton`**
+- Mobile preview uses `useOverlayBack` with `stateKey: 'appDocPreview'`
+
+## User permissions UI
+- **`PermissionMatrix`** in user form — desktop 2-col module cards; mobile full-width clickable rows (48px)
+- Search + bulk toggles on desktop; sticky save bar on mobile user form
+
+## Shell: branding + user identity
+- **Separate concerns:** org brand (`AppBrandMark`) vs signed-in user (`AppAccountChip`)
+- **Desktop sidebar:** brand block at top → nav → account chip footer (avatar + username → `/profile`)
+- **Mobile top bar:** page title center; avatar chip on end; logo on primary tabs; **back** when form page or **`activeOverlay`** open
+- Reuse `EntityAvatar` for all user avatars; fallback to initials when image missing
+
+## Validation
+- Frontend: `useFormValidation` + rules object; Persian messages
+- Password: `passwordFieldRules()` from `utils/passwordPolicy.js`
+- Backend must mirror policy via `PasswordStrengthAttribute`
+
+## Clear buttons (ClearableInput, AppSelect, CurrencyInput, date field)
+- **Not tab-focusable:** `tabindex="-1"`, `@mousedown.prevent`, `aria-hidden="true"`
+- Mouse click still clears; keyboard: **Esc** on focused text/currency input
+
+## Select & date
+- `AppSelect` / `PersonSelect` — desktop dropdown, mobile bottom sheet
+- `PersianDatePicker` — `variant="bar"` in toolbars, `field` in forms
+
+## Reports / dense tables
+- Use scoped `.report-table` with `table-layout: fixed`, `.num` columns LTR-aligned
+- KPI cards: horizontal label/value (`justify-content: space-between`)
+
+## Theming
+- Tokens in `frontend/src/style.css`; picker in `stores/theme.js`
+- Dark `midnight`: neutral black/gray only — no blue surfaces
+- Light themes: pastel `--bg-gradient` + glass cards (`--surface-glass`, blur, inset shine)
+- See skill `.cursor/skills/jame-jafari-theming/SKILL.md` before editing colors
+
+## Do not
+- Auto-fill login or suggested prices without user action (hints OK)
+- Use full-width single column on desktop for 6+ field forms
+- Add default `0` in amount/price inputs — use empty string placeholders

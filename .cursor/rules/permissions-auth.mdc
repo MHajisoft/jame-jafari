@@ -1,0 +1,45 @@
+---
+description: Permission codes, JWT claims, and authorization rules
+globs: "{src/**/PermissionCodes.cs,src/**/SystemUsers.cs,src/**/Auth*.cs,src/**/PermissionFilter.cs,src/**/RequirePermission*.cs,frontend/src/stores/auth.js,frontend/src/router/index.js}"
+alwaysApply: false
+---
+
+# Permissions & Auth
+
+## Permission naming
+Format: `{module}.{action}` — e.g. `income.create`, `users.changepassword`
+
+Modules: `accounts`, `income`, `cost`, `users`, `persons`, `costtypes`, `food`, `reports`, `generaltypes`, `attachments`
+
+Standard actions: `view`, `create`, `update`, `delete` (+ `users.changepassword`, `attachments.add`)
+
+`attachments` has no menu — `view` = list/preview, `add` = upload, `delete` = remove saved file
+
+## Source of truth
+- Backend: `PermissionCodes.cs` — `All` array drives DB seed
+- JWT claims: `"permission"` claim per granted code
+- Frontend: permissions array on login/profile; cached in localStorage
+
+## Backend enforcement
+```csharp
+[RequirePermission(PermissionCodes.FoodUpdate)]
+```
+`PermissionFilter` — unauthenticated → 401; missing permission → 403
+
+## Frontend enforcement
+- Route guard: `meta.permission` or `meta.permissionsAny`
+- Income/cost/food menu + route: visible with `*.view` **or** `*.create` **or** `*.update`
+- Without `*.view`, list/update/delete are limited to records created by the current user
+- UI: hide buttons/rows with `auth.hasPermission`
+- Never rely on UI alone — API must always enforce
+
+## User permissions editor
+- Component: `PermissionMatrix.vue` + `usePermissionMatrix.js`
+- Grouped by module; desktop horizontal checkboxes in 2-col cards; mobile vertical tappable rows
+- Persisted with user create/update — same permission codes as JWT claims
+- Transaction forms use `/api/lookups/*`; admin `accounts.view` / `costtypes.view` not required for income/cost create
+
+## Special cases
+- `users.changepassword` — separate from `users.update`; dedicated `PUT /api/users/{id}/password`
+- System admin (`admin`) — cannot edit/delete from users page; password/avatar only via profile
+- New permissions auto-added to DB on startup; assigned to admin only (not all users)

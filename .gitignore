@@ -11,7 +11,10 @@ dist/
 *.user
 *.suo
 .zcode
-.cursor
+# Cursor: ignore local IDE state; keep project rules in git
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 
 # Dependencies
 node_modules/
