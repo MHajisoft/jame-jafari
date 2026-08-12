@@ -21,6 +21,7 @@ node_modules/
 
 # Uploads & secrets
 uploads/
+.env
 appsettings.*.local.json
 *.db
 

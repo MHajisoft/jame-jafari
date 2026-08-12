@@ -1,0 +1,25 @@
+# Git / IDE
+.git
+.cursor
+.idea
+.vs
+.vscode
+**/.zcode
+
+# Build outputs
+**/bin
+**/obj
+**/publish
+**/dist
+**/node_modules
+
+# Runtime / secrets
+uploads
+.env
+**/*.user
+**/appsettings.*.local.json
+**/*.db
+**/*.log
+
+# Frontend (API image doesn't need these)
+frontend

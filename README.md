@@ -10,15 +10,19 @@ jame-jafari-source/
 │   ├── JameJafari.Api/              # ASP.NET Core 10 Web API، JWT، فیلتر دسترسی
 │   ├── JameJafari.Core/             # Entities، DTOs، Enums، Constants، Validation
 │   └── JameJafari.Infrastructure/   # EF Core، Services، Migrations، Caching
-├── frontend/                        # Vue 3 + Vite PWA
+├── frontend/                        # Vue 3 + Vite PWA (+ Dockerfile / nginx)
+├── Dockerfile                       # image API
+├── docker-compose.yml               # db + api + web
+├── .env.example                     # نمونه متغیرهای Docker
 └── .cursor/rules/                   # قوانین Agent برای توسعه یکپارچه
 ```
 
 ## پیش‌نیازها
 
 - .NET 10 SDK
-- SQL Server (LocalDB یا Express)
+- SQL Server (LocalDB یا Express) — یا Docker
 - Node.js 18+
+- (اختیاری) Docker Desktop / Docker Engine + Compose
 
 ## راه‌اندازی
 
@@ -46,6 +50,31 @@ npm run dev
 
 - Dev server: `http://localhost:5173`
 - Proxy: `/api` و `/uploads` → backend
+
+### Docker (publish / run)
+
+```bash
+cp .env.example .env
+# ویرایش MSSQL_SA_PASSWORD و JWT_KEY
+docker compose up -d --build
+```
+
+| سرویس | آدرس |
+|--------|------|
+| وب (nginx + SPA) | `http://localhost:8080` |
+| API مستقیم | `http://localhost:5093` |
+| SQL Server | `localhost:1433` (user `sa`) |
+
+- Migration/seed هنگام استارت API اجرا می‌شود.
+- فایل‌های آپلود در volume `uploads_data` می‌مانند.
+- توقف: `docker compose down` — داده DB با `docker compose down -v` پاک می‌شود.
+
+ساخت جداگانه:
+
+```bash
+docker build -t jamejafari-api -f Dockerfile .
+docker build -t jamejafari-web ./frontend
+```
 
 ### کاربر پیش‌فرض
 
@@ -160,6 +189,8 @@ cd frontend && npm run build
 ```
 
 خروجی frontend: `frontend/dist`
+
+یا با Docker: `docker compose up -d --build` (بخش Docker در بالا).
 
 ## توسعه برای Agent / AI
 
