@@ -27,6 +27,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Username).HasMaxLength(100);
             e.Property(x => x.Email).HasMaxLength(200);
             e.Property(x => x.Mobile).HasMaxLength(20);
+            e.HasQueryFilter(x => !x.IsDeleted);
         });
 
         modelBuilder.Entity<Permission>(e =>
@@ -47,6 +48,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.Property(x => x.Name).HasMaxLength(100);
             e.Property(x => x.Code).HasMaxLength(50);
+            e.HasIndex(x => new { x.Category, x.IsDeleted, x.SortOrder });
+            e.HasQueryFilter(x => !x.IsDeleted);
         });
 
         modelBuilder.Entity<Person>(e =>
@@ -58,17 +61,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(x => x.Father).WithMany(x => x.ChildrenAsFather).HasForeignKey(x => x.FatherId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Mother).WithMany(x => x.ChildrenAsMother).HasForeignKey(x => x.MotherId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.NamePrefix).WithMany().HasForeignKey(x => x.NamePrefixId).OnDelete(DeleteBehavior.SetNull);
+            e.HasQueryFilter(x => !x.IsDeleted);
         });
 
         modelBuilder.Entity<Account>(e =>
         {
             e.Property(x => x.Name).HasMaxLength(200);
+            e.HasQueryFilter(x => !x.IsDeleted);
         });
 
         modelBuilder.Entity<CostType>(e =>
         {
             e.Property(x => x.Name).HasMaxLength(200);
             e.HasOne(x => x.Unit).WithMany().HasForeignKey(x => x.UnitId).OnDelete(DeleteBehavior.SetNull);
+            e.HasQueryFilter(x => !x.IsDeleted);
         });
 
         modelBuilder.Entity<IncomeTransaction>(e =>
@@ -78,6 +84,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(x => x.Person).WithMany(x => x.IncomeTransactions).HasForeignKey(x => x.PersonId);
             e.HasOne(x => x.Account).WithMany(x => x.IncomeTransactions).HasForeignKey(x => x.AccountId);
             e.HasOne(x => x.CostType).WithMany(x => x.IncomeTransactions).HasForeignKey(x => x.CostTypeId);
+            e.HasIndex(x => new { x.IsDeleted, x.TransactionDate });
+            e.HasIndex(x => new { x.AccountId, x.TransactionDate });
+            e.HasIndex(x => new { x.CostTypeId, x.TransactionDate });
+            e.HasQueryFilter(x => !x.IsDeleted);
         });
 
         modelBuilder.Entity<CostTransaction>(e =>
@@ -86,6 +96,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.TrackingCode).HasMaxLength(100);
             e.HasOne(x => x.Account).WithMany(x => x.CostTransactions).HasForeignKey(x => x.AccountId);
             e.HasOne(x => x.CostType).WithMany(x => x.CostTransactions).HasForeignKey(x => x.CostTypeId);
+            e.HasIndex(x => new { x.IsDeleted, x.TransactionDate });
+            e.HasIndex(x => new { x.AccountId, x.TransactionDate });
+            e.HasIndex(x => new { x.CostTypeId, x.TransactionDate });
+            e.HasQueryFilter(x => !x.IsDeleted);
         });
 
         modelBuilder.Entity<FoodGeneration>(e =>
@@ -93,6 +107,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Name).HasMaxLength(200);
             e.Property(x => x.TotalCost).HasPrecision(18, 2);
             e.Property(x => x.CostPerUnit).HasPrecision(18, 4);
+            e.HasIndex(x => x.CookDate);
+            e.HasQueryFilter(x => !x.IsDeleted);
         });
 
         modelBuilder.Entity<FoodIngredient>(e =>

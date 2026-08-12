@@ -1,23 +1,15 @@
 using JameJafari.Core.DTOs;
-using JameJafari.Infrastructure.Data;
+using JameJafari.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace JameJafari.Api.Controllers;
 
 [Authorize]
 [Route("api/permissions")]
-public class PermissionsController(AppDbContext db) : ApiControllerBase
+public class PermissionsController(PermissionService permissions) : ApiControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<PermissionDto>>> GetAll()
-    {
-        var items = await db.Permissions
-            .AsNoTracking()
-            .OrderBy(p => p.Code)
-            .Select(p => new PermissionDto(p.Id, p.Code, p.Name, p.Description, p.Code.Split('.')[0]))
-            .ToListAsync();
-        return Ok(items);
-    }
+        => Ok(await permissions.GetAllAsync());
 }

@@ -32,7 +32,12 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
         if (request is null)
             return BadRequest("داده ارسالی نامعتبر است");
 
-        string? path = document is not null ? await storage.SaveAsync(document, "transactions") : null;
+        string? path = null;
+        if (document is not null)
+        {
+            try { path = await storage.SaveAsync(document, "transactions"); }
+            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+        }
         return Ok(await service.CreateIncomeAsync(request, CurrentUserId, path));
     }
 
@@ -64,7 +69,12 @@ public class CostTransactionsController(TransactionService service, FileStorageS
         if (request is null)
             return BadRequest("داده ارسالی نامعتبر است");
 
-        string? path = document is not null ? await storage.SaveAsync(document, "transactions") : null;
+        string? path = null;
+        if (document is not null)
+        {
+            try { path = await storage.SaveAsync(document, "transactions"); }
+            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+        }
         return Ok(await service.CreateCostAsync(request, CurrentUserId, path));
     }
 

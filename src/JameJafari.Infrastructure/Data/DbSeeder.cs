@@ -2,7 +2,7 @@ using JameJafari.Core.Constants;
 using JameJafari.Core.Entities;
 using JameJafari.Core.Enums;
 using JameJafari.Infrastructure.Data;
-using JameJafari.Infrastructure.Services;
+using JameJafari.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,6 +15,7 @@ public static class DbSeeder
     {
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<IAppPasswordHasher>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
 
         await db.Database.MigrateAsync();
@@ -36,7 +37,7 @@ public static class DbSeeder
             var admin = new User
             {
                 Username = "admin",
-                PasswordHash = AuthService.HashPassword("admin123"),
+                PasswordHash = passwordHasher.Hash("admin123"),
                 IsActive = true,
                 Email = "admin@jame-jafari.local"
             };

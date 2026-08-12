@@ -53,9 +53,16 @@ public class PersonsController(PersonService service) : ApiControllerBase
     [RequirePermission(PermissionCodes.PersonsUpdate, PermissionCodes.PersonsCreate)]
     public async Task<ActionResult<PersonDto>> UploadPicture(int id, IFormFile file, [FromServices] FileStorageService storage)
     {
-        var path = await storage.SaveAsync(file, "persons");
-        var person = await service.UpdatePictureAsync(id, path, CurrentUserId);
-        return person is null ? NotFound() : Ok(person);
+        try
+        {
+            var path = await storage.SaveAsync(file, "persons");
+            var person = await service.UpdatePictureAsync(id, path, CurrentUserId);
+            return person is null ? NotFound() : Ok(person);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpDelete("{id:int}/picture")]

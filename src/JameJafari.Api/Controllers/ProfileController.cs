@@ -40,9 +40,16 @@ public class ProfileController(AuthService authService) : ApiControllerBase
         if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
             return BadRequest(new { message = "فقط تصویر مجاز است" });
 
-        var path = await storage.SaveAsync(file, "avatars");
-        var profile = await authService.UpdateAvatarAsync(CurrentUserId, path);
-        return profile is null ? NotFound() : Ok(profile);
+        try
+        {
+            var path = await storage.SaveAsync(file, "avatars");
+            var profile = await authService.UpdateAvatarAsync(CurrentUserId, path);
+            return profile is null ? NotFound() : Ok(profile);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpDelete("avatar")]
