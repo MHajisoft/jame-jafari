@@ -45,6 +45,13 @@ public static class PermissionCodes
     public const string GeneralTypesUpdate = "generaltypes.update";
     public const string GeneralTypesDelete = "generaltypes.delete";
 
+    /// <summary>Show attachments in lists/forms and open previews (no menu).</summary>
+    public const string AttachmentsView = "attachments.view";
+    /// <summary>Upload new attachment files on income/cost create/update.</summary>
+    public const string AttachmentsAdd = "attachments.add";
+    /// <summary>Delete an existing attachment from a transaction.</summary>
+    public const string AttachmentsDelete = "attachments.delete";
+
     public static readonly string[] All =
     [
         AccountsView, AccountsCreate, AccountsUpdate, AccountsDelete,
@@ -55,6 +62,7 @@ public static class PermissionCodes
         CostTypesView, CostTypesCreate, CostTypesUpdate, CostTypesDelete,
         FoodView, FoodCreate, FoodUpdate, FoodDelete,
         ReportsView,
-        GeneralTypesView, GeneralTypesCreate, GeneralTypesUpdate, GeneralTypesDelete
+        GeneralTypesView, GeneralTypesCreate, GeneralTypesUpdate, GeneralTypesDelete,
+        AttachmentsView, AttachmentsAdd, AttachmentsDelete
     ];
 }

@@ -31,7 +31,8 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
         [FromQuery, Range(1, 100)] int page = 1, [FromQuery, Range(1, 200)] int pageSize = 20)
     {
         int? ownOnly = OwnRecordsFilter(PermissionCodes.IncomeView);
-        return Ok(await service.GetIncomePagedAsync(from, to, accountId, page, pageSize, ownOnly));
+        var result = await service.GetIncomePagedAsync(from, to, accountId, page, pageSize, ownOnly);
+        return Ok(ApplyAttachmentVisibility(result));
     }
 
     [HttpPost]
@@ -45,10 +46,13 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
         if (request is null)
             return BadRequest("داده ارسالی نامعتبر است");
 
+        if (EnsureCanAddAttachments(documents) is { } denied)
+            return denied;
+
         var paths = await SaveDocumentsAsync(documents);
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
-        return Ok(await service.CreateIncomeAsync(request, CurrentUserId, paths));
+        return Ok(ApplyAttachmentVisibility(await service.CreateIncomeAsync(request, CurrentUserId, paths)));
     }
 
     [HttpPut("{id:int}")]
@@ -62,18 +66,24 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
         if (request is null)
             return BadRequest("داده ارسالی نامعتبر است");
 
+        if (EnsureCanAddAttachments(documents) is { } denied)
+            return denied;
+
         var paths = await SaveDocumentsAsync(documents);
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
         var updated = await service.UpdateIncomeAsync(
             id, request, CurrentUserId, paths, OwnRecordsFilter(PermissionCodes.IncomeView));
-        return updated is null ? NotFound() : Ok(updated);
+        return updated is null ? NotFound() : Ok(ApplyAttachmentVisibility(updated));
     }
 
     [HttpDelete("{id:int}/attachments/{attachmentId:int}")]
-    [RequirePermission(PermissionCodes.IncomeUpdate)]
+    [RequirePermission(PermissionCodes.AttachmentsDelete)]
     public async Task<IActionResult> DeleteAttachment(int id, int attachmentId)
     {
+        if (!HasPermission(PermissionCodes.IncomeUpdate))
+            return Forbid();
+
         var ownOnly = OwnRecordsFilter(PermissionCodes.IncomeView);
         var path = await service.GetIncomeAttachmentPathAsync(id, attachmentId, ownOnly);
         if (path is null) return NotFound();
@@ -133,7 +143,8 @@ public class CostTransactionsController(TransactionService service, FileStorageS
         [FromQuery, Range(1, 100)] int page = 1, [FromQuery, Range(1, 200)] int pageSize = 20)
     {
         int? ownOnly = OwnRecordsFilter(PermissionCodes.CostView);
-        return Ok(await service.GetCostPagedAsync(from, to, accountId, page, pageSize, ownOnly));
+        var result = await service.GetCostPagedAsync(from, to, accountId, page, pageSize, ownOnly);
+        return Ok(ApplyAttachmentVisibility(result));
     }
 
     [HttpPost]
@@ -147,10 +158,13 @@ public class CostTransactionsController(TransactionService service, FileStorageS
         if (request is null)
             return BadRequest("داده ارسالی نامعتبر است");
 
+        if (EnsureCanAddAttachments(documents) is { } denied)
+            return denied;
+
         var paths = await SaveDocumentsAsync(documents);
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
-        return Ok(await service.CreateCostAsync(request, CurrentUserId, paths));
+        return Ok(ApplyAttachmentVisibility(await service.CreateCostAsync(request, CurrentUserId, paths)));
     }
 
     [HttpPut("{id:int}")]
@@ -164,18 +178,24 @@ public class CostTransactionsController(TransactionService service, FileStorageS
         if (request is null)
             return BadRequest("داده ارسالی نامعتبر است");
 
+        if (EnsureCanAddAttachments(documents) is { } denied)
+            return denied;
+
         var paths = await SaveDocumentsAsync(documents);
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
         var updated = await service.UpdateCostAsync(
             id, request, CurrentUserId, paths, OwnRecordsFilter(PermissionCodes.CostView));
-        return updated is null ? NotFound() : Ok(updated);
+        return updated is null ? NotFound() : Ok(ApplyAttachmentVisibility(updated));
     }
 
     [HttpDelete("{id:int}/attachments/{attachmentId:int}")]
-    [RequirePermission(PermissionCodes.CostUpdate)]
+    [RequirePermission(PermissionCodes.AttachmentsDelete)]
     public async Task<IActionResult> DeleteAttachment(int id, int attachmentId)
     {
+        if (!HasPermission(PermissionCodes.CostUpdate))
+            return Forbid();
+
         var ownOnly = OwnRecordsFilter(PermissionCodes.CostView);
         var path = await service.GetCostAttachmentPathAsync(id, attachmentId, ownOnly);
         if (path is null) return NotFound();

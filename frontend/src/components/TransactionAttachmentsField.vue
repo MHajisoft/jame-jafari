@@ -12,7 +12,13 @@ const props = defineProps({
   transactionId: { type: [Number, String], default: null },
   deleteAttachmentPath: { type: Function, default: null },
   accept: { type: String, default: 'image/*,application/pdf' },
-  disabled: { type: Boolean, default: false }
+  disabled: { type: Boolean, default: false },
+  /** Show existing files and open preview */
+  canView: { type: Boolean, default: true },
+  /** Show attach / add controls */
+  canAdd: { type: Boolean, default: true },
+  /** Show delete on saved attachments */
+  canDelete: { type: Boolean, default: true }
 })
 
 const emit = defineEmits(['update:pending', 'update:existing'])
@@ -52,7 +58,9 @@ watch(
   { immediate: true, deep: true }
 )
 
-const hasAny = computed(() => props.existing.length > 0 || props.pending.length > 0)
+const hasAny = computed(() =>
+  (props.canView && props.existing.length > 0) || props.pending.length > 0
+)
 
 function openPreview(src, kind) {
   previewSrc.value = src
@@ -61,6 +69,7 @@ function openPreview(src, kind) {
 }
 
 function openExisting(att) {
+  if (!props.canView) return
   openPreview(documentUrl(att.path), documentKind(att.path))
 }
 
@@ -71,7 +80,7 @@ function openPending(file, index) {
 }
 
 function addFiles(fileList) {
-  if (!fileList?.length || props.disabled) return
+  if (!fileList?.length || props.disabled || !props.canAdd) return
   emit('update:pending', [...props.pending, ...fileList])
   sheetOpen.value = false
 }
@@ -82,7 +91,7 @@ function onFileChange(e) {
 }
 
 function openAttach() {
-  if (props.disabled) return
+  if (props.disabled || !props.canAdd) return
   if (isMobile.value) sheetOpen.value = true
   else fileInput.value?.click()
 }
@@ -94,7 +103,7 @@ function removePending(index) {
 }
 
 async function removeExisting(att) {
-  if (props.disabled) return
+  if (props.disabled || !props.canDelete) return
   if (!(await dialog.confirmDelete('این پیوست'))) return
 
   if (props.transactionId && props.deleteAttachmentPath) {
@@ -125,7 +134,7 @@ onBeforeUnmount(() => {
   <div class="tx-attachments">
     <div v-if="hasAny" class="tx-attachments-grid">
       <article
-        v-for="att in existing"
+        v-for="att in (canView ? existing : [])"
         :key="`saved-${att.id}`"
         class="tx-attach-card"
       >
@@ -148,7 +157,7 @@ onBeforeUnmount(() => {
           <span class="tx-attach-hint">مشاهده</span>
         </button>
         <button
-          v-if="!disabled"
+          v-if="!disabled && canDelete"
           type="button"
           class="tx-attach-remove"
           title="حذف پیوست"
@@ -195,7 +204,7 @@ onBeforeUnmount(() => {
     </div>
 
     <button
-      v-if="!disabled"
+      v-if="!disabled && canAdd"
       type="button"
       class="attach-btn"
       @click="openAttach"

@@ -88,7 +88,7 @@ defineExpose({ markSaved })
 
         <!-- Desktop: horizontal checkbox row -->
         <div v-if="!isMobile" class="perm-card-row">
-          <template v-for="col in CORE_COLUMNS" :key="col.key">
+          <template v-for="col in (mod.columns || CORE_COLUMNS)" :key="col.key">
             <label v-if="mod.slots[col.key]" class="perm-chip">
               <AppCheckbox
                 :model-value="isGranted(mod.slots[col.key].id)"

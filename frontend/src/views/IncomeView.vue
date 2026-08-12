@@ -132,7 +132,7 @@ async function submit() {
   const fd = new FormData()
   fd.append('data', data)
   for (const file of pendingDocuments.value) {
-    fd.append('documents', file)
+    if (auth.hasPermission('attachments.add')) fd.append('documents', file)
   }
   const ok = await trySubmit(async () => {
     if (editing.value) {
@@ -254,9 +254,16 @@ onMounted(() => load().catch(() => {}))
           <label>توضیحات</label>
           <ClearableInput v-model="form.description" type="textarea" :rows="2" />
         </div>
-        <div class="form-group form-span-full">
+        <div
+          v-if="auth.hasAnyPermission('attachments.view', 'attachments.add', 'attachments.delete')"
+          class="form-group form-span-full"
+        >
           <label>پیوست‌ها (فاکتور/رسید)</label>
-          <p v-if="editing && existingAttachments.length" class="text-muted" style="margin: 0 0 0.5rem; font-size: 0.85rem">
+          <p
+            v-if="editing && auth.hasPermission('attachments.view') && auth.hasPermission('attachments.delete') && existingAttachments.length"
+            class="text-muted"
+            style="margin: 0 0 0.5rem; font-size: 0.85rem"
+          >
             برای حذف هر پیوست، روی دکمه حذف (×) آن کلیک کنید.
           </p>
           <TransactionAttachmentsField
@@ -264,6 +271,9 @@ onMounted(() => load().catch(() => {}))
             :existing="existingAttachments"
             :transaction-id="editing"
             :delete-attachment-path="ApiPaths.incomeTransactionAttachment"
+            :can-view="auth.hasPermission('attachments.view')"
+            :can-add="auth.hasPermission('attachments.add')"
+            :can-delete="auth.hasPermission('attachments.delete')"
             @update:existing="onExistingAttachmentsChange"
           />
         </div>
@@ -281,7 +291,8 @@ onMounted(() => load().catch(() => {}))
           <thead>
             <tr>
               <th>تاریخ</th><th>شخص</th><th>حساب</th><th>مبلغ</th><th>نوع پرداخت</th>
-              <th>نوع هزینه</th><th>کد رهگیری</th><th>توضیحات</th><th>پیوست</th>
+              <th>نوع هزینه</th><th>کد رهگیری</th><th>توضیحات</th>
+              <th v-if="auth.hasPermission('attachments.view')">پیوست</th>
               <th v-if="auth.hasAnyPermission('income.update', 'income.delete')"></th>
             </tr>
           </thead>
@@ -295,7 +306,7 @@ onMounted(() => load().catch(() => {}))
               <td data-label="نوع هزینه">{{ item.costTypeName || '—' }}</td>
               <td data-label="کد رهگیری">{{ item.trackingCode || '—' }}</td>
               <td data-label="توضیحات">{{ item.description || '—' }}</td>
-              <td data-label="پیوست">
+              <td v-if="auth.hasPermission('attachments.view')" data-label="پیوست">
                 <DocumentAttachmentList :attachments="item.attachments" />
               </td>
               <td v-if="auth.hasAnyPermission('income.update', 'income.delete')">

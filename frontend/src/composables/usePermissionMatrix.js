@@ -10,7 +10,8 @@ export const MODULE_LABELS = {
   costtypes: 'انواع هزینه',
   food: 'تهیه غذا',
   reports: 'گزارشات',
-  generaltypes: 'انواع عمومی'
+  generaltypes: 'انواع عمومی',
+  attachments: 'پیوست‌ها'
 }
 
 const ACTION_LABELS = {
@@ -18,21 +19,29 @@ const ACTION_LABELS = {
   create: 'ایجاد',
   update: 'ویرایش',
   delete: 'حذف',
+  add: 'افزودن',
   changepassword: 'تغییر رمز'
 }
 
-const CORE_ACTIONS = ['view', 'create', 'update', 'delete']
-
-export const CORE_COLUMNS = [
+const CORE_COLUMNS = [
   { key: 'view', label: 'مشاهده' },
   { key: 'create', label: 'ایجاد' },
   { key: 'update', label: 'ویرایش' },
   { key: 'delete', label: 'حذف' }
 ]
 
+/** Modules with non-standard action sets (no nav menu). */
+const MODULE_COLUMNS = {
+  attachments: [
+    { key: 'view', label: 'مشاهده' },
+    { key: 'add', label: 'افزودن' },
+    { key: 'delete', label: 'حذف' }
+  ]
+}
+
 const MODULE_ORDER = [
   'accounts', 'cost', 'costtypes', 'generaltypes',
-  'income', 'persons', 'food', 'reports', 'users'
+  'income', 'persons', 'food', 'attachments', 'reports', 'users'
 ]
 
 const moduleIcons = Object.fromEntries(
@@ -43,6 +52,7 @@ const moduleIcons = Object.fromEntries(
       return [code.split('.')[0], n.icon]
     })
 )
+moduleIcons.attachments = '📎'
 
 export function permActionLabel(code) {
   return ACTION_LABELS[code.split('.')[1]] || code.split('.')[1]
@@ -66,12 +76,14 @@ export function buildModules(permissions) {
 
   return orderedKeys.map(moduleKey => {
     const perms = grouped[moduleKey]
-    const slots = Object.fromEntries(CORE_ACTIONS.map(a => [a, null]))
+    const columns = MODULE_COLUMNS[moduleKey] || CORE_COLUMNS
+    const columnKeys = columns.map(c => c.key)
+    const slots = Object.fromEntries(columnKeys.map(a => [a, null]))
     const extra = []
 
     for (const p of perms) {
       const action = p.code.split('.')[1]
-      if (CORE_ACTIONS.includes(action)) {
+      if (columnKeys.includes(action)) {
         slots[action] = { id: p.id, code: p.code }
       } else {
         extra.push({ key: action, label: permActionLabel(p.code), id: p.id, code: p.code })
@@ -79,7 +91,7 @@ export function buildModules(permissions) {
     }
 
     const rows = [
-      ...CORE_COLUMNS.map(col => ({
+      ...columns.map(col => ({
         key: col.key,
         label: col.label,
         id: slots[col.key]?.id ?? null,
@@ -97,6 +109,7 @@ export function buildModules(permissions) {
       key: moduleKey,
       name: MODULE_LABELS[moduleKey] || moduleKey,
       icon: moduleIcons[moduleKey] || '📁',
+      columns,
       slots,
       extra,
       rows
@@ -105,7 +118,7 @@ export function buildModules(permissions) {
 }
 
 function applicableIds(mod) {
-  const ids = CORE_ACTIONS.map(a => mod.slots[a]?.id).filter(Boolean)
+  const ids = (mod.columns || CORE_COLUMNS).map(c => mod.slots[c.key]?.id).filter(Boolean)
   for (const e of mod.extra) ids.push(e.id)
   return ids
 }

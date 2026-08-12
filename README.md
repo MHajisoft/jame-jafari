@@ -97,9 +97,10 @@ npm run dev
 - **درآمد:** شخص، حساب، مبلغ، نوع پرداخت، نوع هزینه، تاریخ، کد رهگیری، **چند پیوست**، توضیحات
 - **هزینه:** حساب، مبلغ، نوع هزینه، تاریخ، کد رهگیری، **چند پیوست**، توضیحات
 - **پیوست‌ها:** چند فایل تصویر/PDF per تراکنش (`TransactionAttachment`)
+  - دسترسی‌ها (بدون منو): `attachments.view` (لیست/پیش‌نمایش)، `attachments.add` (آپلود)، `attachments.delete` (حذف)
   - **ایجاد/ویرایش:** `TransactionAttachmentsField` — افزودن چند فایل؛ حذف تکی (در ویرایش: فوری via API)
   - **لیست:** آیکون per پیوست → پیش‌نمایش درون‌برنامه (`DocumentPreview`)
-  - **API:** `POST/PUT` multipart — فیلد JSON `data` + چند فایل `documents`؛ `DELETE .../attachments/{attachmentId}` (نیاز به `*.update`)
+  - **API:** `POST/PUT` multipart — فیلد JSON `data` + چند فایل `documents`؛ `DELETE .../attachments/{attachmentId}` (`attachments.delete` + `income|cost.update`)
   - پیش‌نمایش موبایل: back (top bar / gesture) overlay را می‌بندد، نه خروج از صفحه
 
 ### مدیریت
