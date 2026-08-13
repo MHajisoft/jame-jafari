@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
 import { useDialogStore } from '../stores/dialog'
 import { useFormValidation } from '../composables/useFormValidation'
+import { useAvatarField } from '../composables/useAvatarField'
 import { passwordFieldRules } from '../utils/passwordPolicy'
 import { useIsMobile } from '../composables/useMediaQuery'
 import ClearableInput from '../components/ClearableInput.vue'
@@ -37,9 +38,16 @@ const showPasswordForm = ref(false)
 const passwordTarget = ref(null)
 const passwordForm = ref({ newPassword: '', confirmPassword: '' })
 const editing = ref(null)
-const avatarFile = ref(null)
-const avatarPath = ref('')
-const initialAvatarPath = ref('')
+const {
+  avatarFile,
+  avatarPath,
+  initialAvatarPath,
+  resetAvatarState,
+  syncAvatar: syncUserAvatar
+} = useAvatarField({
+  uploadUrl: (id) => `/users/${id}/avatar`,
+  deleteUrl: (id) => `/users/${id}/avatar`
+})
 const form = ref({ username: '', password: '', email: '', mobile: '', isActive: true, permissionIds: [] })
 const permMatrixRef = ref(null)
 
@@ -84,20 +92,6 @@ async function load() {
   }
 }
 
-async function syncUserAvatar(id) {
-  if (avatarFile.value) {
-    const fd = new FormData()
-    fd.append('file', avatarFile.value)
-    await api.post(`/users/${id}/avatar`, fd, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-    return
-  }
-  if (editing.value && initialAvatarPath.value && !avatarPath.value) {
-    await api.delete(`/users/${id}/avatar`)
-  }
-}
-
 async function submit() {
   if (!validate(getRules(), form.value)) return
   const normalized = {
@@ -139,12 +133,6 @@ async function submit() {
   permMatrixRef.value?.markSaved?.()
   closeForm()
   await load()
-}
-
-function resetAvatarState(path = '') {
-  avatarFile.value = null
-  avatarPath.value = path || ''
-  initialAvatarPath.value = path || ''
 }
 
 function openCreate() {
@@ -227,7 +215,7 @@ onMounted(load)
           v-model="avatarFile"
           v-model:path="avatarPath"
           :name="form.username || 'کاربر'"
-          label="تصویر کاربر"
+          label="تصویر"
           class="form-span-full"
         />
         <div class="form-group user-active-row form-span-full">
@@ -332,7 +320,12 @@ onMounted(load)
           <tr v-for="item in items" :key="item.id">
             <td data-label="نام کاربری">
               <div class="entity-cell">
-                <EntityAvatar :src="item.avatarPath" :name="item.username" />
+                <EntityAvatar
+                  :src="item.avatarPath"
+                  :name="item.username"
+                  previewable
+                  :preview-title="item.username"
+                />
                 <div class="entity-names">
                   <strong>{{ item.username }}</strong>
                   <span v-if="item.isSystemAdmin" class="badge badge-system">مدیر اصلی</span>

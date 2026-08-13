@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
 import { useDialogStore } from '../stores/dialog'
 import { useFormValidation } from '../composables/useFormValidation'
+import { useAvatarField } from '../composables/useAvatarField'
 import { passwordFieldRules } from '../utils/passwordPolicy'
 import AvatarPicker from '../components/AvatarPicker.vue'
 import ClearableInput from '../components/ClearableInput.vue'
@@ -15,9 +16,17 @@ const toast = useToastStore()
 const dialog = useDialogStore()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 
+const { avatarFile, busy: avatarBusy } = useAvatarField({
+  immediate: true,
+  onUpload: async (file) => {
+    await auth.uploadAvatar(file)
+    toast.success('تصویر به‌روز شد')
+  },
+  onError: (err) => trySubmit(async () => { throw err })
+})
+
 const profileForm = reactive({ email: '', mobile: '' })
 const passwordForm = reactive({ currentPassword: '', newPassword: '', confirmPassword: '' })
-const avatarBusy = ref(false)
 
 const profileRules = {
   email: [{ type: 'email', msg: 'فرمت ایمیل نامعتبر است' }],
@@ -34,20 +43,6 @@ const passwordRules = {
       return null
     }
   ]
-}
-
-async function onAvatarFile(file) {
-  if (!file) return
-  avatarBusy.value = true
-  clearErrors()
-  try {
-    await auth.uploadAvatar(file)
-    toast.success('تصویر پروفایل به‌روز شد')
-  } catch (err) {
-    await trySubmit(async () => { throw err })
-  } finally {
-    avatarBusy.value = false
-  }
 }
 
 async function onAvatarPathUpdate(path) {
@@ -97,16 +92,13 @@ async function savePassword() {
 
 async function removeAvatar() {
   if (!auth.avatarPath) return
-  if (!(await dialog.confirmDelete('تصویر پروفایل'))) return
-  avatarBusy.value = true
+  if (!(await dialog.confirmDelete('تصویر'))) return
   clearErrors()
   try {
     await auth.removeAvatar()
-    toast.success('تصویر پروفایل حذف شد')
+    toast.success('تصویر حذف شد')
   } catch (err) {
     await trySubmit(async () => { throw err })
-  } finally {
-    avatarBusy.value = false
   }
 }
 
@@ -129,21 +121,17 @@ function logout() {
     <div class="profile-layout">
       <section class="card profile-avatar-card">
         <AvatarPicker
+          v-model="avatarFile"
           :path="auth.avatarPath || ''"
           :name="auth.username"
           :disabled="avatarBusy"
-          :size="120"
-          label=""
-          :show-hint="false"
-          @update:model-value="onAvatarFile"
+          label="تصویر"
+          class="profile-avatar-picker"
           @update:path="onAvatarPathUpdate"
         />
         <div class="avatar-meta">
           <h2 class="avatar-name">{{ auth.username }}</h2>
           <p class="text-muted">حساب کاربری شما</p>
-          <p class="avatar-hint text-muted">
-            {{ avatarBusy ? 'در حال بارگذاری…' : `برای ${auth.avatarPath ? 'تغییر' : 'افزودن'} تصویر، روی عکس بزنید` }}
-          </p>
         </div>
       </section>
 
@@ -255,85 +243,21 @@ function logout() {
   position: sticky;
   top: 1rem;
 }
-.avatar-hit {
-  position: relative;
-  border: none;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-  border-radius: 50%;
-  -webkit-tap-highlight-color: transparent;
-}
-.avatar-hit:disabled { opacity: 0.65; cursor: not-allowed; }
-.avatar-hit:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 3px;
-}
-.avatar-wrap {
-  display: block;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 3px solid color-mix(in srgb, var(--primary) 35%, var(--border));
-  background: var(--bg);
-}
-.avatar-badge {
-  position: absolute;
-  inset-inline-end: 4px;
-  bottom: 4px;
-  width: 34px;
-  height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--primary);
-  color: var(--on-primary);
-  border-radius: 50%;
-  border: 2px solid var(--surface);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
-}
-.avatar-badge svg { display: block; }
-.avatar-img {
+.profile-avatar-picker {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+  margin-bottom: 0;
 }
-.avatar-fallback {
-  width: 100%;
-  height: 100%;
-  display: flex;
+.profile-avatar-picker :deep(.avatar-stage) {
   align-items: center;
+}
+.profile-avatar-picker :deep(.avatar-actions) {
   justify-content: center;
-  background: var(--primary);
-  color: white;
-  font-size: 2.4rem;
-  font-weight: 700;
 }
 .avatar-name {
   font-size: 1.15rem;
   font-weight: 700;
   margin: 0;
 }
-.avatar-hint {
-  margin: 0.35rem 0 0;
-  font-size: 0.82rem;
-  line-height: 1.4;
-}
-.avatar-remove {
-  border: none;
-  background: transparent;
-  color: var(--danger);
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 0.35rem 0;
-  margin-top: 0.15rem;
-  cursor: pointer;
-  min-height: 44px;
-}
-.avatar-remove:disabled { opacity: 0.55; cursor: not-allowed; }
 .section-title {
   font-size: 1rem;
   font-weight: 700;
@@ -363,78 +287,6 @@ function logout() {
   cursor: pointer;
 }
 
-.attach-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 1200;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-.attach-sheet {
-  width: 100%;
-  max-width: 420px;
-  background: var(--surface);
-  border-radius: 20px 20px 0 0;
-  padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom, 0));
-}
-.sheet-handle {
-  width: 36px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--border);
-  margin: 0 auto 0.75rem;
-}
-.sheet-title {
-  text-align: center;
-  font-weight: 700;
-  margin: 0 0 0.75rem;
-}
-.sheet-option {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  width: 100%;
-  padding: 0.85rem 0.5rem;
-  border: none;
-  border-bottom: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  text-align: right;
-  cursor: pointer;
-  min-height: 56px;
-}
-.sheet-option.danger strong { color: var(--danger); }
-.option-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  background: var(--bg);
-  flex-shrink: 0;
-}
-.option-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-.option-text small { color: var(--text-muted); }
-.sheet-cancel {
-  width: 100%;
-  min-height: 44px;
-  margin-top: 0.5rem;
-  border: none;
-  border-radius: 999px;
-  background: var(--bg);
-  color: var(--text);
-  font-weight: 600;
-  cursor: pointer;
-}
-
 @media (max-width: 768px) {
   .profile-layout {
     grid-template-columns: 1fr;
@@ -444,18 +296,13 @@ function logout() {
     flex-direction: row;
     flex-wrap: wrap;
     text-align: right;
-    align-items: center;
+    align-items: flex-start;
   }
-  .avatar-wrap {
-    width: 88px;
-    height: 88px;
+  .profile-avatar-picker :deep(.avatar-stage) {
+    align-items: flex-start;
   }
-  .avatar-fallback { font-size: 1.8rem; }
-  .avatar-badge {
-    width: 30px;
-    height: 30px;
-    inset-inline-end: 2px;
-    bottom: 2px;
+  .profile-avatar-picker :deep(.avatar-actions) {
+    justify-content: flex-start;
   }
   .avatar-meta { flex: 1; min-width: 0; text-align: right; }
 }

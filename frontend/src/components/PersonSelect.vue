@@ -4,6 +4,7 @@ import api from '../api/client'
 import { ApiPaths } from '../api/paths'
 import PersonLifeStatus from './PersonLifeStatus.vue'
 import NickBadge from './NickBadge.vue'
+import EntityAvatar from './EntityAvatar.vue'
 
 const props = defineProps({
   modelValue: { type: [String, Number], default: '' },
@@ -58,17 +59,6 @@ const selectedLabel = computed(() => personFullName(selected.value))
 const selectedNickName = computed(() => selected.value?.nickName || '')
 const selectedParentHint = computed(() => parentHintName(selected.value))
 const selectedIsDead = computed(() => !!selected.value?.isDead)
-const selectedAvatarUrl = computed(() => avatarUrl(selected.value))
-const selectedInitials = computed(() => personInitials(selected.value))
-
-function personInitials(p) {
-  const name = [p?.firstName, p?.lastName].filter(Boolean).join(' ')
-  return name?.charAt(0)?.toUpperCase() || '؟'
-}
-
-function avatarUrl(p) {
-  return p?.picturePath ? '/uploads/' + p.picturePath : ''
-}
 
 function personFullName(p) {
   if (!p) return ''
@@ -348,10 +338,15 @@ onBeforeUnmount(() => {
         :aria-expanded="open"
         @click="toggle"
       >
-        <span v-if="selected" class="trigger-avatar" :class="{ deceased: selectedIsDead }" aria-hidden="true">
-          <img v-if="selectedAvatarUrl" :src="selectedAvatarUrl" alt="" />
-          <span v-else>{{ selectedInitials }}</span>
-          <span v-if="selectedIsDead" class="memorial-band" />
+        <span v-if="selected" class="trigger-avatar-slot" @click.stop>
+          <EntityAvatar
+            :src="selected.picturePath"
+            :name="selectedLabel"
+            :deceased="selectedIsDead"
+            :size="28"
+            previewable
+            :preview-title="selectedLabel"
+          />
         </span>
         <span class="select-value" :class="{ placeholder: !selected }">
           <template v-if="selected">
@@ -420,10 +415,15 @@ onBeforeUnmount(() => {
               :class="{ selected: sameId(modelValue, p.id) }"
               @click="selectPerson(p)"
             >
-              <div class="person-avatar" :class="{ deceased: !!p.isDead }">
-                <img v-if="avatarUrl(p)" :src="avatarUrl(p)" alt="" />
-                <span v-else>{{ personInitials(p) }}</span>
-                <span v-if="p.isDead" class="memorial-band" />
+              <div class="person-avatar-slot" @click.stop>
+                <EntityAvatar
+                  :src="p.picturePath"
+                  :name="personFullName(p)"
+                  :deceased="!!p.isDead"
+                  :size="40"
+                  previewable
+                  :preview-title="personFullName(p)"
+                />
               </div>
               <div class="person-info">
                 <div class="person-name">
@@ -464,10 +464,15 @@ onBeforeUnmount(() => {
               :class="{ selected: sameId(modelValue, p.id) }"
               @click="selectPerson(p)"
             >
-              <div class="person-avatar" :class="{ deceased: !!p.isDead }">
-                <img v-if="avatarUrl(p)" :src="avatarUrl(p)" alt="" />
-                <span v-else>{{ personInitials(p) }}</span>
-                <span v-if="p.isDead" class="memorial-band" />
+              <div class="person-avatar-slot" @click.stop>
+                <EntityAvatar
+                  :src="p.picturePath"
+                  :name="personFullName(p)"
+                  :deceased="!!p.isDead"
+                  :size="40"
+                  previewable
+                  :preview-title="personFullName(p)"
+                />
               </div>
               <div class="person-info">
                 <div class="person-name">
@@ -505,51 +510,9 @@ onBeforeUnmount(() => {
   padding-block: 0.35rem;
 }
 .select-trigger.has-avatar { gap: 0.55rem; }
-.trigger-avatar {
-  position: relative;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  overflow: hidden;
+.trigger-avatar-slot {
   flex-shrink: 0;
-  background: color-mix(in srgb, var(--primary) 18%, var(--bg));
-  color: var(--primary);
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-.trigger-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.trigger-avatar.deceased {
-  color: color-mix(in srgb, var(--text-muted) 70%, var(--text));
-  background: color-mix(in srgb, var(--text-muted) 12%, var(--bg));
-}
-.trigger-avatar.deceased img,
-.trigger-avatar.deceased > span:not(.memorial-band) {
-  filter: grayscale(1) brightness(0.92);
-  opacity: 0.88;
-}
-.memorial-band {
-  position: absolute;
-  inset-inline-end: -18%;
-  top: 8%;
-  width: 62%;
-  height: 18%;
-  transform: rotate(-38deg);
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    color-mix(in srgb, var(--text-muted) 55%, #2a3038) 35%,
-    color-mix(in srgb, var(--text-muted) 40%, #1f242b) 100%
-  );
-  opacity: 0.85;
-  pointer-events: none;
-  z-index: 2;
 }
 .select-name.deceased,
 .person-name .first.deceased {
@@ -743,33 +706,9 @@ onBeforeUnmount(() => {
 [dir="rtl"] .person-option.selected {
   box-shadow: inset -3px 0 0 var(--primary);
 }
-.person-avatar {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
+.person-avatar-slot {
   flex-shrink: 0;
-  background: color-mix(in srgb, var(--primary) 18%, var(--bg));
-  color: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-}
-.person-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.person-avatar.deceased {
-  color: color-mix(in srgb, var(--text-muted) 70%, var(--text));
-  background: color-mix(in srgb, var(--text-muted) 12%, var(--bg));
-}
-.person-avatar.deceased img,
-.person-avatar.deceased > span:not(.memorial-band) {
-  filter: grayscale(1) brightness(0.92);
-  opacity: 0.88;
+  display: inline-flex;
 }
 .person-info { min-width: 0; flex: 1; }
 .person-name {

@@ -122,6 +122,8 @@ onMounted(load)
                     :name="item.displayName"
                     deceased
                     :size="40"
+                    previewable
+                    :preview-title="item.displayName"
                   />
                   <div class="person-names">
                     <span class="person-name-row">

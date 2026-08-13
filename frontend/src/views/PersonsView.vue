@@ -8,6 +8,7 @@ import { useToastStore } from '../stores/toast'
 import { useDialogStore } from '../stores/dialog'
 import { useLookupsStore } from '../stores/lookups'
 import { useFormValidation } from '../composables/useFormValidation'
+import { useAvatarField } from '../composables/useAvatarField'
 import { useIsMobile } from '../composables/useMediaQuery'
 import AppSelect from '../components/AppSelect.vue'
 import PersonSelect from '../components/PersonSelect.vue'
@@ -34,9 +35,16 @@ const loading = ref(false)
 const namePrefixes = ref([])
 const showForm = ref(false)
 const editing = ref(null)
-const avatarFile = ref(null)
-const avatarPath = ref('')
-const initialAvatarPath = ref('')
+const {
+  avatarFile,
+  avatarPath,
+  initialAvatarPath,
+  resetAvatarState,
+  syncAvatar: syncPersonPicture
+} = useAvatarField({
+  uploadUrl: (id) => `/persons/${id}/picture`,
+  deleteUrl: (id) => `/persons/${id}/picture`
+})
 const form = ref({
   firstName: '', lastName: '', nickName: '', gender: 1,
   fatherId: '', motherId: '', mobile: '', address: '', namePrefixId: '',
@@ -84,20 +92,6 @@ async function load() {
   }
 }
 
-async function syncPersonPicture(id) {
-  if (avatarFile.value) {
-    const fd = new FormData()
-    fd.append('file', avatarFile.value)
-    await api.post(`/persons/${id}/picture`, fd, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-    return
-  }
-  if (editing.value && initialAvatarPath.value && !avatarPath.value) {
-    await api.delete(`/persons/${id}/picture`)
-  }
-}
-
 async function submit() {
   if (!validate(rules, form.value)) return
   const payload = {
@@ -127,12 +121,6 @@ async function submit() {
   closeForm()
   editing.value = null
   await load()
-}
-
-function resetAvatarState(path = '') {
-  avatarFile.value = null
-  avatarPath.value = path || ''
-  initialAvatarPath.value = path || ''
 }
 
 function openCreate() {
@@ -193,7 +181,7 @@ onMounted(load)
           v-model="avatarFile"
           v-model:path="avatarPath"
           :name="avatarName"
-          label="تصویر شخص"
+          label="تصویر"
           class="form-span-full"
         />
         <div class="form-group">
@@ -304,7 +292,13 @@ onMounted(load)
             <tr v-for="item in items" :key="item.id">
               <td data-label="نام">
                 <div class="entity-cell">
-                  <EntityAvatar :src="item.picturePath" :name="item.displayName" :deceased="item.isDead" />
+                  <EntityAvatar
+                    :src="item.picturePath"
+                    :name="item.displayName"
+                    :deceased="item.isDead"
+                    previewable
+                    :preview-title="item.displayName"
+                  />
                   <div class="entity-name-stack">
                     <span class="person-name-with-nick">
                       <strong :class="{ 'name-deceased': item.isDead }">{{ item.displayName }}</strong>

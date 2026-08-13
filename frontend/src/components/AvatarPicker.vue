@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useMobileAttachSheet } from '../composables/useMobileAttachSheet'
 import EntityAvatar from './EntityAvatar.vue'
+import AvatarPreview from './AvatarPreview.vue'
 
 const props = defineProps({
   modelValue: { type: File, default: null },
@@ -9,7 +10,7 @@ const props = defineProps({
   name: { type: String, default: '' },
   disabled: { type: Boolean, default: false },
   label: { type: String, default: 'تصویر' },
-  size: { type: Number, default: 88 },
+  size: { type: Number, default: null },
   showHint: { type: Boolean, default: true },
   /** Front camera for portraits; environment for documents */
   cameraFacing: { type: String, default: 'user' }
@@ -17,6 +18,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'update:path'])
 
+const previewOpen = ref(false)
 const localPreview = ref('')
 
 const {
@@ -56,6 +58,27 @@ onBeforeUnmount(() => {
 const displayPath = computed(() => localPreview.value || props.path || '')
 const hasImage = computed(() => !!props.modelValue || !!props.path)
 
+const avatarSize = computed(() => props.size ?? (isMobile.value ? 96 : 132))
+
+const previewUrl = computed(() => {
+  const path = displayPath.value
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('/') || path.startsWith('blob:')) {
+    return path
+  }
+  return `/uploads/${path}`
+})
+
+function openPreview() {
+  if (!hasImage.value || props.disabled) return
+  previewOpen.value = true
+}
+
+function openPreviewFromSheet() {
+  closeSheet()
+  openPreview()
+}
+
 function openPicker() {
   if (props.disabled) return
   openSheetOrFile()
@@ -81,10 +104,10 @@ function clear() {
         type="button"
         class="avatar-hit"
         :disabled="disabled"
-        :aria-label="hasImage ? 'تغییر تصویر پروفایل' : 'افزودن تصویر پروفایل'"
+        :aria-label="hasImage ? 'تغییر تصویر' : 'افزودن تصویر'"
         @click="openPicker"
       >
-        <EntityAvatar :src="displayPath" :name="name" :size="size" />
+        <EntityAvatar :src="displayPath" :name="name" :size="avatarSize" />
         <span class="avatar-badge" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 8h3l2-2h6l2 2h3v11H4z" />
@@ -97,15 +120,24 @@ function clear() {
         برای {{ hasImage ? 'تغییر' : 'افزودن' }} تصویر، روی عکس بزنید
       </p>
 
-      <button
-        v-if="hasImage"
-        type="button"
-        class="avatar-remove"
-        :disabled="disabled"
-        @click="clear"
-      >
-        حذف تصویر
-      </button>
+      <div v-if="hasImage" class="avatar-actions">
+        <button
+          type="button"
+          class="btn btn-outline btn-sm"
+          :disabled="disabled"
+          @click="openPreview"
+        >
+          مشاهده اندازه واقعی
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline btn-sm avatar-remove-btn"
+          :disabled="disabled"
+          @click="clear"
+        >
+          حذف تصویر
+        </button>
+      </div>
     </div>
 
     <input ref="fileInput" type="file" accept="image/*" hidden @change="onFileChange" />
@@ -122,7 +154,20 @@ function clear() {
       <div v-if="sheetOpen && isMobile" class="attach-overlay" @click.self="closeSheet">
         <div class="attach-sheet" role="dialog" aria-modal="true" aria-label="انتخاب تصویر">
           <div class="sheet-handle" />
-          <p class="sheet-title">تصویر پروفایل</p>
+          <p class="sheet-title">انتخاب تصویر</p>
+
+          <button v-if="hasImage" type="button" class="sheet-option" @click="openPreviewFromSheet">
+            <span class="option-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="10.5" cy="10.5" r="6.5" />
+                <path d="M21 21l-5.5-5.5" />
+              </svg>
+            </span>
+            <span class="option-text">
+              <strong>مشاهده اندازه واقعی</strong>
+              <small>برای تشخیص چهره</small>
+            </span>
+          </button>
 
           <button type="button" class="sheet-option" @click="openCamera">
             <span class="option-icon" aria-hidden="true">
@@ -174,6 +219,12 @@ function clear() {
         </div>
       </div>
     </Teleport>
+
+    <AvatarPreview
+      v-model:show="previewOpen"
+      :src="previewUrl"
+      :title="name"
+    />
   </div>
 </template>
 
@@ -232,18 +283,27 @@ function clear() {
   max-width: 16rem;
 }
 
-.avatar-remove {
-  border: none;
-  background: transparent;
-  color: var(--danger);
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 0.25rem 0;
-  cursor: pointer;
-  min-height: 44px;
+.avatar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 20rem;
 }
-.avatar-remove:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.avatar-actions .btn {
+  min-height: 44px;
+  flex: 1 1 auto;
+}
+
+.avatar-remove-btn {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 32%, var(--border));
+}
+.avatar-remove-btn:hover {
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+}
 
 .attach-overlay {
   position: fixed;
