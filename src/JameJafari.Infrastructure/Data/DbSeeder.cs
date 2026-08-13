@@ -45,9 +45,13 @@ public static class DbSeeder
                 new GeneralType { Name = "گرم", Code = "g", Category = GeneralTypeCategory.Unit, SortOrder = 2 },
                 new GeneralType { Name = "لیتر", Code = "l", Category = GeneralTypeCategory.Unit, SortOrder = 3 },
                 new GeneralType { Name = "عدد", Code = "pcs", Category = GeneralTypeCategory.Unit, SortOrder = 4 },
+                new GeneralType { Name = "مثقال", Code = "msgh", Category = GeneralTypeCategory.Unit, SortOrder = 5 },
                 new GeneralType { Name = "حاج", Code = "haj", Category = GeneralTypeCategory.NamePrefix, SortOrder = 1 },
-                new GeneralType { Name = "کربلایی", Code = "karbalaee", Category = GeneralTypeCategory.NamePrefix, SortOrder = 2 },
-                new GeneralType { Name = "مشهدی", Code = "mashhady", Category = GeneralTypeCategory.NamePrefix, SortOrder = 3 }
+                new GeneralType { Name = "حاجیه", Code = "hajie", Category = GeneralTypeCategory.NamePrefix, SortOrder = 2 },
+                new GeneralType { Name = "کربلایی", Code = "karbalaee", Category = GeneralTypeCategory.NamePrefix, SortOrder = 3 },
+                new GeneralType { Name = "مشهدی", Code = "mashhady", Category = GeneralTypeCategory.NamePrefix, SortOrder = 4 },
+                new GeneralType { Name = "دکتر", Code = "doctor", Category = GeneralTypeCategory.NamePrefix, SortOrder = 5 },
+                new GeneralType { Name = "مهندس", Code = "engeener", Category = GeneralTypeCategory.NamePrefix, SortOrder = 6 }
             );
             await db.SaveChangesAsync();
         }
