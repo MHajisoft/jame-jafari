@@ -179,6 +179,8 @@ docker build -t jamejafari-web ./frontend
 
 **جستجوی اشخاص (PersonSelect):** `GET /api/lookups/persons?search=&gender=&page=&pageSize=` — فیلتر چندکلمه‌ای (همه توکن‌ها) روی نام/نام‌خانوادگی/لقب خود شخص و پدر/مادر؛ لیست slim در FusionCache و فیلتر در حافظه؛ شامل `isDead` برای نمایش وضعیت حیات. `GET /api/persons` برای CRUD باقی می‌ماند.
 
+**AppSelect:** جستجو پیش‌فرض در دسکتاپ و موبایل؛ فیلتر چندکلمه‌ای (همه توکن‌ها) با نرمال‌سازی فارسی، هم‌راستا با PersonSelect.
+
 کاتالوگ در `PermissionCodes.All` نگه‌داری می‌شود؛ `DbSeeder` کدهای جدید را sync و به admin اختصاص می‌دهد.
 
 **مدیر اصلی:** username=`admin` — `SystemUsers.IsSystemAdmin()`؛ فقط از پروفایل قابل تغییر رمز/آواتار.

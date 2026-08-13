@@ -195,7 +195,6 @@ onMounted(load)
             :options="genders"
             placeholder="جنسیت"
             :allow-empty="false"
-            :searchable="false"
           />
         </div>
         <div class="form-group">

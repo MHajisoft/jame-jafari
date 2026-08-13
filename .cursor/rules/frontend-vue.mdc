@@ -57,6 +57,7 @@ Router: `meta: { permission: 'food.view' }`
 
 ## Lookups
 - Use `useLookupsStore()` for accounts/cost-types/general-types dropdowns
+- **AppSelect:** searchable by default (desktop + mobile); multi-token ALL-match + Persian normalize via `utils/selectSearch.js` (same idea as PersonSelect)
 - **PersonSelect:** search via `ApiPaths.lookups.persons`; resolve selected id via `ApiPaths.person(id)`
 - Person life status uses `isDead`: `PersonLifeStatus` badge **only when deceased** (same row as `NickBadge`); living people show no life badge
 - Person **لقب** (`nickName`): `NickBadge` on Persons list, PersonSelect, Income person column, person-income report

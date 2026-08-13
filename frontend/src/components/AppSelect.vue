@@ -1,5 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { matchesAllTokens } from '../utils/selectSearch'
 
 const props = defineProps({
   modelValue: { type: [String, Number, Boolean], default: '' },
@@ -55,13 +56,16 @@ const selectedLabel = computed(() => {
 })
 
 const filtered = computed(() => {
-  const q = query.value.trim().toLowerCase()
-  if (!q) return normalized.value
-  return normalized.value.filter((o) => o.label.toLowerCase().includes(q))
+  if (!props.searchable) return normalized.value
+  return normalized.value.filter((o) => matchesAllTokens(o.label, query.value))
 })
 
-const showSearch = computed(() => props.searchable && (isMobile.value || normalized.value.length > 6))
+/** Always show search when enabled (same approach as PersonSelect). */
+const showSearch = computed(() => props.searchable)
 const canClear = computed(() => props.allowEmpty && hasValue.value)
+const emptyMessage = computed(() =>
+  query.value.trim() ? 'موردی یافت نشد' : 'موردی برای نمایش نیست'
+)
 
 function checkMobile() {
   isMobile.value = window.matchMedia('(max-width: 768px)').matches
@@ -286,7 +290,7 @@ onBeforeUnmount(() => {
             >
               {{ opt.label }}
             </button>
-            <div v-if="!filtered.length" class="option-empty">موردی یافت نشد</div>
+            <div v-if="!filtered.length" class="option-empty">{{ emptyMessage }}</div>
           </div>
         </div>
 
@@ -328,7 +332,7 @@ onBeforeUnmount(() => {
             >
               {{ opt.label }}
             </button>
-            <div v-if="!filtered.length" class="option-empty">موردی یافت نشد</div>
+            <div v-if="!filtered.length" class="option-empty">{{ emptyMessage }}</div>
           </div>
         </div>
       </div>

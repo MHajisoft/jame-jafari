@@ -227,7 +227,6 @@ onMounted(() => load().catch(() => {}))
             :options="paymentTypes"
             placeholder="نوع پرداخت"
             :allow-empty="false"
-            :searchable="false"
           />
         </div>
         <div class="form-group">
