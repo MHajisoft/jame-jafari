@@ -38,6 +38,7 @@ Standard actions: `view`, `create`, `update`, `delete` (+ `users.changepassword`
 - Grouped by module; desktop horizontal checkboxes in 2-col cards; mobile vertical tappable rows
 - Persisted with user create/update — same permission codes as JWT claims
 - Transaction forms use `/api/lookups/*`; admin `accounts.view` / `costtypes.view` not required for income/cost create
+- PersonSelect search: `GET /api/lookups/persons` (persons.view/create/update **or** income.view/create/update)
 
 ## Special cases
 - `users.changepassword` — separate from `users.update`; dedicated `PUT /api/users/{id}/password`

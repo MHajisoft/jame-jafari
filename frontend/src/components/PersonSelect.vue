@@ -1,18 +1,19 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import api from '../api/client'
+import { ApiPaths } from '../api/paths'
 
 const props = defineProps({
   modelValue: { type: [String, Number], default: '' },
   placeholder: { type: String, default: 'انتخاب شخص' },
-  searchPlaceholder: { type: String, default: 'حداقل ۳ حرف از نام...' },
+  searchPlaceholder: { type: String, default: 'جستجو نام، لقب، پدر یا مادر...' },
   gender: { type: [Number, String], default: null }, // 1 Male, 2 Female
   excludeId: { type: [Number, String], default: null },
   allowEmpty: { type: Boolean, default: true },
   invalid: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
   pageSize: { type: Number, default: 20 },
-  minSearchLength: { type: Number, default: 3 }
+  minSearchLength: { type: Number, default: 1 }
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])
@@ -51,33 +52,48 @@ const canClear = computed(() => props.allowEmpty && hasValue.value)
 const canSearch = computed(() => query.value.trim().length >= props.minSearchLength)
 const hasMore = computed(() => canSearch.value && items.value.length < totalCount.value)
 
-const selectedLabel = computed(() => {
-  if (!selected.value) return ''
-  return personTitle(selected.value)
-})
-
+const selectedLabel = computed(() => personFullName(selected.value))
+const selectedNickName = computed(() => selected.value?.nickName || '')
+const selectedParentHint = computed(() => parentHintName(selected.value))
 const selectedAvatarUrl = computed(() => avatarUrl(selected.value))
 const selectedInitials = computed(() => personInitials(selected.value))
 
-function personTitle(p) {
-  if (!p) return ''
-  return [p.firstName, p.lastName].filter(Boolean).join(' ')
-}
-
 function personInitials(p) {
-  const name = personTitle(p)
+  const name = [p?.firstName, p?.lastName].filter(Boolean).join(' ')
   return name?.charAt(0)?.toUpperCase() || '؟'
 }
 
 function avatarUrl(p) {
-  return p?.picturePath ? `/uploads/${p.picturePath}` : ''
+  return p?.picturePath ? '/uploads/' + p.picturePath : ''
+}
+
+function personFullName(p) {
+  if (!p) return ''
+  return [p.firstName, p.lastName].filter(Boolean).join(' ')
+}
+
+function parentHintName(p) {
+  if (!p) return ''
+  if (p.fatherFirstName) return p.fatherFirstName
+  if (p.motherFirstName) return p.motherFirstName
+  // Stale payload fallback when first-name fields are missing
+  const fromDisplay = (name) => {
+    if (!name) return ''
+    const parts = String(name).trim().split(/\s+/).filter(Boolean)
+    if (parts.length === 0) return ''
+    // "Prefix First Last" → second token; otherwise first token
+    return parts.length >= 3 ? parts[1] : parts[0]
+  }
+  if (p.fatherName) return fromDisplay(p.fatherName)
+  if (p.motherName) return fromDisplay(p.motherName)
+  return ''
 }
 
 function parentsLine(p) {
-  const parts = []
-  if (p.fatherName) parts.push(`پدر: ${p.fatherName}`)
-  if (p.motherName) parts.push(`مادر: ${p.motherName}`)
-  return parts.join(' · ')
+  const hint = parentHintName(p)
+  if (!hint) return ''
+  if (p.fatherFirstName || p.fatherName) return 'پدر: ' + hint
+  return 'مادر: ' + hint
 }
 
 function checkMobile() {
@@ -125,7 +141,7 @@ async function fetchPage(pageNum, { append = false } = {}) {
   if (append) loadingMore.value = true
   else loading.value = true
   try {
-    const { data } = await api.get('/persons', { params: buildParams(pageNum) })
+    const { data } = await api.get(ApiPaths.lookups.persons, { params: buildParams(pageNum) })
     if (seq !== requestSeq) return
     const next = filterExcluded(data.items || [])
     items.value = append ? [...items.value, ...next] : next
@@ -139,21 +155,33 @@ async function fetchPage(pageNum, { append = false } = {}) {
   }
 }
 
+function hasParentHintFields(p) {
+  return !!(p && (p.fatherFirstName || p.motherFirstName || p.fatherName || p.motherName))
+}
+
 async function ensureSelected() {
   if (!hasValue.value) {
     selected.value = null
     return
   }
-  if (selected.value && sameId(selected.value.id, props.modelValue)) return
+  // Keep current selection only when it already has parent disambiguation fields
+  if (selected.value && sameId(selected.value.id, props.modelValue) && hasParentHintFields(selected.value)) {
+    return
+  }
   const cached = items.value.find((p) => sameId(p.id, props.modelValue))
-  if (cached) {
+  if (cached && hasParentHintFields(cached)) {
     selected.value = cached
     return
   }
   try {
-    const { data } = await api.get(`/persons/${props.modelValue}`, { skipErrorToast: true })
+    const { data } = await api.get(ApiPaths.person(props.modelValue), { skipErrorToast: true })
     selected.value = data
   } catch {
+    if (cached) {
+      selected.value = cached
+      return
+    }
+    if (selected.value && sameId(selected.value.id, props.modelValue)) return
     selected.value = { id: props.modelValue, firstName: `#${props.modelValue}`, lastName: '' }
   }
 }
@@ -312,7 +340,7 @@ onBeforeUnmount(() => {
         ref="triggerRef"
         type="button"
         class="select-trigger form-control"
-        :class="{ 'field-invalid': invalid, placeholder: !selectedLabel, 'has-avatar': !!selected }"
+        :class="{ 'field-invalid': invalid, placeholder: !selected, 'has-avatar': !!selected }"
         :disabled="disabled"
         :aria-expanded="open"
         @click="toggle"
@@ -321,7 +349,16 @@ onBeforeUnmount(() => {
           <img v-if="selectedAvatarUrl" :src="selectedAvatarUrl" alt="" />
           <span v-else>{{ selectedInitials }}</span>
         </span>
-        <span class="select-value">{{ selectedLabel || placeholder }}</span>
+        <span class="select-value" :class="{ placeholder: !selected }">
+          <template v-if="selected">
+            <span class="select-main">
+              <span class="select-name">{{ selectedLabel }}</span>
+              <span v-if="selectedNickName" class="nick-badge">{{ selectedNickName }}</span>
+            </span>
+            <span v-if="selectedParentHint" class="select-parent">{{ selectedParentHint }}</span>
+          </template>
+          <template v-else>{{ placeholder }}</template>
+        </span>
         <span class="select-caret" aria-hidden="true">▾</span>
       </button>
       <button
@@ -386,11 +423,12 @@ onBeforeUnmount(() => {
                 <div class="person-name">
                   <span class="first">{{ p.firstName }}</span>
                   <span v-if="p.lastName" class="last">{{ p.lastName }}</span>
+                  <span v-if="p.nickName" class="nick-badge">{{ p.nickName }}</span>
                 </div>
-                <div v-if="parentsLine(p)" class="person-parents">{{ parentsLine(p) }}</div>
+                <div v-if="parentHintName(p)" class="person-parents">{{ parentHintName(p) }}</div>
               </div>
             </button>
-            <div v-if="!canSearch" class="option-status">حداقل {{ minSearchLength }} حرف وارد کنید</div>
+            <div v-if="!canSearch" class="option-status">برای جستجو تایپ کنید</div>
             <div v-else-if="loading" class="option-status">در حال بارگذاری...</div>
             <div v-else-if="!items.length" class="option-status">موردی یافت نشد</div>
             <div v-else-if="loadingMore" class="option-status">موارد بیشتر...</div>
@@ -427,11 +465,12 @@ onBeforeUnmount(() => {
                 <div class="person-name">
                   <span class="first">{{ p.firstName }}</span>
                   <span v-if="p.lastName" class="last">{{ p.lastName }}</span>
+                  <span v-if="p.nickName" class="nick-badge">{{ p.nickName }}</span>
                 </div>
-                <div v-if="parentsLine(p)" class="person-parents">{{ parentsLine(p) }}</div>
+                <div v-if="parentHintName(p)" class="person-parents">{{ parentHintName(p) }}</div>
               </div>
             </button>
-            <div v-if="!canSearch" class="option-status">حداقل {{ minSearchLength }} حرف وارد کنید</div>
+            <div v-if="!canSearch" class="option-status">برای جستجو تایپ کنید</div>
             <div v-else-if="loading" class="option-status">در حال بارگذاری...</div>
             <div v-else-if="!items.length" class="option-status">موردی یافت نشد</div>
             <div v-else-if="loadingMore" class="option-status">موارد بیشتر...</div>
@@ -453,7 +492,8 @@ onBeforeUnmount(() => {
   width: 100%;
   text-align: right;
   cursor: pointer;
-  min-height: 42px;
+  min-height: 48px;
+  padding-block: 0.35rem;
 }
 .select-trigger.has-avatar { gap: 0.55rem; }
 .trigger-avatar {
@@ -476,10 +516,55 @@ onBeforeUnmount(() => {
   object-fit: cover;
 }
 .has-clear .select-trigger { padding-inline-start: 2.85rem; }
-.select-trigger.placeholder .select-value { color: var(--text-muted); }
+.select-trigger.placeholder .select-value,
+.select-value.placeholder { color: var(--text-muted); }
 .select-trigger:disabled { opacity: 0.6; cursor: not-allowed; }
 .select-value {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  overflow: hidden;
+}
+.select-value.placeholder {
+  display: block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.select-main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.select-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.select-parent {
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.nick-badge {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--primary);
+  max-width: 7rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -13,6 +13,8 @@ public record PersonDto(
     string? FatherName,
     int? MotherId,
     string? MotherName,
+    string? FatherFirstName,
+    string? MotherFirstName,
     string? PicturePath,
     string? Mobile,
     string? Address,

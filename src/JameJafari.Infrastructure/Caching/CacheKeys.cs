@@ -6,6 +6,7 @@ public static class CacheKeys
 {
     public const string PermissionsAll = "permissions:all";
     public const string IngredientPriceRecs = "ingredient-price-recs";
+    public const string LookupPersons = "lookups:persons:v2";
 
     public static string GeneralTypes(GeneralTypeCategory category, bool includeInactive) =>
         $"general-types:{(int)category}:{includeInactive}";

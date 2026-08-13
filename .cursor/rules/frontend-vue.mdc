@@ -57,6 +57,7 @@ Router: `meta: { permission: 'food.view' }`
 
 ## Lookups
 - Use `useLookupsStore()` for accounts/cost-types/general-types dropdowns
+- **PersonSelect:** search via `ApiPaths.lookups.persons`; resolve selected id via `ApiPaths.person(id)`
 - Call `invalidate*` after mutating lookup data
 
 ## PWA

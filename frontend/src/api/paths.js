@@ -29,6 +29,7 @@ export const ApiPaths = {
   lookups: {
     accounts: '/lookups/accounts',
     costTypes: '/lookups/cost-types',
-    generalTypes: '/lookups/general-types'
+    generalTypes: '/lookups/general-types',
+    persons: '/lookups/persons'
   }
 }

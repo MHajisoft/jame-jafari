@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using JameJafari.Api.Authorization;
 using JameJafari.Core.Constants;
 using JameJafari.Core.DTOs;
@@ -68,4 +69,19 @@ public class LookupsController(LookupService service) : ApiControllerBase
             return BadRequest("Invalid category");
         return Ok(await service.GetGeneralTypesAsync(cat));
     }
+
+    [HttpGet("persons")]
+    [RequirePermission(
+        PermissionCodes.PersonsView,
+        PermissionCodes.PersonsCreate,
+        PermissionCodes.PersonsUpdate,
+        PermissionCodes.IncomeView,
+        PermissionCodes.IncomeCreate,
+        PermissionCodes.IncomeUpdate)]
+    public async Task<ActionResult<PagedResult<PersonLookupItemDto>>> SearchPersons(
+        [FromQuery] string? search,
+        [FromQuery] Gender? gender,
+        [FromQuery, Range(1, 100)] int page = 1,
+        [FromQuery, Range(1, 200)] int pageSize = 20)
+        => Ok(await service.SearchPersonsAsync(search, gender, page, pageSize));
 }

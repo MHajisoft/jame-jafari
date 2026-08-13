@@ -9,6 +9,7 @@ public static class LookupCache
     public static readonly TimeSpan AccountsDuration = TimeSpan.FromMinutes(15);
     public static readonly TimeSpan CostTypesDuration = TimeSpan.FromMinutes(15);
     public static readonly TimeSpan IngredientRecsDuration = TimeSpan.FromMinutes(10);
+    public static readonly TimeSpan PersonsDuration = TimeSpan.FromMinutes(15);
 
     public static Task InvalidatePermissionsAsync(IFusionCache cache, CancellationToken ct = default) =>
         cache.RemoveAsync(CacheKeys.PermissionsAll, token: ct).AsTask();
@@ -46,4 +47,7 @@ public static class LookupCache
 
     public static Task InvalidateIngredientRecsAsync(IFusionCache cache, CancellationToken ct = default) =>
         cache.RemoveAsync(CacheKeys.IngredientPriceRecs, token: ct).AsTask();
+
+    public static Task InvalidatePersonsAsync(IFusionCache cache, CancellationToken ct = default) =>
+        cache.RemoveAsync(CacheKeys.LookupPersons, token: ct).AsTask();
 }

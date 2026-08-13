@@ -1,12 +1,14 @@
 using JameJafari.Core.DTOs;
 using JameJafari.Core.Entities;
 using JameJafari.Core.Enums;
+using JameJafari.Infrastructure.Caching;
 using JameJafari.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using ZiggyCreatures.Caching.Fusion;
 
 namespace JameJafari.Infrastructure.Services;
 
-public class PersonService(AppDbContext db)
+public class PersonService(AppDbContext db, IFusionCache cache)
 {
     public async Task<PagedResult<PersonDto>> GetPagedAsync(string? search, Gender? gender, int page, int pageSize)
     {
@@ -58,6 +60,7 @@ public class PersonService(AppDbContext db)
         };
         db.Persons.Add(entity);
         await db.SaveChangesAsync();
+        await LookupCache.InvalidatePersonsAsync(cache);
         return (await GetByIdAsync(entity.Id))!;
     }
 
@@ -78,6 +81,7 @@ public class PersonService(AppDbContext db)
         entity.IsDead = request.IsDead;
         entity.UpdatedById = userId;
         await db.SaveChangesAsync();
+        await LookupCache.InvalidatePersonsAsync(cache);
         return await GetByIdAsync(id);
     }
 
@@ -89,6 +93,7 @@ public class PersonService(AppDbContext db)
         entity.DeletedAt = DateTime.UtcNow;
         entity.DeletedById = userId;
         await db.SaveChangesAsync();
+        await LookupCache.InvalidatePersonsAsync(cache);
         return true;
     }
 
@@ -99,6 +104,7 @@ public class PersonService(AppDbContext db)
         entity.PicturePath = path;
         entity.UpdatedById = userId;
         await db.SaveChangesAsync();
+        await LookupCache.InvalidatePersonsAsync(cache);
         return await GetByIdAsync(id);
     }
 
@@ -128,6 +134,8 @@ public class PersonService(AppDbContext db)
                 : (p.Mother.NamePrefix != null ? p.Mother.NamePrefix.Name + " " : "")
                   + p.Mother.FirstName
                   + (p.Mother.LastName != null ? " " + p.Mother.LastName : ""),
+            p.Father != null ? p.Father.FirstName : null,
+            p.Mother != null ? p.Mother.FirstName : null,
             p.PicturePath,
             p.Mobile,
             p.Address,
