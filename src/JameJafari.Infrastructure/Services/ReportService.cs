@@ -120,18 +120,26 @@ public class ReportService(AppDbContext db)
             return Array.Empty<PersonIncomeReportDto>();
 
         var personIds = aggregates.Select(a => a.PersonId).ToList();
-        var names = await db.Persons
+        var people = await db.Persons
             .AsNoTracking()
             .Where(p => personIds.Contains(p.Id))
-            .Select(p => new { p.Id, p.FirstName, p.LastName })
-            .ToDictionaryAsync(p => p.Id, p => ((p.FirstName ?? "") + " " + (p.LastName ?? "")).Trim());
+            .Select(p => new { p.Id, p.FirstName, p.LastName, p.NickName })
+            .ToDictionaryAsync(p => p.Id);
 
         return aggregates
-            .Select(a => new PersonIncomeReportDto(
-                a.PersonId,
-                names.TryGetValue(a.PersonId, out var name) ? name : "",
-                a.TotalAmount,
-                a.TransactionCount))
+            .Select(a =>
+            {
+                people.TryGetValue(a.PersonId, out var person);
+                var name = person is null
+                    ? ""
+                    : ((person.FirstName ?? "") + " " + (person.LastName ?? "")).Trim();
+                return new PersonIncomeReportDto(
+                    a.PersonId,
+                    name,
+                    person?.NickName,
+                    a.TotalAmount,
+                    a.TransactionCount);
+            })
             .ToList();
     }
 

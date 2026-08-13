@@ -541,16 +541,30 @@ onBeforeUnmount(() => {
   font: inherit;
   cursor: pointer;
   transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
-.option-item:hover,
+@media (hover: hover) and (pointer: fine) {
+  .option-item:hover,
+  .option-item:focus-visible {
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    outline: none;
+  }
+}
 .option-item:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  outline-offset: -2px;
+}
+.option-item:active {
   background: color-mix(in srgb, var(--primary) 12%, transparent);
-  outline: none;
 }
 .option-item.selected {
-  background: color-mix(in srgb, var(--primary) 22%, transparent);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
   color: var(--text);
   font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+[dir="rtl"] .option-item.selected {
+  box-shadow: inset -3px 0 0 var(--primary);
 }
 .select-sheet .option-item {
   padding: 0.95rem 1.1rem;

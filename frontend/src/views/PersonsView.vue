@@ -17,6 +17,8 @@ import AppCheckbox from '../components/AppCheckbox.vue'
 import RowActions from '../components/RowActions.vue'
 import EntityAvatar from '../components/EntityAvatar.vue'
 import AvatarPicker from '../components/AvatarPicker.vue'
+import PersonLifeStatus from '../components/PersonLifeStatus.vue'
+import NickBadge from '../components/NickBadge.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -183,7 +185,7 @@ onMounted(load)
           <ClearableInput v-model="form.lastName" />
         </div>
         <div class="form-group">
-          <label>نام مستعار</label>
+          <label>لقب</label>
           <ClearableInput v-model="form.nickName" />
         </div>
         <div class="form-group">
@@ -242,7 +244,8 @@ onMounted(load)
           <div v-if="errors.mobile" class="field-error">{{ errors.mobile }}</div>
         </div>
         <div class="form-group">
-          <AppCheckbox v-model="form.isDead" label="فوت شده" />
+          <label>وضعیت حیات</label>
+          <AppCheckbox v-model="form.isDead" label="درگذشته است" />
         </div>
         <div class="form-group form-span-full">
           <label>آدرس</label>
@@ -260,7 +263,7 @@ onMounted(load)
         <table class="mobile-table">
           <thead>
             <tr>
-              <th>نام</th><th>جنسیت</th><th>موبایل</th><th>پدر</th><th>مادر</th><th>وضعیت</th>
+              <th>نام</th><th>جنسیت</th><th>موبایل</th><th>پدر</th><th>مادر</th>
               <th v-if="auth.hasAnyPermission('persons.update', 'persons.delete')"></th>
             </tr>
           </thead>
@@ -268,18 +271,20 @@ onMounted(load)
             <tr v-for="item in items" :key="item.id">
               <td data-label="نام">
                 <div class="entity-cell">
-                  <EntityAvatar :src="item.picturePath" :name="item.displayName" />
-                  <strong>{{ item.displayName }}</strong>
+                  <EntityAvatar :src="item.picturePath" :name="item.displayName" :deceased="item.isDead" />
+                  <div class="entity-name-stack">
+                    <span class="person-name-with-nick">
+                      <strong :class="{ 'name-deceased': item.isDead }">{{ item.displayName }}</strong>
+                      <NickBadge :value="item.nickName" />
+                      <PersonLifeStatus :is-dead="item.isDead" />
+                    </span>
+                  </div>
                 </div>
               </td>
               <td data-label="جنسیت">{{ genderLabel(item.gender) }}</td>
               <td data-label="موبایل">{{ item.mobile || '—' }}</td>
               <td data-label="پدر">{{ item.fatherName || '—' }}</td>
               <td data-label="مادر">{{ item.motherName || '—' }}</td>
-              <td data-label="وضعیت">
-                <span v-if="item.isDead" class="badge badge-danger">فوت شده</span>
-                <span v-else class="badge badge-success">فعال</span>
-              </td>
               <td v-if="auth.hasAnyPermission('persons.update', 'persons.delete')">
                 <RowActions
                   :show-edit="auth.hasPermission('persons.update')"
@@ -316,9 +321,17 @@ onMounted(load)
   gap: 0.7rem;
   min-width: 0;
 }
+.entity-name-stack {
+  min-width: 0;
+  flex: 1;
+}
 .entity-cell strong {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.name-deceased {
+  color: color-mix(in srgb, var(--text-muted) 55%, var(--text));
+  font-weight: 600;
 }
 </style>

@@ -7,6 +7,7 @@ public record IncomeTransactionDto(
     int Id,
     int PersonId,
     string PersonName,
+    string? PersonNickName,
     int AccountId,
     string AccountName,
     decimal Amount,

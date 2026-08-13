@@ -134,7 +134,7 @@ docker build -t jamejafari-web ./frontend
 
 ### مدیریت
 - **کاربران:** ایجاد/ویرایش، آواتار، **ماتریس دسترسی** (`PermissionMatrix`)، تغییر رمز جدا (`users.changepassword`)
-- **اشخاص:** درخت خانوادگی (پدر/مادر)، پیشوند نام، آواتار
+- **اشخاص:** درخت خانوادگی (پدر/مادر)، پیشوند نام، آواتار، **لقب**؛ وضعیت حیات فقط با بج «درگذشته» وقتی `IsDead` است (کنار نام، دسکتاپ/موبایل)
 - **حساب‌ها، انواع هزینه، انواع عمومی** (واحد، پیشوند نام)
 
 ### تهیه غذا
@@ -177,7 +177,7 @@ docker build -t jamejafari-web ./frontend
 
 **Lookups (فرم‌ها):** کاربر با `income.create` / `cost.create` بدون `accounts.view` می‌تواند از `GET /api/lookups/accounts` و `GET /api/lookups/cost-types` برای dropdown استفاده کند؛ APIهای مدیریت (`/api/accounts`, …) همچنان نیاز به `*.view` دارند.
 
-**جستجوی اشخاص (PersonSelect):** `GET /api/lookups/persons?search=&gender=&page=&pageSize=` — فیلتر چندکلمه‌ای (همه توکن‌ها) روی نام/نام‌خانوادگی/لقب خود شخص و پدر/مادر؛ لیست slim در FusionCache و فیلتر در حافظه. `GET /api/persons` برای CRUD باقی می‌ماند.
+**جستجوی اشخاص (PersonSelect):** `GET /api/lookups/persons?search=&gender=&page=&pageSize=` — فیلتر چندکلمه‌ای (همه توکن‌ها) روی نام/نام‌خانوادگی/لقب خود شخص و پدر/مادر؛ لیست slim در FusionCache و فیلتر در حافظه؛ شامل `isDead` برای نمایش وضعیت حیات. `GET /api/persons` برای CRUD باقی می‌ماند.
 
 کاتالوگ در `PermissionCodes.All` نگه‌داری می‌شود؛ `DbSeeder` کدهای جدید را sync و به admin اختصاص می‌دهد.
 

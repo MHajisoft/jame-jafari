@@ -21,6 +21,7 @@ import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import RowActions from '../components/RowActions.vue'
 import PageHeader from '../components/PageHeader.vue'
+import NickBadge from '../components/NickBadge.vue'
 
 const auth = useAuthStore()
 const dialog = useDialogStore()
@@ -299,7 +300,13 @@ onMounted(() => load().catch(() => {}))
           <tbody>
             <tr v-for="item in items" :key="item.id">
               <td data-label="تاریخ"><DateDisplay :value="item.transactionDate" /></td>
-              <td data-label="شخص">{{ item.personName || '—' }}</td>
+              <td data-label="شخص">
+                <span v-if="item.personName" class="person-name-with-nick">
+                  <span>{{ item.personName }}</span>
+                  <NickBadge :value="item.personNickName" />
+                </span>
+                <template v-else>—</template>
+              </td>
               <td data-label="حساب">{{ item.accountName || '—' }}</td>
               <td class="text-success" data-label="مبلغ">{{ formatMoney(item.amount) }}</td>
               <td data-label="نوع پرداخت">{{ paymentTypeLabel(item.paymentType) }}</td>

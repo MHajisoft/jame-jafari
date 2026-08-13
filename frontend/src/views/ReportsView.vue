@@ -6,6 +6,7 @@ import { formatMoney } from '../utils/format'
 import { todayGregorian, startOfJalaliMonthGregorian } from '../utils/jalali'
 import DateDisplay from '../components/DateDisplay.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
+import NickBadge from '../components/NickBadge.vue'
 
 const from = ref(startOfJalaliMonthGregorian())
 const to = ref(todayGregorian())
@@ -130,7 +131,12 @@ onMounted(load)
           </thead>
           <tbody>
             <tr v-for="p in personIncome" :key="p.personId">
-              <td data-label="شخص">{{ p.personName }}</td>
+              <td data-label="شخص">
+                <span class="person-name-with-nick">
+                  <span>{{ p.personName }}</span>
+                  <NickBadge :value="p.personNickName" />
+                </span>
+              </td>
               <td class="num" data-label="تعداد">{{ p.transactionCount }}</td>
               <td class="num text-success" data-label="مجموع">{{ formatMoney(p.totalAmount) }}</td>
             </tr>

@@ -13,4 +13,5 @@ public record PersonLookupItemDto(
     string? FatherName,
     string? MotherName,
     string? FatherFirstName,
-    string? MotherFirstName);
+    string? MotherFirstName,
+    bool IsDead);

@@ -269,6 +269,7 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
             (t.Person.NamePrefix != null ? t.Person.NamePrefix.Name + " " : "")
             + t.Person.FirstName
             + (t.Person.LastName != null ? " " + t.Person.LastName : ""),
+            t.Person.NickName,
             t.AccountId,
             t.Account.Name,
             t.Amount,

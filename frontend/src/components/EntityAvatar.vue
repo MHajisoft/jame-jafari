@@ -5,7 +5,9 @@ const props = defineProps({
   /** Relative upload path or absolute URL */
   src: { type: String, default: '' },
   name: { type: String, default: '' },
-  size: { type: [Number, String], default: 36 }
+  size: { type: [Number, String], default: 36 },
+  /** Person.IsDead — grayscale + memorial rim */
+  deceased: { type: Boolean, default: false }
 })
 
 const broken = ref(false)
@@ -47,9 +49,10 @@ const boxStyle = computed(() => {
 </script>
 
 <template>
-  <span class="entity-avatar" :style="boxStyle" aria-hidden="true">
+  <span class="entity-avatar" :class="{ deceased }" :style="boxStyle" aria-hidden="true">
     <img v-if="showImage" :src="url" alt="" @error="broken = true" />
     <span v-else class="entity-avatar-fallback">{{ initials }}</span>
+    <span v-if="deceased" class="memorial-band" />
   </span>
 </template>
 
@@ -76,5 +79,32 @@ const boxStyle = computed(() => {
 }
 .entity-avatar-fallback {
   user-select: none;
+}
+.entity-avatar.deceased {
+  border-color: color-mix(in srgb, var(--text-muted) 45%, var(--border));
+  color: color-mix(in srgb, var(--text-muted) 70%, var(--text));
+  background: color-mix(in srgb, var(--text-muted) 12%, var(--bg));
+}
+.entity-avatar.deceased img,
+.entity-avatar.deceased .entity-avatar-fallback {
+  filter: grayscale(1) brightness(0.92) contrast(0.95);
+  opacity: 0.88;
+}
+.memorial-band {
+  position: absolute;
+  inset-inline-end: -18%;
+  top: 8%;
+  width: 62%;
+  height: 18%;
+  transform: rotate(-38deg);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--text-muted) 55%, #2a3038) 35%,
+    color-mix(in srgb, var(--text-muted) 40%, #1f242b) 100%
+  );
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 2;
 }
 </style>

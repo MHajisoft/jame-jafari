@@ -2,6 +2,8 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import api from '../api/client'
 import { ApiPaths } from '../api/paths'
+import PersonLifeStatus from './PersonLifeStatus.vue'
+import NickBadge from './NickBadge.vue'
 
 const props = defineProps({
   modelValue: { type: [String, Number], default: '' },
@@ -55,6 +57,7 @@ const hasMore = computed(() => canSearch.value && items.value.length < totalCoun
 const selectedLabel = computed(() => personFullName(selected.value))
 const selectedNickName = computed(() => selected.value?.nickName || '')
 const selectedParentHint = computed(() => parentHintName(selected.value))
+const selectedIsDead = computed(() => !!selected.value?.isDead)
 const selectedAvatarUrl = computed(() => avatarUrl(selected.value))
 const selectedInitials = computed(() => personInitials(selected.value))
 
@@ -345,15 +348,17 @@ onBeforeUnmount(() => {
         :aria-expanded="open"
         @click="toggle"
       >
-        <span v-if="selected" class="trigger-avatar" aria-hidden="true">
+        <span v-if="selected" class="trigger-avatar" :class="{ deceased: selectedIsDead }" aria-hidden="true">
           <img v-if="selectedAvatarUrl" :src="selectedAvatarUrl" alt="" />
           <span v-else>{{ selectedInitials }}</span>
+          <span v-if="selectedIsDead" class="memorial-band" />
         </span>
         <span class="select-value" :class="{ placeholder: !selected }">
           <template v-if="selected">
             <span class="select-main">
-              <span class="select-name">{{ selectedLabel }}</span>
-              <span v-if="selectedNickName" class="nick-badge">{{ selectedNickName }}</span>
+              <span class="select-name" :class="{ deceased: selectedIsDead }">{{ selectedLabel }}</span>
+              <NickBadge :value="selectedNickName" />
+              <PersonLifeStatus :is-dead="selectedIsDead" />
             </span>
             <span v-if="selectedParentHint" class="select-parent">{{ selectedParentHint }}</span>
           </template>
@@ -415,15 +420,17 @@ onBeforeUnmount(() => {
               :class="{ selected: sameId(modelValue, p.id) }"
               @click="selectPerson(p)"
             >
-              <div class="person-avatar">
+              <div class="person-avatar" :class="{ deceased: !!p.isDead }">
                 <img v-if="avatarUrl(p)" :src="avatarUrl(p)" alt="" />
                 <span v-else>{{ personInitials(p) }}</span>
+                <span v-if="p.isDead" class="memorial-band" />
               </div>
               <div class="person-info">
                 <div class="person-name">
-                  <span class="first">{{ p.firstName }}</span>
+                  <span class="first" :class="{ deceased: !!p.isDead }">{{ p.firstName }}</span>
                   <span v-if="p.lastName" class="last">{{ p.lastName }}</span>
-                  <span v-if="p.nickName" class="nick-badge">{{ p.nickName }}</span>
+                  <NickBadge :value="p.nickName" />
+                  <PersonLifeStatus :is-dead="!!p.isDead" />
                 </div>
                 <div v-if="parentHintName(p)" class="person-parents">{{ parentHintName(p) }}</div>
               </div>
@@ -457,15 +464,17 @@ onBeforeUnmount(() => {
               :class="{ selected: sameId(modelValue, p.id) }"
               @click="selectPerson(p)"
             >
-              <div class="person-avatar">
+              <div class="person-avatar" :class="{ deceased: !!p.isDead }">
                 <img v-if="avatarUrl(p)" :src="avatarUrl(p)" alt="" />
                 <span v-else>{{ personInitials(p) }}</span>
+                <span v-if="p.isDead" class="memorial-band" />
               </div>
               <div class="person-info">
                 <div class="person-name">
-                  <span class="first">{{ p.firstName }}</span>
+                  <span class="first" :class="{ deceased: !!p.isDead }">{{ p.firstName }}</span>
                   <span v-if="p.lastName" class="last">{{ p.lastName }}</span>
-                  <span v-if="p.nickName" class="nick-badge">{{ p.nickName }}</span>
+                  <NickBadge :value="p.nickName" />
+                  <PersonLifeStatus :is-dead="!!p.isDead" />
                 </div>
                 <div v-if="parentHintName(p)" class="person-parents">{{ parentHintName(p) }}</div>
               </div>
@@ -497,6 +506,7 @@ onBeforeUnmount(() => {
 }
 .select-trigger.has-avatar { gap: 0.55rem; }
 .trigger-avatar {
+  position: relative;
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -514,6 +524,36 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.trigger-avatar.deceased {
+  color: color-mix(in srgb, var(--text-muted) 70%, var(--text));
+  background: color-mix(in srgb, var(--text-muted) 12%, var(--bg));
+}
+.trigger-avatar.deceased img,
+.trigger-avatar.deceased > span:not(.memorial-band) {
+  filter: grayscale(1) brightness(0.92);
+  opacity: 0.88;
+}
+.memorial-band {
+  position: absolute;
+  inset-inline-end: -18%;
+  top: 8%;
+  width: 62%;
+  height: 18%;
+  transform: rotate(-38deg);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--text-muted) 55%, #2a3038) 35%,
+    color-mix(in srgb, var(--text-muted) 40%, #1f242b) 100%
+  );
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 2;
+}
+.select-name.deceased,
+.person-name .first.deceased {
+  color: color-mix(in srgb, var(--text-muted) 50%, var(--text));
 }
 .has-clear .select-trigger { padding-inline-start: 2.85rem; }
 .select-trigger.placeholder .select-value,
@@ -554,20 +594,6 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
-}
-.nick-badge {
-  flex-shrink: 0;
-  font-size: 0.68rem;
-  font-weight: 600;
-  line-height: 1;
-  padding: 0.18rem 0.45rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--primary) 14%, transparent);
-  color: var(--primary);
-  max-width: 7rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .select-caret { color: var(--text-muted); }
 .person-select.open .select-caret { color: var(--primary); }
@@ -693,16 +719,32 @@ onBeforeUnmount(() => {
   font: inherit;
   cursor: pointer;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.12s ease;
 }
-.person-option:hover,
+@media (hover: hover) and (pointer: fine) {
+  .person-option:hover,
+  .person-option:focus-visible {
+    background: color-mix(in srgb, var(--primary) 10%, transparent);
+    outline: none;
+  }
+}
 .person-option:focus-visible {
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
-  outline: none;
+  outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  outline-offset: -2px;
+}
+.person-option:active {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
 }
 .person-option.selected {
-  background: color-mix(in srgb, var(--primary) 18%, transparent);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+[dir="rtl"] .person-option.selected {
+  box-shadow: inset -3px 0 0 var(--primary);
 }
 .person-avatar {
+  position: relative;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -719,6 +761,15 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.person-avatar.deceased {
+  color: color-mix(in srgb, var(--text-muted) 70%, var(--text));
+  background: color-mix(in srgb, var(--text-muted) 12%, var(--bg));
+}
+.person-avatar.deceased img,
+.person-avatar.deceased > span:not(.memorial-band) {
+  filter: grayscale(1) brightness(0.92);
+  opacity: 0.88;
 }
 .person-info { min-width: 0; flex: 1; }
 .person-name {

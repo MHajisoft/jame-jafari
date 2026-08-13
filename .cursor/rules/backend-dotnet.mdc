@@ -47,7 +47,7 @@ Apply on user delete/update/password/avatar for admin account.
 ## Lookups API (form reference data)
 - **`GET /api/lookups/accounts`** — `{ id, name }[]`; allowed with `accounts.view` **or** any income/cost view/create/update
 - **`GET /api/lookups/cost-types`** — `{ id, name, unitName? }[]`; allowed with `costtypes.view` **or** income/cost/food view/create/update
-- **`GET /api/lookups/persons`** — paged PersonSelect search; ALL tokens match FirstName/LastName/NickName of person + father + mother; FusionCache slim list + in-memory filter; invalidate with LookupCache.InvalidatePersonsAsync
+- **`GET /api/lookups/persons`** — paged PersonSelect search; ALL tokens match FirstName/LastName/NickName of person + father + mother; FusionCache slim list + in-memory filter (includes `IsDead`); invalidate with LookupCache.InvalidatePersonsAsync
 - Admin list APIs (`/api/accounts`, `/api/cost-types`) stay behind module `*.view` for CRUD pages only
 - `LookupService` + separate cache keys; invalidated with account/cost-type/person writes
 

@@ -93,7 +93,8 @@ public class LookupService(AppDbContext db, IFusionCache cache)
                 p.FatherName,
                 p.MotherName,
                 p.FatherFirstName,
-                p.MotherFirstName))
+                p.MotherFirstName,
+                p.IsDead))
             .ToList();
 
         return new PagedResult<PersonLookupItemDto>(items, total, page, pageSize);
@@ -113,6 +114,7 @@ public class LookupService(AppDbContext db, IFusionCache cache)
                         p.NickName,
                         p.Gender,
                         p.PicturePath,
+                        p.IsDead,
                         FatherFirst = p.Father != null ? p.Father.FirstName : null,
                         FatherLast = p.Father != null ? p.Father.LastName : null,
                         FatherNick = p.Father != null ? p.Father.NickName : null,
@@ -133,7 +135,7 @@ public class LookupService(AppDbContext db, IFusionCache cache)
                         r.FatherFirst, r.FatherLast, r.FatherNick,
                         r.MotherFirst, r.MotherLast, r.MotherNick);
                     return new PersonLookupCacheItem(
-                        r.Id, r.FirstName, r.LastName, r.NickName, r.Gender, r.PicturePath,
+                        r.Id, r.FirstName, r.LastName, r.NickName, r.Gender, r.PicturePath, r.IsDead,
                         fatherName, motherName, r.FatherFirst, r.MotherFirst, blob);
                 }).ToList();
             },
@@ -186,6 +188,7 @@ public class LookupService(AppDbContext db, IFusionCache cache)
         string? NickName,
         Gender Gender,
         string? PicturePath,
+        bool IsDead,
         string? FatherName,
         string? MotherName,
         string? FatherFirstName,
