@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { matchesAllTokens } from '../utils/selectSearch'
+import { useOverlayBack } from '../composables/useOverlayBack'
 
 const props = defineProps({
   modelValue: { type: [String, Number, Boolean], default: '' },
@@ -111,6 +112,12 @@ function closeSelect() {
   query.value = ''
   dragging.value = false
 }
+
+const mobileSheetOpen = computed(() => open.value && isMobile.value)
+useOverlayBack(mobileSheetOpen, closeSelect, {
+  enabled: () => isMobile.value,
+  stateKey: 'appSelect'
+})
 
 function toggle() {
   if (open.value) closeSelect()

@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 
 /** @type {import('vue').Ref<null | { title: string, close: () => void }>} */
-const activeFormPage = ref(null)
+export const activeFormPage = ref(null)
 
 export function useActiveFormPage() {
   return {

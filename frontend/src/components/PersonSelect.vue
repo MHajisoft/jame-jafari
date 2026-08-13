@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import api from '../api/client'
 import { ApiPaths } from '../api/paths'
 import PersonCell from './PersonCell.vue'
+import { useOverlayBack } from '../composables/useOverlayBack'
 
 const props = defineProps({
   modelValue: { type: [String, Number], default: '' },
@@ -212,6 +213,12 @@ function closeSelect() {
   query.value = ''
   dragging.value = false
 }
+
+const mobileSheetOpen = computed(() => open.value && isMobile.value)
+useOverlayBack(mobileSheetOpen, closeSelect, {
+  enabled: () => isMobile.value,
+  stateKey: 'appPersonSelect'
+})
 
 function toggle() {
   if (open.value) closeSelect()

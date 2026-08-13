@@ -27,6 +27,7 @@ function isMoreSection(path) {
       v-for="tab in tabs"
       :key="tab.to"
       :to="tab.to"
+      replace
       class="nav-item"
       :class="{ active: isActive(tab) }"
     >

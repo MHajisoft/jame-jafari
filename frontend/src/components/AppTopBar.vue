@@ -20,7 +20,7 @@ const listTitle = computed(() => {
 
 const title = computed(() => activeFormPage.value?.title || listTitle.value)
 
-const primaryPaths = ['/', '/income', '/cost', '/more']
+const primaryPaths = ['/', '/income', '/cost', '/reports', '/more']
 const showBack = computed(() => isFormPageOpen.value || !!activeOverlay.value || !primaryPaths.includes(route.path))
 
 function onBack() {

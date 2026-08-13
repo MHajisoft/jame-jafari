@@ -10,6 +10,7 @@ import { useUiPrefsStore } from './stores/uiPrefs'
 import { useAuthStore } from './stores/auth'
 import { initPwaInstallListeners } from './composables/usePwaInstall'
 import { initPwaUpdate } from './composables/usePwaUpdate'
+import { initPwaExitBack } from './composables/usePwaExitBack'
 import './style.css'
 
 dayjs.extend(jalaliday)
@@ -26,6 +27,7 @@ theme.init()
 useUiPrefsStore().init()
 initPwaInstallListeners()
 initPwaUpdate()
+initPwaExitBack()
 
 const auth = useAuthStore()
 auth.loadFromStorage()
