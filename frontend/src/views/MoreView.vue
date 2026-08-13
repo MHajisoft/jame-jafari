@@ -1,14 +1,18 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
-import { navItems, filterNavItems } from '../config/navigation'
+import { navItems, groupNavItems } from '../config/navigation'
 import AppBrandMark from '../components/AppBrandMark.vue'
 import AppAccountChip from '../components/AppAccountChip.vue'
 
 const auth = useAuthStore()
 
-const menuItems = computed(() =>
-  filterNavItems(navItems.filter(n => n.section === 'more'), auth.hasPermission)
+/** Mobile «بیشتر»: ops extras + config (reports has its own bottom tab). */
+const groups = computed(() =>
+  groupNavItems(
+    navItems.filter((n) => n.section === 'more'),
+    auth.hasPermission
+  )
 )
 
 onMounted(() => {
@@ -29,17 +33,25 @@ onMounted(() => {
       show-chevron
     />
 
-    <div class="menu-grid">
-      <router-link
-        v-for="item in menuItems"
-        :key="item.to"
-        :to="item.to"
-        class="menu-item card"
-      >
-        <span class="menu-icon">{{ item.icon }}</span>
-        <span class="menu-label">{{ item.label }}</span>
-      </router-link>
-    </div>
+    <section
+      v-for="group in groups"
+      :key="group.id"
+      class="more-group"
+      :aria-label="group.label"
+    >
+      <h2 class="more-group-label">{{ group.label }}</h2>
+      <div class="menu-grid">
+        <router-link
+          v-for="item in group.items"
+          :key="item.to"
+          :to="item.to"
+          class="menu-item card"
+        >
+          <span class="menu-icon">{{ item.icon }}</span>
+          <span class="menu-label">{{ item.label }}</span>
+        </router-link>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -64,11 +76,19 @@ onMounted(() => {
   height: 52px !important;
   font-size: 1.15rem !important;
 }
+.more-group + .more-group {
+  margin-top: 1.15rem;
+}
+.more-group-label {
+  margin: 0 0.15rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
 .menu-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
 }
 .menu-item {
   display: flex;

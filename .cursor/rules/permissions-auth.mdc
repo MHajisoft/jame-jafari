@@ -28,7 +28,9 @@ Standard actions: `view`, `create`, `update`, `delete` (+ `users.changepassword`
 
 ## Frontend enforcement
 - Route guard: `meta.permission` or `meta.permissionsAny`; denied → `resolveHomePath()` (no empty dashboard)
-- `/` redirects to first accessible module (reports → income → cost → … → more)
+- `/` redirects to first accessible **operational** module (income → cost → … → reports → more)
+- Sidebar / More menu groups: **عملیات** → **اطلاعات پایه** (اشخاص، حساب‌ها، …) → **پیکربندی** → **گزارشات**
+- Mobile bottom tabs: درآمد · هزینه · گزارشات · **بیشتر** (overflow at the end, never middle)
 - Income/cost/food menu + route: visible with `*.view` **or** `*.create` **or** `*.update`
 - Without `*.view`, list/update/delete are limited to records created by the current user
 - UI: hide buttons/rows with `auth.hasPermission`

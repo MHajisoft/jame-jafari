@@ -15,7 +15,8 @@ function isActive(tab) {
 }
 
 function isMoreSection(path) {
-  const primary = ['/reports', '/income', '/cost', '/more', '/login']
+  // Bottom primary tabs — everything else (config + ops extras) lives under «بیشتر»
+  const primary = ['/income', '/cost', '/more', '/reports', '/login']
   return !primary.includes(path)
 }
 </script>
