@@ -25,7 +25,6 @@ async function installApp() {
     <div class="card theme-card">
       <div class="theme-card-head">
         <h3>تم ظاهری</h3>
-        <p class="text-muted">یکی از تم‌های زیر را برای ظاهر برنامه انتخاب کنید.</p>
       </div>
 
       <div class="theme-grid" role="listbox" aria-label="انتخاب تم">
@@ -36,28 +35,27 @@ async function installApp() {
           class="theme-option"
           role="option"
           :aria-selected="theme.theme === opt.id"
+          :aria-label="opt.label"
           :class="{ active: theme.theme === opt.id }"
           @click="theme.setTheme(opt.id)"
         >
-          <div class="theme-swatches" aria-hidden="true">
-            <span
-              v-for="(color, i) in opt.swatches"
-              :key="`${opt.id}-${i}`"
-              class="swatch"
-              :style="{ background: color }"
-            />
+          <div
+            class="theme-preview"
+            aria-hidden="true"
+            :style="{ background: opt.swatches[3] }"
+          >
+            <span class="preview-sidebar" :style="{ background: opt.swatches[0] }" />
+            <span class="preview-body">
+              <span class="preview-bar" :style="{ background: opt.swatches[1] }" />
+              <span class="preview-panel" :style="{ background: opt.swatches[2] }" />
+            </span>
+            <span v-if="theme.theme === opt.id" class="theme-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+            </span>
           </div>
-          <div class="theme-meta">
-            <div class="theme-title-row">
-              <strong>{{ opt.label }}</strong>
-              <span v-if="theme.theme === opt.id" class="theme-check" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 13l4 4L19 7" />
-                </svg>
-              </span>
-            </div>
-            <span class="theme-desc">{{ opt.description }}</span>
-          </div>
+          <strong class="theme-label">{{ opt.label }}</strong>
         </button>
       </div>
     </div>
@@ -100,96 +98,122 @@ async function installApp() {
 
 <style scoped>
 .theme-card-head {
-  margin-bottom: 1.1rem;
+  margin-bottom: 1rem;
 }
 .theme-card-head h3 {
-  margin: 0 0 0.35rem;
+  margin: 0;
   font-size: 1.05rem;
 }
 .theme-card-head p {
-  margin: 0;
+  margin: 0.35rem 0 0;
   font-size: 0.9rem;
   line-height: 1.5;
 }
 
 .theme-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
 }
 
 .theme-option {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  text-align: right;
-  padding: 0.85rem;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--surface);
+  gap: 0.55rem;
+  text-align: center;
+  padding: 0;
+  border: none;
+  background: transparent;
   color: var(--text);
   cursor: pointer;
-  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+  -webkit-tap-highlight-color: transparent;
 }
-.theme-option:hover {
-  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+.theme-preview {
+  position: relative;
+  display: flex;
+  height: 4.75rem;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
   box-shadow: var(--shadow);
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.15s;
 }
-.theme-option.active {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent), var(--shadow), var(--glow-primary, none);
-  background: color-mix(in srgb, var(--primary) 6%, var(--surface-glass, var(--surface)));
+.preview-sidebar {
+  width: 28%;
+  flex-shrink: 0;
 }
-
-.theme-swatches {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.35rem;
-  height: 2.4rem;
-  padding: 0.15rem;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--bg) 70%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-}
-.swatch {
-  display: block;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-}
-
-.theme-meta {
+.preview-body {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.4rem;
+  padding: 0.55rem 0.5rem;
+  min-width: 0;
 }
-.theme-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+.preview-bar {
+  height: 0.55rem;
+  width: 58%;
+  border-radius: 999px;
+  margin-inline-start: auto;
+  opacity: 0.95;
+}
+.preview-panel {
+  flex: 1;
+  border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  opacity: 0.92;
+}
+.theme-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 .theme-check {
-  color: var(--primary);
-  width: 1.1rem;
-  height: 1.1rem;
+  position: absolute;
+  inset-inline-start: 0.45rem;
+  bottom: 0.45rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
   display: grid;
   place-items: center;
+  background: var(--primary);
+  color: var(--on-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 .theme-check svg {
-  width: 100%;
-  height: 100%;
+  width: 0.78rem;
+  height: 0.78rem;
   display: block;
 }
-.theme-desc {
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  line-height: 1.45;
+
+@media (hover: hover) and (pointer: fine) {
+  .theme-option:hover .theme-preview {
+    border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+    transform: translateY(-1px);
+  }
+}
+.theme-option.active .theme-preview {
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent),
+    var(--shadow),
+    var(--glow-primary, none);
+}
+.theme-option.active .theme-label {
+  color: var(--primary);
+}
+.theme-option:active .theme-preview {
+  transform: scale(0.98);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .theme-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+  }
+  .theme-preview {
+    height: 4.35rem;
   }
 }
 

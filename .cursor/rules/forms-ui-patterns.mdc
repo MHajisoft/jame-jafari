@@ -66,6 +66,7 @@ alwaysApply: false
 ## Theming
 - Tokens in `frontend/src/style.css`; picker in `stores/theme.js`
 - Dark `midnight`: neutral black/gray only — no blue surfaces
+- `plastic` / `plastic-dark`: shiny cerulean pair (glossy light + navy dark)
 - Light themes: pastel `--bg-gradient` + glass cards (`--surface-glass`, blur, inset shine)
 - See skill `.cursor/skills/jame-jafari-theming/SKILL.md` before editing colors
 

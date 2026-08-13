@@ -64,5 +64,5 @@ Router: `meta: { permission: 'food.view' }`
 - Call `invalidate*` after mutating lookup data
 
 ## PWA
-- Themes via `data-theme` on `<html>` (emerald, midnight, saffron, slate)
+- Themes via `data-theme` on `<html>` (emerald, midnight, saffron, slate, plastic, plastic-dark)
 - Mobile breakpoint: 768px (`useIsMobile`)

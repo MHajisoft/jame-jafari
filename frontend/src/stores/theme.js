@@ -1,32 +1,38 @@
 import { defineStore } from 'pinia'
 
-/** @typedef {{ id: string, label: string, description: string, swatches: string[] }} ThemeMeta */
+/** @typedef {{ id: string, label: string, swatches: string[] }} ThemeMeta */
 
 /** @type {ThemeMeta[]} */
 export const THEME_OPTIONS = [
   {
     id: 'emerald',
     label: 'زمردی',
-    description: 'پاستلی نعنایی با درخشش شیشه‌ای — تم سازمانی پیش‌فرض',
     swatches: ['#0d3d2e', '#15956f', '#d1fae5', '#ffffff']
   },
   {
     id: 'midnight',
-    label: 'شب',
-    description: 'خاکستری تیره نرم — بدون آبی، با اکcent زمردی',
+    label: 'تیره',
     swatches: ['#141414', '#2dd4a8', '#2e2e2e', '#ececec']
   },
   {
     id: 'saffron',
     label: 'زعفرانی',
-    description: 'پاستلی هلویی و کهربایی با هاله گرم',
     swatches: ['#3d2818', '#d97706', '#fed7aa', '#fffcf7']
   },
   {
     id: 'slate',
     label: 'یاسی',
-    description: 'پاستلی یاسی و آسمانی با جلوه شیشه‌ای',
     swatches: ['#2e1065', '#7c3aed', '#c4b5fd', '#ffffff']
+  },
+  {
+    id: 'plastic',
+    label: 'آبی براق',
+    swatches: ['#0a4f9c', '#1a8cff', '#7dd3fc', '#f7fbff']
+  },
+  {
+    id: 'plastic-dark',
+    label: 'آبی تیره',
+    swatches: ['#040b16', '#38bdf8', '#12243a', '#e8f2ff']
   }
 ]
 
@@ -39,7 +45,9 @@ const LEGACY_THEME_MAP = {
   lemon: 'saffron',
   gold: 'saffron',
   shirazi: 'saffron',
-  ocean: 'slate'
+  ocean: 'slate',
+  azure: 'plastic',
+  navy: 'plastic-dark'
 }
 
 const DEFAULT_THEME = 'emerald'
@@ -49,7 +57,9 @@ const THEME_COLORS = {
   emerald: '#15956f',
   midnight: '#1c1c1c',
   saffron: '#3d2818',
-  slate: '#2e1065'
+  slate: '#2e1065',
+  plastic: '#1a8cff',
+  'plastic-dark': '#07111f'
 }
 
 function resolveTheme(raw) {
