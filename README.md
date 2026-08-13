@@ -23,7 +23,6 @@ jame-jafari-source/
 - SQL Server (LocalDB یا Express) — یا Docker
 - Node.js 18+
 - (اختیاری) Docker Desktop / Docker Engine + Compose
-- (اختیاری) برای deploy تست: skill `vps-publish` — پس از push: روی VPS با SSH، `git pull` + `docker compose up -d --build`
 
 ## راه‌اندازی
 
@@ -217,7 +216,6 @@ cd frontend && npm run build
 | `permissions-auth.mdc` | auth + permissions |
 | `forms-ui-patterns.mdc` | فرم‌ها، UI، overlay back، پیوست‌ها |
 | `jame-jafari-theming` skill | `.cursor/skills/jame-jafari-theming/` — توکن رنگ و تم |
-| `vps-publish` skill | `.cursor/skills/vps-publish/` — deploy تست VPS با SSH (`git pull` + `docker compose up -d --build`)؛ اسرار در `config.local.md` (gitignore) |
 | SonarQube (اختیاری) | `.cursor/SONARQUBE.md` — skills `sonar-*`، agent `sonarqube-reviewer`، MCP در `.cursor/mcp.json` |
 
 **الزام:** هر تغییر معنادار در رفتار یا معماری → به‌روزرسانی **`README.md`** و rule مرتبط در **همان تغییر**.
