@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { resolveHomePath } from '../config/navigation'
 
 const routes = [
   { path: '/login', name: 'login', component: () => import('../views/LoginView.vue'), meta: { guest: true } },
@@ -8,7 +9,11 @@ const routes = [
     component: () => import('../layouts/AppLayout.vue'),
     meta: { requiresAuth: true },
     children: [
-      { path: '', name: 'dashboard', component: () => import('../views/DashboardView.vue') },
+      {
+        path: '',
+        name: 'home',
+        redirect: () => resolveHomePath(useAuthStore().hasPermission)
+      },
       {
         path: 'income',
         name: 'income',
@@ -48,9 +53,13 @@ const router = createRouter({
 router.beforeEach((to) => {
   const auth = useAuthStore()
   if (to.meta.requiresAuth && !auth.isAuthenticated) return '/login'
-  if (to.meta.guest && auth.isAuthenticated) return '/'
-  if (to.meta.permission && !auth.hasPermission(to.meta.permission)) return '/'
-  if (to.meta.permissionsAny?.length && !to.meta.permissionsAny.some((p) => auth.hasPermission(p))) return '/'
+  if (to.meta.guest && auth.isAuthenticated) return resolveHomePath(auth.hasPermission)
+  if (to.meta.permission && !auth.hasPermission(to.meta.permission)) {
+    return resolveHomePath(auth.hasPermission)
+  }
+  if (to.meta.permissionsAny?.length && !to.meta.permissionsAny.some((p) => auth.hasPermission(p))) {
+    return resolveHomePath(auth.hasPermission)
+  }
 })
 
 export default router

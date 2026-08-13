@@ -11,11 +11,12 @@ const tabs = computed(() => filterNavItems(bottomTabs, auth.hasPermission))
 
 function isActive(tab) {
   if (tab.tab === 'more') return route.path === '/more' || isMoreSection(route.path)
-  return route.path === tab.to
+  return route.path === tab.to || route.path.startsWith(tab.to + '/')
 }
 
 function isMoreSection(path) {
-  return !['/', '/income', '/cost', '/more', '/login'].includes(path)
+  const primary = ['/reports', '/income', '/cost', '/more', '/login']
+  return !primary.includes(path)
 }
 </script>
 

@@ -27,7 +27,8 @@ Standard actions: `view`, `create`, `update`, `delete` (+ `users.changepassword`
 `PermissionFilter` — unauthenticated → 401; missing permission → 403
 
 ## Frontend enforcement
-- Route guard: `meta.permission` or `meta.permissionsAny`
+- Route guard: `meta.permission` or `meta.permissionsAny`; denied → `resolveHomePath()` (no empty dashboard)
+- `/` redirects to first accessible module (reports → income → cost → … → more)
 - Income/cost/food menu + route: visible with `*.view` **or** `*.create` **or** `*.update`
 - Without `*.view`, list/update/delete are limited to records created by the current user
 - UI: hide buttons/rows with `auth.hasPermission`

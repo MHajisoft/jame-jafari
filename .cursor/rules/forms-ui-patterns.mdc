@@ -59,8 +59,9 @@ alwaysApply: false
 - `PersianDatePicker` — `variant="bar"` in toolbars, `field` in forms
 
 ## Reports / dense tables
+- `ReportsView`: KPI strip + section tabs (one detail table at a time); date range auto-reloads
 - Use scoped `.report-table` with `table-layout: fixed`, `.num` columns LTR-aligned
-- KPI cards: horizontal label/value (`justify-content: space-between`)
+- Hover row tint only under `(hover: hover) and (pointer: fine)`
 
 ## Theming
 - Tokens in `frontend/src/style.css`; picker in `stores/theme.js`
