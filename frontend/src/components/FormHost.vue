@@ -26,7 +26,7 @@ function requestClose() {
 
 function pushFormHistory() {
   if (!pushed.value && !history.state?.appForm) {
-    history.pushState({ appForm: true, formPath: route.fullPath }, '')
+    history.pushState({ ...history.state, appForm: true, formPath: route.fullPath }, '')
     pushed.value = true
   }
 }

@@ -18,6 +18,8 @@ export function closeActiveOverlay() {
  * History + hardware/gesture back for mobile overlays (preview, bottom sheet, …).
  * Same contract as FormHost: pushState on open, pop on close, popstate closes overlay.
  *
+ * Must spread `history.state` so Vue Router's position/current keys stay intact.
+ *
  * @param {import('vue').Ref<boolean>} isOpen
  * @param {() => void} requestClose
  * @param {{ enabled?: () => boolean, stateKey?: string }} [options]
@@ -33,16 +35,17 @@ export function useOverlayBack(isOpen, requestClose, options = {}) {
   function pushHistory() {
     if (!isEnabled()) return
     if (!pushed.value) {
-      history.pushState({ [stateKey]: true }, '')
+      history.pushState({ ...history.state, [stateKey]: true }, '')
       pushed.value = true
     }
   }
 
   function popHistory() {
-    if (!isEnabled()) return
+    // Always unwind our entry if we pushed — even if enabled flipped off (e.g. resize).
     if (pushed.value && !closingFromPop) {
+      const shouldBack = !!history.state?.[stateKey]
       pushed.value = false
-      if (history.state?.[stateKey]) history.back()
+      if (shouldBack) history.back()
     } else {
       pushed.value = false
     }

@@ -13,6 +13,8 @@ import {
   toPersianDigits,
   maxJalaliYear
 } from '../utils/jalali'
+import { useUiPrefsStore } from '../stores/uiPrefs'
+import { useOverlayBack } from '../composables/useOverlayBack'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -22,6 +24,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])
+
+const uiPrefs = useUiPrefsStore()
 
 const ITEM_HEIGHT = 40
 const VISIBLE_ROWS = 5
@@ -38,6 +42,11 @@ const monthWheel = ref(null)
 const yearWheel = ref(null)
 const yearMenuList = ref(null)
 let scrollTimer = null
+
+/** Mobile: sheet (action bar) vs modal — preference only applies under 768px. */
+const useMobileSheet = computed(
+  () => isMobile.value && uiPrefs.datePickerMobileMode === 'sheet'
+)
 
 const displayValue = computed(() =>
   props.modelValue ? formatJalali(props.modelValue, 'D MMMM YYYY') : ''
@@ -119,13 +128,18 @@ function open() {
   syncDraftFromValue()
   openMenu.value = null
   visible.value = true
-  if (isMobile.value) scrollWheelsToDraft()
+  if (useMobileSheet.value) scrollWheelsToDraft()
 }
 
 function cancel() {
   openMenu.value = null
   visible.value = false
 }
+
+useOverlayBack(visible, cancel, {
+  enabled: () => isMobile.value,
+  stateKey: 'appDatePicker'
+})
 
 function applyDate(year, month, day) {
   const iso = jalaliToGregorian(year, month, day)
@@ -286,11 +300,11 @@ onBeforeUnmount(() => {
       <div
         v-if="visible"
         class="picker-overlay"
-        :class="{ mobile: isMobile, desktop: !isMobile }"
+        :class="{ mobile: useMobileSheet, desktop: !useMobileSheet }"
         @click.self="cancel"
       >
-        <!-- Mobile: wheel sheet -->
-        <div v-if="isMobile" class="picker-sheet">
+        <!-- Mobile sheet (action bar): wheel picker -->
+        <div v-if="useMobileSheet" class="picker-sheet">
           <div class="picker-wheels" :style="{ height: `${WHEEL_HEIGHT}px` }">
             <div class="wheel-highlight" :style="{ height: `${ITEM_HEIGHT}px`, top: `${PAD}px` }" />
             <div ref="dayWheel" class="wheel-col" @scroll="onWheelScroll('day')">
@@ -340,7 +354,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Desktop: calendar modal -->
+        <!-- Calendar modal (desktop always; mobile when preference is modal) -->
         <div v-else class="picker-modal" role="dialog" aria-modal="true" @click="closeMenus">
           <div class="cal-header" @click.stop>
             <button type="button" class="nav-btn" aria-label="ماه قبل" @click="shiftMonth(-1)">‹</button>

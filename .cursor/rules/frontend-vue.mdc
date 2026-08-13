@@ -39,6 +39,7 @@ const { showForm, editing, form, openCreate, openEdit, closeForm } = useEntityFo
 ## Mobile overlay back (required for overlays)
 Any mobile full-screen overlay, sheet, or preview **must** handle hardware/gesture back and top-bar back:
 - Use `useOverlayBack(isOpen, requestClose, { enabled, stateKey })` from `composables/useOverlayBack.js`
+- Always `history.pushState({ ...history.state, [stateKey]: true }, '')` — never wipe Vue Router keys or nav breaks (`…undefined/` SecurityError)
 - `AppTopBar` calls `closeActiveOverlay()` before form back
 - `FormHost` `onPopState`: skip if `hasActiveOverlay()`; only close form when `!history.state?.appForm`
 - Register overlay in `activeOverlay` so top bar shows back on primary tabs when preview is open
@@ -66,3 +67,5 @@ Router: `meta: { permission: 'food.view' }`
 ## PWA
 - Themes via `data-theme` on `<html>` (emerald, midnight, saffron, slate, plastic, plastic-dark)
 - Mobile breakpoint: 768px (`useIsMobile`)
+- Mobile datepicker mode (`stores/uiPrefs`): `sheet` (bottom wheels) | `modal` (calendar); Settings card only when `useIsMobile`; desktop always calendar modal
+- `PersianDatePicker` mobile overlay (sheet or modal): `useOverlayBack` with `stateKey: 'appDatePicker'`

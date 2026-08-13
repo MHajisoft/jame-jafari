@@ -6,6 +6,7 @@ import 'dayjs/locale/fa'
 import App from './App.vue'
 import router from './router'
 import { useThemeStore } from './stores/theme'
+import { useUiPrefsStore } from './stores/uiPrefs'
 import { useAuthStore } from './stores/auth'
 import { initPwaInstallListeners } from './composables/usePwaInstall'
 import './style.css'
@@ -21,6 +22,7 @@ app.use(router)
 
 const theme = useThemeStore()
 theme.init()
+useUiPrefsStore().init()
 initPwaInstallListeners()
 
 const auth = useAuthStore()

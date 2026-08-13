@@ -110,12 +110,12 @@ docker build -t jamejafari-web ./frontend
 | `views/` | صفحات CRUD + گزارش (الگوی FormHost) |
 | `components/` | UI مشترک (ClearableInput، AppSelect، PersianDatePicker، …) |
 | `composables/` | `useEntityForm`، `useFormValidation`، `useFormPage`، **`useOverlayBack`** |
-| `stores/` | auth، lookups، theme، toast، dialog |
+| `stores/` | auth، lookups، theme، uiPrefs، toast، dialog |
 | `api/` | axios client + `ApiPaths` |
 
 **الگوهای کلیدی:**
 - Desktop: فرم inline در `FormHost`؛ Mobile: full-page + back در top bar
-- Mobile overlay (پیش‌نمایش پیوست، …): **`useOverlayBack`** — دکمه/ژesture back ابتدا overlay را می‌بندد
+- Mobile overlay (پیش‌نمایش پیوست، انتخابگر تاریخ، …): **`useOverlayBack`** — دکمه/ژesture back ابتدا overlay را می‌بندد
 - دسترسی UI: `auth.hasPermission('module.action')`
 - تاریخ: نمایش شمسی، ذخیره ISO میلادی
 - فرم‌ها: `form-layout-adaptive` (۲ ستون / ۳ ستون در عرض زیاد)، `form-span-full` برای textarea/پیوست
@@ -149,6 +149,7 @@ docker build -t jamejafari-web ./frontend
 ### PWA و UI
 - تم‌ها: **زمردی**، **تیره**، **زعفرانی**، **یاسی**، **آبی براق**، **آبی تیره**
 - کارت‌ها: جلوه شیشه‌ای (blur + highlight) در تم‌های روشن و آبی براق
+- **انتخابگر تاریخ (موبایل):** در تنظیمات — «نوار پایین» (چرخاننده) یا «مودال» (تقویم)؛ فقط زیر ۷۶۸px؛ دسکتاپ همیشه مودال
 - فونت IRANSans FaNum، RTL، FAB موبایل برای ایجاد رکورد
 
 ## سیاست رمز عبور

@@ -1,8 +1,12 @@
 <script setup>
 import { useThemeStore, THEME_OPTIONS } from '../stores/theme'
+import { useUiPrefsStore, DATE_PICKER_MOBILE_MODES } from '../stores/uiPrefs'
+import { useIsMobile } from '../composables/useMediaQuery'
 import { usePwaInstall } from '../composables/usePwaInstall'
 
 const theme = useThemeStore()
+const uiPrefs = useUiPrefsStore()
+const isMobile = useIsMobile()
 const {
   standalone,
   ios,
@@ -56,6 +60,32 @@ async function installApp() {
             </span>
           </div>
           <strong class="theme-label">{{ opt.label }}</strong>
+        </button>
+      </div>
+    </div>
+
+    <div v-if="isMobile" class="card datepicker-card">
+      <div class="theme-card-head">
+        <h3>نمایش انتخابگر تاریخ</h3>
+        <p class="text-muted">فقط در حالت موبایل؛ دسکتاپ همیشه تقویم مودال است.</p>
+      </div>
+      <div
+        class="datepicker-mode-grid"
+        role="listbox"
+        aria-label="حالت انتخابگر تاریخ"
+      >
+        <button
+          v-for="opt in DATE_PICKER_MOBILE_MODES"
+          :key="opt.id"
+          type="button"
+          class="datepicker-mode-option"
+          role="option"
+          :aria-selected="uiPrefs.datePickerMobileMode === opt.id"
+          :class="{ active: uiPrefs.datePickerMobileMode === opt.id }"
+          @click="uiPrefs.setDatePickerMobileMode(opt.id)"
+        >
+          <strong>{{ opt.label }}</strong>
+          <span class="text-muted">{{ opt.hint }}</span>
         </button>
       </div>
     </div>
@@ -215,6 +245,49 @@ async function installApp() {
   .theme-preview {
     height: 4.35rem;
   }
+}
+
+.datepicker-card {
+  margin-top: 1rem;
+}
+.datepicker-mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+.datepicker-mode-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: start;
+  padding: 0.85rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.datepicker-mode-option strong {
+  font-size: 0.95rem;
+}
+.datepicker-mode-option span {
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+.datepicker-mode-option.active {
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent),
+    var(--shadow);
+}
+.datepicker-mode-option.active strong {
+  color: var(--primary);
+}
+.datepicker-mode-option:active {
+  transform: scale(0.98);
 }
 
 .pwa-card {
