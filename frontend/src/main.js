@@ -27,7 +27,6 @@ theme.init()
 useUiPrefsStore().init()
 initPwaInstallListeners()
 initPwaUpdate()
-initPwaExitBack()
 
 const auth = useAuthStore()
 auth.loadFromStorage()
@@ -36,3 +35,5 @@ if (auth.isAuthenticated) {
 }
 
 app.mount('#app')
+// After mount so the first route is settled before we push the exit guard
+initPwaExitBack()
