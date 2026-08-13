@@ -59,6 +59,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.LastName).HasMaxLength(100);
             e.Property(x => x.NickName).HasMaxLength(100);
             e.Property(x => x.Mobile).HasMaxLength(20);
+            e.Property(x => x.DeathDate).HasColumnType("date");
             e.HasOne(x => x.Father).WithMany(x => x.ChildrenAsFather).HasForeignKey(x => x.FatherId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Mother).WithMany(x => x.ChildrenAsMother).HasForeignKey(x => x.MotherId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.NamePrefix).WithMany().HasForeignKey(x => x.NamePrefixId).OnDelete(DeleteBehavior.SetNull);

@@ -42,14 +42,30 @@ public class PersonsController(PersonService service) : ApiControllerBase
     [HttpPost]
     [RequirePermission(PermissionCodes.PersonsCreate)]
     public async Task<ActionResult<PersonDto>> Create([FromBody] CreatePersonRequest request)
-        => Ok(await service.CreateAsync(request, CurrentUserId));
+    {
+        try
+        {
+            return Ok(await service.CreateAsync(request, CurrentUserId));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.PersonsUpdate)]
     public async Task<ActionResult<PersonDto>> Update(int id, [FromBody] UpdatePersonRequest request)
     {
-        var item = await service.UpdateAsync(id, request, CurrentUserId);
-        return item is null ? NotFound() : Ok(item);
+        try
+        {
+            var item = await service.UpdateAsync(id, request, CurrentUserId);
+            return item is null ? NotFound() : Ok(item);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpDelete("{id:int}")]

@@ -88,8 +88,8 @@ onMounted(load)
 
     <section class="card reports-filters" aria-label="فیلتر بازه">
       <div class="reports-filter-grid">
-        <PersianDatePicker v-model="from" variant="bar" label="از" />
-        <PersianDatePicker v-model="to" variant="bar" label="تا" />
+        <PersianDatePicker v-model="from" variant="bar" label="از" required />
+        <PersianDatePicker v-model="to" variant="bar" label="تا" required />
         <button type="button" class="btn reports-apply-btn" :disabled="loading" @click="load">
           {{ loading ? 'در حال بارگذاری…' : 'به‌روزرسانی' }}
         </button>

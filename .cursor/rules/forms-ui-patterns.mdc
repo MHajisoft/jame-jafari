@@ -60,6 +60,9 @@ alwaysApply: false
 ## Select & date
 - `AppSelect` / `PersonSelect` — desktop dropdown, mobile bottom sheet
 - `PersianDatePicker` — `variant="bar"` in toolbars, `field` in forms
+- **Optional date fields:** initial value `''`; no `todayGregorian()` / `toInputDate(new Date())` prefill; clear when parent condition hides the field (e.g. person `deathDate` when not `isDead`)
+- **Required date fields:** pass `required` on `PersianDatePicker`; may default to today in `blankForm()` (income/cost `transactionDate`, food `cookDate`, report range)
+- Optional picker: blind confirm (mobile sheet) without scrolling/picking does **not** set a value — user must pick a day or tap «امروز»
 
 ## Reports / dense tables
 - `ReportsView`: KPI strip + section tabs (one detail table at a time); date range auto-reloads

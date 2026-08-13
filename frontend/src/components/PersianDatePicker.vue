@@ -20,7 +20,9 @@ const props = defineProps({
   modelValue: { type: String, default: '' },
   label: { type: String, default: '' },
   placeholder: { type: String, default: 'انتخاب تاریخ...' },
-  variant: { type: String, default: 'field' } // field | bar
+  variant: { type: String, default: 'field' }, // field | bar
+  /** When true, field may start with a default and confirm applies draft even if empty. */
+  required: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])
@@ -42,6 +44,12 @@ const monthWheel = ref(null)
 const yearWheel = ref(null)
 const yearMenuList = ref(null)
 let scrollTimer = null
+/** User changed wheels / picked a day — needed so optional empty fields are not filled on blind confirm. */
+const draftTouched = ref(false)
+
+function markDraftTouched() {
+  draftTouched.value = true
+}
 
 /** Mobile: sheet (action bar) vs modal — preference only applies under 768px. */
 const useMobileSheet = computed(
@@ -126,6 +134,7 @@ function closeMenus() {
 
 function open() {
   syncDraftFromValue()
+  draftTouched.value = false
   openMenu.value = null
   visible.value = true
   if (useMobileSheet.value) scrollWheelsToDraft()
@@ -150,12 +159,17 @@ function applyDate(year, month, day) {
 }
 
 function confirm() {
+  if (!props.required && !props.modelValue && !draftTouched.value) {
+    cancel()
+    return
+  }
   clampDraft()
   applyDate(draft.value.year, draft.value.month, draft.value.day)
 }
 
 function pickDay(cell) {
   closeMenus()
+  markDraftTouched()
   if (!cell.current) {
     view.value = { year: cell.year, month: cell.month }
   }
@@ -165,6 +179,7 @@ function pickDay(cell) {
 }
 
 function goToday() {
+  markDraftTouched()
   const t = todayParts.value
   draft.value = { ...t }
   view.value = { year: t.year, month: t.month }
@@ -172,6 +187,7 @@ function goToday() {
 }
 
 function clearDate(e) {
+  if (props.required) return
   e?.stopPropagation?.()
   emit('update:modelValue', '')
   emit('change', '')
@@ -223,6 +239,7 @@ function isToday(cell) {
 }
 
 function onWheelScroll(column) {
+  markDraftTouched()
   clearTimeout(scrollTimer)
   scrollTimer = setTimeout(() => {
     if (column === 'day' && dayWheel.value) {
@@ -272,7 +289,7 @@ onBeforeUnmount(() => {
         class="form-control date-input"
       />
       <button
-        v-if="hasValue"
+        v-if="hasValue && !required"
         type="button"
         class="field-clear"
         tabindex="-1"
@@ -348,7 +365,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
           <div class="picker-actions">
-            <button type="button" class="picker-btn picker-btn-clear" @click="clearDate">پاک کردن</button>
+            <button v-if="!required" type="button" class="picker-btn picker-btn-clear" @click="clearDate">پاک کردن</button>
             <button type="button" class="picker-btn picker-btn-cancel" @click="cancel">انصراف</button>
             <button type="button" class="picker-btn picker-btn-ok" @click="confirm">تأیید</button>
           </div>
@@ -430,7 +447,7 @@ onBeforeUnmount(() => {
 
           <div class="cal-footer">
             <button type="button" class="cal-action-btn today-btn" @click="goToday">امروز</button>
-            <button type="button" class="cal-action-btn clear-btn" @click="clearDate">پاک کردن</button>
+            <button v-if="!required" type="button" class="cal-action-btn clear-btn" @click="clearDate">پاک کردن</button>
             <button type="button" class="cal-action-btn close-btn" @click="cancel">بستن</button>
           </div>
         </div>

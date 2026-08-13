@@ -1,8 +1,8 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/client'
-import { genders, genderLabel, enumValue } from '../utils/format'
+import { genders, genderLabel, enumValue, toInputDate } from '../utils/format'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
 import { useDialogStore } from '../stores/dialog'
@@ -20,6 +20,7 @@ import AvatarPicker from '../components/AvatarPicker.vue'
 import PersonLifeStatus from '../components/PersonLifeStatus.vue'
 import NickBadge from '../components/NickBadge.vue'
 import AppSkeleton from '../components/AppSkeleton.vue'
+import PersianDatePicker from '../components/PersianDatePicker.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -38,7 +39,8 @@ const avatarPath = ref('')
 const initialAvatarPath = ref('')
 const form = ref({
   firstName: '', lastName: '', nickName: '', gender: 1,
-  fatherId: '', motherId: '', mobile: '', address: '', namePrefixId: '', isDead: false
+  fatherId: '', motherId: '', mobile: '', address: '', namePrefixId: '',
+  isDead: false, deathDate: ''
 })
 
 const avatarName = computed(() =>
@@ -51,8 +53,22 @@ const canManagePrefixes = computed(() =>
 
 const rules = {
   firstName: [{ type: 'required', msg: 'نام الزامی است' }],
-  mobile: [{ type: 'maxLength', param: 20, msg: 'موبایل حداکثر ۲۰ کاراکتر' }]
+  mobile: [{ type: 'maxLength', param: 20, msg: 'موبایل حداکثر ۲۰ کاراکتر' }],
+  deathDate: [
+    (value, data) => {
+      if (!data.isDead) return null
+      if (!value?.trim()) return 'تاریخ وفات الزامی است'
+      return null
+    }
+  ]
 }
+
+watch(() => form.value.isDead, (dead) => {
+  if (!dead) {
+    form.value.deathDate = ''
+    clearFieldError('deathDate')
+  }
+})
 
 async function load() {
   loading.value = true
@@ -94,7 +110,8 @@ async function submit() {
     mobile: form.value.mobile?.trim() || null,
     address: form.value.address?.trim() || null,
     namePrefixId: form.value.namePrefixId ? +form.value.namePrefixId : null,
-    isDead: form.value.isDead
+    isDead: form.value.isDead,
+    deathDate: form.value.isDead ? form.value.deathDate || null : null
   }
   const ok = await trySubmit(async () => {
     let id = editing.value
@@ -120,7 +137,7 @@ function resetAvatarState(path = '') {
 
 function openCreate() {
   editing.value = null
-  form.value = { firstName: '', lastName: '', nickName: '', gender: 1, fatherId: '', motherId: '', mobile: '', address: '', namePrefixId: '', isDead: false }
+  form.value = { firstName: '', lastName: '', nickName: '', gender: 1, fatherId: '', motherId: '', mobile: '', address: '', namePrefixId: '', isDead: false, deathDate: '' }
   resetAvatarState()
   clearErrors()
   showForm.value = true
@@ -132,7 +149,8 @@ function openEdit(item) {
     firstName: item.firstName, lastName: item.lastName || '', nickName: item.nickName || '',
     gender: enumValue(genders, item.gender, 1), fatherId: item.fatherId || '', motherId: item.motherId || '',
     mobile: item.mobile || '', address: item.address || '', namePrefixId: item.namePrefixId || '',
-    isDead: item.isDead
+    isDead: item.isDead,
+    deathDate: item.deathDate ? toInputDate(item.deathDate) : ''
   }
   resetAvatarState(item.picturePath || '')
   clearErrors()
@@ -252,6 +270,14 @@ onMounted(load)
         <div class="form-group">
           <label>وضعیت حیات</label>
           <AppCheckbox v-model="form.isDead" label="درگذشته است" />
+        </div>
+        <div v-if="form.isDead" class="form-group">
+          <label>تاریخ وفات *</label>
+          <PersianDatePicker
+            v-model="form.deathDate"
+            @change="clearFieldError('deathDate')"
+          />
+          <div v-if="errors.deathDate" class="field-error">{{ errors.deathDate }}</div>
         </div>
         <div class="form-group form-span-full">
           <label>آدرس</label>

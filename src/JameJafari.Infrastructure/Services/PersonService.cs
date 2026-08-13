@@ -44,6 +44,8 @@ public class PersonService(AppDbContext db, IFusionCache cache)
 
     public async Task<PersonDto> CreateAsync(CreatePersonRequest request, int userId)
     {
+        ValidateLifeStatus(request.IsDead, request.DeathDate);
+
         var entity = new Person
         {
             FirstName = request.FirstName,
@@ -56,6 +58,7 @@ public class PersonService(AppDbContext db, IFusionCache cache)
             Address = request.Address,
             NamePrefixId = request.NamePrefixId,
             IsDead = request.IsDead,
+            DeathDate = request.IsDead ? ToDateOnly(request.DeathDate) : null,
             CreatedById = userId
         };
         db.Persons.Add(entity);
@@ -78,7 +81,9 @@ public class PersonService(AppDbContext db, IFusionCache cache)
         entity.Mobile = request.Mobile;
         entity.Address = request.Address;
         entity.NamePrefixId = request.NamePrefixId;
+        ValidateLifeStatus(request.IsDead, request.DeathDate);
         entity.IsDead = request.IsDead;
+        entity.DeathDate = request.IsDead ? ToDateOnly(request.DeathDate) : null;
         entity.UpdatedById = userId;
         await db.SaveChangesAsync();
         await LookupCache.InvalidatePersonsAsync(cache);
@@ -115,6 +120,17 @@ public class PersonService(AppDbContext db, IFusionCache cache)
         return string.IsNullOrWhiteSpace(prefix) ? name : $"{prefix} {name}";
     }
 
+    static void ValidateLifeStatus(bool isDead, DateTime? deathDate)
+    {
+        if (isDead && deathDate is null)
+            throw new InvalidOperationException("تاریخ وفات الزامی است");
+        if (!isDead && deathDate is not null)
+            throw new InvalidOperationException("تاریخ وفات فقط برای اشخاص درگذشته مجاز است");
+    }
+
+    static DateTime? ToDateOnly(DateTime? value) =>
+        value is null ? null : value.Value.Date;
+
     private static IQueryable<PersonDto> Project(IQueryable<Person> query) =>
         query.Select(p => new PersonDto(
             p.Id,
@@ -142,6 +158,7 @@ public class PersonService(AppDbContext db, IFusionCache cache)
             p.NamePrefixId,
             p.NamePrefix != null ? p.NamePrefix.Name : null,
             p.IsDead,
+            p.DeathDate,
             (p.NamePrefix != null ? p.NamePrefix.Name + " " : "")
             + p.FirstName
             + (p.LastName != null ? " " + p.LastName : ""),

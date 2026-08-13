@@ -245,7 +245,7 @@ onMounted(() => load().catch(() => {}))
         </div>
         <div class="form-group">
           <label>تاریخ</label>
-          <PersianDatePicker v-model="form.transactionDate" />
+          <PersianDatePicker v-model="form.transactionDate" required />
         </div>
         <div class="form-group form-span-full">
           <label>کد رهگیری <span class="optional">(اختیاری)</span></label>

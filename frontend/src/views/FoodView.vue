@@ -54,6 +54,7 @@ const formTitle = computed(() => (editing.value ? 'ویرایش تهیه غذا'
 function getRules() {
   return {
     name: [{ type: 'required', msg: 'نام غذا الزامی است' }],
+    cookDate: [{ type: 'required', msg: 'تاریخ پخت الزامی است' }],
     totalCount: [{ type: 'positiveNumber', msg: 'تعداد باید حداقل ۱ باشد' }],
     ingredientRows: [
       (val) => {
@@ -196,6 +197,7 @@ onMounted(load)
           v-model="cookDate"
           variant="bar"
           placeholder="تاریخ پخت"
+          required
           @change="load"
         />
         <button
@@ -231,7 +233,7 @@ onMounted(load)
         </div>
         <div class="form-group">
           <label>تاریخ</label>
-          <PersianDatePicker v-model="form.cookDate" />
+          <PersianDatePicker v-model="form.cookDate" required />
         </div>
         <div class="form-group">
           <label>تعداد پخته شده *</label>

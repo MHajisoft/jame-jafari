@@ -18,6 +18,7 @@ public class Person : AuditableEntity
     public int? NamePrefixId { get; set; }
     public GeneralType? NamePrefix { get; set; }
     public bool IsDead { get; set; }
+    public DateTime? DeathDate { get; set; }
 
     public ICollection<Person> ChildrenAsFather { get; set; } = [];
     public ICollection<Person> ChildrenAsMother { get; set; } = [];

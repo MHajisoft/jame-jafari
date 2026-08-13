@@ -21,6 +21,7 @@ public record PersonDto(
     int? NamePrefixId,
     string? NamePrefixName,
     bool IsDead,
+    DateTime? DeathDate,
     string DisplayName,
     AuditInfoDto Audit);
 
@@ -49,7 +50,8 @@ public record CreatePersonRequest(
 
     int? NamePrefixId,
 
-    bool IsDead);
+    bool IsDead,
+    DateTime? DeathDate);
 
 public record UpdatePersonRequest(
     [Required(ErrorMessage = "نام الزامی است")]
@@ -76,4 +78,5 @@ public record UpdatePersonRequest(
 
     int? NamePrefixId,
 
-    bool IsDead);
+    bool IsDead,
+    DateTime? DeathDate);
