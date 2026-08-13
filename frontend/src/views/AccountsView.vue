@@ -3,7 +3,6 @@ import { computed, onMounted } from 'vue'
 import api from '../api/client'
 import { ApiPaths } from '../api/paths'
 import { useAuthStore } from '../stores/auth'
-import { useToastStore } from '../stores/toast'
 import { useDialogStore } from '../stores/dialog'
 import { useLookupsStore } from '../stores/lookups'
 import { useFormValidation } from '../composables/useFormValidation'
@@ -18,7 +17,6 @@ import PageHeader from '../components/PageHeader.vue'
 import AppSkeleton from '../components/AppSkeleton.vue'
 
 const auth = useAuthStore()
-const toast = useToastStore()
 const dialog = useDialogStore()
 const lookups = useLookupsStore()
 const isMobile = useIsMobile()

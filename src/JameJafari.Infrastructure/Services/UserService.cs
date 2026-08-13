@@ -131,7 +131,7 @@ public class UserService(AppDbContext db, IAppPasswordHasher passwordHasher)
             u.Mobile,
             u.AvatarPath,
             u.IsActive,
-            u.Username.ToLower() == SystemUsers.AdminUsername,
+            u.Username == SystemUsers.AdminUsername,
             u.UserPermissions.Select(up => up.Permission.Code).ToList(),
             new AuditInfoDto(
                 u.CreatedAt,

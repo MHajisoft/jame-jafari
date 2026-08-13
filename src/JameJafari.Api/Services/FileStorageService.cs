@@ -2,7 +2,10 @@ using Microsoft.AspNetCore.Http;
 
 namespace JameJafari.Api.Services;
 
-public class FileStorageService(IWebHostEnvironment env, ImageProcessingService imageProcessing)
+public class FileStorageService(
+    IWebHostEnvironment env,
+    ImageProcessingService imageProcessing,
+    ILogger<FileStorageService> logger)
 {
     private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -22,7 +25,7 @@ public class FileStorageService(IWebHostEnvironment env, ImageProcessingService 
     /// <summary>Mobile cameras often send empty Content-Type; accept known image extensions.</summary>
     public static bool IsImageUpload(IFormFile file)
     {
-        if (file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        if (file.ContentType?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) == true)
             return true;
         var ext = Path.GetExtension(file.FileName);
         return !string.IsNullOrWhiteSpace(ext) && ImageExtensions.Contains(ext);
@@ -59,8 +62,9 @@ public class FileStorageService(IWebHostEnvironment env, ImageProcessingService 
                 await using var stream = File.Create(fullPath);
                 await processed.CopyToAsync(stream);
             }
-            catch
+            catch (Exception ex)
             {
+                logger.LogWarning(ex, "Image processing failed; saving original upload");
                 var fallbackName = $"{Guid.NewGuid():N}{ext.ToLowerInvariant()}";
                 var fallbackPath = Path.Combine(dir, fallbackName);
                 await using var stream = File.Create(fallbackPath);
@@ -87,8 +91,9 @@ public class FileStorageService(IWebHostEnvironment env, ImageProcessingService 
             File.Delete(fullPath);
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogWarning(ex, "Failed to delete upload at {RelativePath}", relativePath);
             return false;
         }
     }

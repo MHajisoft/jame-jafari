@@ -1,0 +1,40 @@
+---
+description: SonarQube code quality and security via sonar-* skills and MCP. Use when analyzing quality gates, listing/fixing Sonar issues, coverage, duplication, or dependency risks.
+alwaysApply: false
+---
+
+# SonarQube (Cursor)
+
+Vendored from [SonarSource/sonarqube-agent-plugins](https://github.com/SonarSource/sonarqube-agent-plugins) (SSAL-1.0).
+
+## Setup (once per machine)
+
+1. Install [SonarQube CLI](https://cli.sonarqube.com/) (`sonar` on PATH).
+2. Authenticate: `sonar auth login` (token in OS keychain).
+3. Run **`sonar-integrate`** skill (or `sonar integrate cursor --non-interactive` in this repo).
+4. Enable **MCP → sonarqube** in Cursor Settings; Docker/Podman/Nerdctl must be running.
+5. Optional: `sonar-project.properties` at repo root with `sonar.projectKey=...`.
+
+## Skills (`.cursor/skills/sonar-*`)
+
+| Skill | Purpose |
+|-------|---------|
+| `sonar-integrate` | Install CLI, auth, wire MCP + hooks |
+| `sonar-list-projects` | List project keys |
+| `sonar-list-issues` | Issues with filters |
+| `sonar-fix-issue` | Fix one rule at file:line |
+| `sonar-quality-gate` | Pass/fail + conditions |
+| `sonar-analyze` | Analyze file/snippet |
+| `sonar-coverage` | Coverage by file/line |
+| `sonar-duplication` | Duplicated blocks |
+| `sonar-dependency-risks` | SCA / vulnerable deps |
+
+Invoke by name or natural language (“check quality gate”, “SonarQube issues on this PR”).
+
+## Agent
+
+**`sonarqube-reviewer`** (`.cursor/agents/sonarqube-reviewer.agent.md`) — read-only PR/diff review composing the skills above; does not edit code.
+
+## MCP
+
+Config: `.cursor/mcp.json` — runs `sonar run mcp`. Requires authenticated CLI + container runtime.

@@ -51,7 +51,8 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
 
         db.IncomeTransactions.Add(entity);
         await db.SaveChangesAsync();
-        return await GetIncomeByIdAsync(entity.Id) ?? throw new InvalidOperationException();
+        return await GetIncomeByIdAsync(entity.Id)
+            ?? throw new InvalidOperationException("تراکنش پس از ذخیره یافت نشد");
     }
 
     public async Task<IncomeTransactionDto?> UpdateIncomeAsync(
@@ -159,7 +160,8 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
         db.CostTransactions.Add(entity);
         await db.SaveChangesAsync();
         await LookupCache.InvalidateIngredientRecsAsync(cache);
-        return await GetCostByIdAsync(entity.Id) ?? throw new InvalidOperationException();
+        return await GetCostByIdAsync(entity.Id)
+            ?? throw new InvalidOperationException("تراکنش پس از ذخیره یافت نشد");
     }
 
     public async Task<CostTransactionDto?> UpdateCostAsync(

@@ -214,6 +214,7 @@ cd frontend && npm run build
 | `permissions-auth.mdc` | auth + permissions |
 | `forms-ui-patterns.mdc` | فرم‌ها، UI، overlay back، پیوست‌ها |
 | `jame-jafari-theming` skill | `.cursor/skills/jame-jafari-theming/` — توکن رنگ و تم |
+| SonarQube (اختیاری) | `.cursor/SONARQUBE.md` — skills `sonar-*`، agent `sonarqube-reviewer`، MCP در `.cursor/mcp.json` |
 
 **الزام:** هر تغییر معنادار در رفتار یا معماری → به‌روزرسانی **`README.md`** و rule مرتبط در **همان تغییر**.
 

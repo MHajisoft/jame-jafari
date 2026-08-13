@@ -35,7 +35,7 @@ public static class DbSeeder
 
             db.UserPermissions.AddRange(allPerms.Select(p => new UserPermission { UserId = admin.Id, PermissionId = p.Id }));
             await db.SaveChangesAsync();
-            logger.LogInformation("Default admin user created: {Username} / admin@123 (all permissions)", SystemUsers.AdminUsername);
+            logger.LogInformation("Default admin user created: {Username} (all permissions)", SystemUsers.AdminUsername);
         }
 
         if (!await db.GeneralTypes.AnyAsync())
@@ -123,7 +123,7 @@ public static class DbSeeder
         IReadOnlyList<int> newlyAddedPermissionIds)
     {
         var admin = await db.Users
-            .FirstOrDefaultAsync(u => u.Username.ToLower() == SystemUsers.AdminUsername);
+            .FirstOrDefaultAsync(u => u.Username == SystemUsers.AdminUsername);
         if (admin is null) return;
 
         var allPermissionIds = await db.Permissions.Select(p => p.Id).ToListAsync();

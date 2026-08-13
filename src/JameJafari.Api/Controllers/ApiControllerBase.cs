@@ -9,8 +9,16 @@ namespace JameJafari.Api.Controllers;
 [Route("api/[controller]")]
 public abstract class ApiControllerBase : ControllerBase
 {
-    protected int CurrentUserId =>
-        int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    protected int CurrentUserId
+    {
+        get
+        {
+            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (raw is null || !int.TryParse(raw, out var id))
+                throw new UnauthorizedAccessException();
+            return id;
+        }
+    }
 
     protected bool HasPermission(string permission) =>
         User.HasClaim("permission", permission);
