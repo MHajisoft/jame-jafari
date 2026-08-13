@@ -334,8 +334,8 @@ onBeforeUnmount(() => {
         @click="toggle"
       >
         <div v-if="selected" class="select-selected-block">
-          <div class="trigger-person-slot" @click.stop>
-            <PersonCell :person="selected" :size="28" />
+          <div class="trigger-person-slot">
+            <PersonCell :person="selected" :size="28" :previewable="false" />
           </div>
           <span v-if="selectedParentHint" class="select-parent">{{ selectedParentHint }}</span>
         </div>
@@ -397,8 +397,8 @@ onBeforeUnmount(() => {
               @click="selectPerson(p)"
             >
               <div class="person-info">
-                <div class="person-option-cell" @click.stop>
-                  <PersonCell :person="p" :size="40" />
+                <div class="person-option-cell">
+                  <PersonCell :person="p" :size="40" :previewable="false" />
                 </div>
                 <div v-if="parentsLine(p)" class="person-parents">{{ parentsLine(p) }}</div>
               </div>
@@ -433,8 +433,8 @@ onBeforeUnmount(() => {
               @click="selectPerson(p)"
             >
               <div class="person-info">
-                <div class="person-option-cell" @click.stop>
-                  <PersonCell :person="p" :size="40" />
+                <div class="person-option-cell">
+                  <PersonCell :person="p" :size="40" :previewable="false" />
                 </div>
                 <div v-if="parentsLine(p)" class="person-parents">{{ parentsLine(p) }}</div>
               </div>
