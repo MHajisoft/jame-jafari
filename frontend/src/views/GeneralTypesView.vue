@@ -142,7 +142,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="general-types-page">
+  <div class="general-types-page" :class="{ 'form-open': showForm }">
     <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
       <h1 class="page-title">
         <template v-if="showForm && !isMobile">
@@ -160,7 +160,7 @@ onMounted(load)
       </button>
     </div>
 
-    <div v-show="!showForm || isMobile" class="page-tabs-wrap">
+    <div v-show="!showForm" class="page-tabs-wrap">
       <div class="page-tabs">
         <button
           v-for="cat in CATEGORIES"
@@ -214,18 +214,28 @@ onMounted(load)
         <thead>
           <tr>
             <th>نام</th>
-            <th>کد</th>
-            <th>ترتیب</th>
-            <th>وضعیت</th>
+            <th class="hide-mobile">کد</th>
+            <th class="hide-mobile">ترتیب</th>
+            <th class="hide-mobile">وضعیت</th>
             <th v-if="canUpdate || canDelete"></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
-            <td data-label="نام"><strong>{{ item.name }}</strong></td>
-            <td data-label="کد">{{ item.code || '—' }}</td>
-            <td data-label="ترتیب">{{ item.sortOrder }}</td>
-            <td data-label="وضعیت">
+            <td data-label="نام">
+              <span class="type-title">
+                <span
+                  class="type-status-mobile"
+                  :class="item.isActive ? 'badge badge-success' : 'badge badge-danger'"
+                >
+                  {{ item.isActive ? 'فعال' : 'غیرفعال' }}
+                </span>
+                <strong>{{ item.name }}</strong>
+              </span>
+            </td>
+            <td data-label="کد" class="hide-mobile">{{ item.code || '—' }}</td>
+            <td data-label="ترتیب" class="hide-mobile">{{ item.sortOrder }}</td>
+            <td data-label="وضعیت" class="hide-mobile">
               <span :class="item.isActive ? 'badge badge-success' : 'badge badge-danger'">
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>
@@ -277,10 +287,23 @@ onMounted(load)
   background: color-mix(in srgb, var(--primary) 16%, transparent);
   color: var(--primary);
 }
+.type-title {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.type-status-mobile {
+  display: none;
+}
 
 @media (max-width: 768px) {
   .general-types-page {
     padding-top: 3.55rem;
+  }
+  .general-types-page.form-open {
+    padding-top: 0;
   }
   .general-types-page .page-header {
     margin-bottom: 0;
@@ -306,6 +329,12 @@ onMounted(load)
     flex: 1;
     text-align: center;
     min-height: 40px;
+  }
+  .type-status-mobile {
+    display: inline-flex;
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    padding: 0.12rem 0.45rem;
   }
 }
 </style>
