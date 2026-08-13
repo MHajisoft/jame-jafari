@@ -1044,3 +1044,32 @@ button.field-invalid:focus {
     box-shadow: var(--shadow);
   }
 }
+
+/* Mobile exit-back confirm (initPwaExitBack) — above bottom nav */
+.pwa-exit-hint {
+  position: fixed;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0) + 0.5rem);
+  z-index: 3200;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: center;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+  direction: rtl;
+  pointer-events: none;
+  animation: pwa-exit-hint-in 0.22s ease;
+}
+@keyframes pwa-exit-hint-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (min-width: 769px) {
+  .pwa-exit-hint { display: none; }
+}

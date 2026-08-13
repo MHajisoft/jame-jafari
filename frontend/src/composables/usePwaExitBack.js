@@ -1,47 +1,19 @@
+import { createApp, h, ref } from 'vue'
 import router from '../router'
-import { useToastStore } from '../stores/toast'
 import { hasActiveOverlay } from './useOverlayBack'
 import { activeFormPage } from './useFormPage'
 
-/** Bottom primary tabs — back here can exit the installed PWA (not nested pages). */
+/** Bottom primary tabs — back here can exit / leave after a confirm press. */
 const PRIMARY_EXIT_PATHS = ['/income', '/cost', '/reports', '/more', '/login']
 
 const EXIT_GUARD = 'appExitGuard'
 const EXIT_HINT = 'برای خروج دوباره دکمه بازگشت را بزنید'
 const EXIT_ARM_MS = 2000
-const PWA_FLAG = 'jj-pwa-standalone'
 
 let initialized = false
-/** Timestamp of the last exit toast / first back at root. */
 let lastArmAt = 0
 let allowingExit = false
-
-function markStandalone() {
-  try {
-    sessionStorage.setItem(PWA_FLAG, '1')
-  } catch {
-    /* private mode */
-  }
-}
-
-function isStandalonePwa() {
-  if (typeof window === 'undefined') return false
-  const now =
-    window.matchMedia('(display-mode: standalone)').matches ||
-    window.matchMedia('(display-mode: minimal-ui)').matches ||
-    window.navigator.standalone === true ||
-    document.documentElement.classList.contains('pwa-standalone') ||
-    document.referrer.includes('android-app://')
-  if (now) {
-    markStandalone()
-    return true
-  }
-  try {
-    return sessionStorage.getItem(PWA_FLAG) === '1'
-  } catch {
-    return false
-  }
-}
+let hintApi = null
 
 function isMobileViewport() {
   return window.matchMedia('(max-width: 768px)').matches
@@ -66,16 +38,56 @@ function hasBlockingLayer() {
 }
 
 function canManageExit() {
-  return isStandalonePwa() && isMobileViewport() && isExitRootPath() && !hasBlockingLayer()
+  return isMobileViewport() && isExitRootPath() && !hasBlockingLayer()
 }
 
-function showExitHint() {
-  lastArmAt = Date.now()
-  try {
-    useToastStore().info(EXIT_HINT, { duration: EXIT_ARM_MS })
-  } catch {
-    /* pinia not ready */
+function ensureHintUi() {
+  if (hintApi || typeof document === 'undefined') return hintApi
+  const visible = ref(false)
+  const message = ref(EXIT_HINT)
+  let hideTimer = null
+
+  const Host = {
+    setup() {
+      return () =>
+        visible.value
+          ? h(
+              'div',
+              {
+                class: 'pwa-exit-hint',
+                role: 'status',
+                'aria-live': 'assertive'
+              },
+              message.value
+            )
+          : null
+    }
   }
+
+  const mountEl = document.createElement('div')
+  mountEl.id = 'pwa-exit-hint-host'
+  document.body.appendChild(mountEl)
+  createApp(Host).mount(mountEl)
+
+  hintApi = {
+    show(text = EXIT_HINT, ms = EXIT_ARM_MS) {
+      message.value = text
+      visible.value = true
+      if (hideTimer != null) clearTimeout(hideTimer)
+      hideTimer = window.setTimeout(() => {
+        visible.value = false
+        hideTimer = null
+      }, ms)
+    },
+    hide() {
+      visible.value = false
+      if (hideTimer != null) {
+        clearTimeout(hideTimer)
+        hideTimer = null
+      }
+    }
+  }
+  return hintApi
 }
 
 function isArmed() {
@@ -84,6 +96,12 @@ function isArmed() {
 
 function clearArm() {
   lastArmAt = 0
+  hintApi?.hide()
+}
+
+function showExitHint() {
+  lastArmAt = Date.now()
+  ensureHintUi()?.show(EXIT_HINT, EXIT_ARM_MS)
 }
 
 function pushExitGuard() {
@@ -97,24 +115,20 @@ function maintainExitGuard() {
 }
 
 function onPopState() {
-  // Let the second-press navigation leave without trapping again
   if (allowingExit) {
     allowingExit = false
     return
   }
 
-  if (!isStandalonePwa() || !isMobileViewport()) return
+  if (!isMobileViewport()) return
 
-  // Overlay / form / nested page owns this back
   if (hasBlockingLayer() || !isExitRootPath()) {
     clearArm()
     return
   }
 
-  // Guard entry still current (shouldn't normally happen on a user back)
   if (history.state?.[EXIT_GUARD]) return
 
-  // Second back within window → exit PWA
   if (isArmed()) {
     clearArm()
     allowingExit = true
@@ -122,21 +136,20 @@ function onPopState() {
     return
   }
 
-  // First back: toast + put guard back immediately (sync — before paint/unload)
+  // First back at root: show hint and restore guard immediately (sync)
   showExitHint()
   pushExitGuard()
 }
 
 /**
- * Standalone mobile PWA: on primary tabs, system back shows a toast and exits
- * only on a second press within 2s. Overlays/forms/nested routes still win first.
+ * Mobile: on primary tabs, system back shows an exit hint and leaves only on
+ * a second press within 2s. Overlays/forms/nested routes still win first.
  */
 export function initPwaExitBack() {
   if (initialized || typeof window === 'undefined') return
   initialized = true
 
-  if (isStandalonePwa()) markStandalone()
-
+  ensureHintUi()
   window.addEventListener('popstate', onPopState)
 
   router.afterEach((to) => {
@@ -144,7 +157,6 @@ export function initPwaExitBack() {
       clearArm()
       return
     }
-    // Sync — Vue Router has already committed history for this navigation
     maintainExitGuard()
   })
 
@@ -152,15 +164,7 @@ export function initPwaExitBack() {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') maintainExitGuard()
   })
-
-  // Keep guard on top after user interaction (also satisfies gesture requirements)
-  document.addEventListener(
-    'pointerdown',
-    () => {
-      maintainExitGuard()
-    },
-    { passive: true }
-  )
+  document.addEventListener('pointerdown', () => maintainExitGuard(), { passive: true })
 
   maintainExitGuard()
 }

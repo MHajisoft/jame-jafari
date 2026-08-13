@@ -221,17 +221,13 @@ onMounted(load)
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in items" :key="item.id">
+          <tr
+            v-for="item in items"
+            :key="item.id"
+            :class="item.isActive ? 'type-row-active' : 'type-row-inactive'"
+          >
             <td data-label="نام">
-              <span class="type-title">
-                <span
-                  class="type-status-mobile"
-                  :class="item.isActive ? 'badge badge-success' : 'badge badge-danger'"
-                >
-                  {{ item.isActive ? 'فعال' : 'غیرفعال' }}
-                </span>
-                <strong>{{ item.name }}</strong>
-              </span>
+              <strong>{{ item.name }}</strong>
             </td>
             <td data-label="کد" class="hide-mobile">{{ item.code || '—' }}</td>
             <td data-label="ترتیب" class="hide-mobile">{{ item.sortOrder }}</td>
@@ -287,16 +283,6 @@ onMounted(load)
   background: color-mix(in srgb, var(--primary) 16%, transparent);
   color: var(--primary);
 }
-.type-title {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  min-width: 0;
-}
-.type-status-mobile {
-  display: none;
-}
 
 @media (max-width: 768px) {
   .general-types-page {
@@ -330,11 +316,16 @@ onMounted(load)
     text-align: center;
     min-height: 40px;
   }
-  .type-status-mobile {
-    display: inline-flex;
-    flex-shrink: 0;
-    font-size: 0.68rem;
-    padding: 0.12rem 0.45rem;
+  /* Status as a color strip on the card's right edge */
+  .mobile-table tbody tr.type-row-active {
+    box-shadow:
+      inset -4px 0 0 var(--success),
+      0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+  .mobile-table tbody tr.type-row-inactive {
+    box-shadow:
+      inset -4px 0 0 var(--danger),
+      0 1px 2px rgba(0, 0, 0, 0.04);
   }
 }
 </style>
