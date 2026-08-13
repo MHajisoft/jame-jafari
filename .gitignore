@@ -11,10 +11,15 @@ dist/
 *.user
 *.suo
 .zcode
-# Cursor: ignore local IDE state; keep project rules in git
+# Cursor: ignore local IDE state; keep project rules + vps-publish skill in git
 .cursor/*
 !.cursor/rules/
 !.cursor/rules/**
+!.cursor/skills/
+.cursor/skills/*
+!.cursor/skills/vps-publish/
+!.cursor/skills/vps-publish/**
+.cursor/skills/vps-publish/config.local.md
 
 # Dependencies
 node_modules/
