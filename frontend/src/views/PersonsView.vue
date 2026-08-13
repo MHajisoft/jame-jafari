@@ -11,15 +11,13 @@ import { useFormValidation } from '../composables/useFormValidation'
 import { useAvatarField } from '../composables/useAvatarField'
 import { useIsMobile } from '../composables/useMediaQuery'
 import AppSelect from '../components/AppSelect.vue'
+import PersonCell from '../components/PersonCell.vue'
 import PersonSelect from '../components/PersonSelect.vue'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import AppCheckbox from '../components/AppCheckbox.vue'
 import RowActions from '../components/RowActions.vue'
-import EntityAvatar from '../components/EntityAvatar.vue'
 import AvatarPicker from '../components/AvatarPicker.vue'
-import PersonLifeStatus from '../components/PersonLifeStatus.vue'
-import NickBadge from '../components/NickBadge.vue'
 import AppSkeleton from '../components/AppSkeleton.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
 
@@ -291,27 +289,24 @@ onMounted(load)
           <tbody>
             <tr v-for="item in items" :key="item.id">
               <td data-label="نام">
-                <div class="entity-cell">
-                  <EntityAvatar
-                    :src="item.picturePath"
-                    :name="item.displayName"
-                    :deceased="item.isDead"
-                    previewable
-                    :preview-title="item.displayName"
-                  />
-                  <div class="entity-name-stack">
-                    <span class="person-name-with-nick">
-                      <strong :class="{ 'name-deceased': item.isDead }">{{ item.displayName }}</strong>
-                      <NickBadge :value="item.nickName" />
-                      <PersonLifeStatus :is-dead="item.isDead" />
-                    </span>
-                  </div>
-                </div>
+                <PersonCell :person="item" />
               </td>
               <td data-label="جنسیت">{{ genderLabel(item.gender) }}</td>
               <td data-label="موبایل">{{ item.mobile || '—' }}</td>
-              <td data-label="پدر">{{ item.fatherName || '—' }}</td>
-              <td data-label="مادر">{{ item.motherName || '—' }}</td>
+              <td data-label="پدر">
+                <PersonCell
+                  :person="item.fatherSummary"
+                  :display-name="item.fatherSummary ? '' : (item.fatherName || '')"
+                  :previewable="!!item.fatherSummary"
+                />
+              </td>
+              <td data-label="مادر">
+                <PersonCell
+                  :person="item.motherSummary"
+                  :display-name="item.motherSummary ? '' : (item.motherName || '')"
+                  :previewable="!!item.motherSummary"
+                />
+              </td>
               <td v-if="auth.hasAnyPermission('persons.update', 'persons.delete')">
                 <RowActions
                   :show-edit="auth.hasPermission('persons.update')"
@@ -341,24 +336,4 @@ onMounted(load)
   padding: 0;
 }
 .link-btn:hover { text-decoration: underline; }
-
-.entity-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  min-width: 0;
-}
-.entity-name-stack {
-  min-width: 0;
-  flex: 1;
-}
-.entity-cell strong {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.name-deceased {
-  color: color-mix(in srgb, var(--text-muted) 55%, var(--text));
-  font-weight: 600;
-}
 </style>

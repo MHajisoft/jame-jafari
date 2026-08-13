@@ -162,6 +162,26 @@ public class PersonService(AppDbContext db, IFusionCache cache)
             (p.NamePrefix != null ? p.NamePrefix.Name + " " : "")
             + p.FirstName
             + (p.LastName != null ? " " + p.LastName : ""),
+            p.Father == null
+                ? null
+                : new PersonSummaryDto(
+                    p.Father.Id,
+                    (p.Father.NamePrefix != null ? p.Father.NamePrefix.Name + " " : "")
+                    + p.Father.FirstName
+                    + (p.Father.LastName != null ? " " + p.Father.LastName : ""),
+                    p.Father.NickName,
+                    p.Father.PicturePath,
+                    p.Father.IsDead),
+            p.Mother == null
+                ? null
+                : new PersonSummaryDto(
+                    p.Mother.Id,
+                    (p.Mother.NamePrefix != null ? p.Mother.NamePrefix.Name + " " : "")
+                    + p.Mother.FirstName
+                    + (p.Mother.LastName != null ? " " + p.Mother.LastName : ""),
+                    p.Mother.NickName,
+                    p.Mother.PicturePath,
+                    p.Mother.IsDead),
             new AuditInfoDto(
                 p.CreatedAt,
                 p.CreatedBy != null ? p.CreatedBy.Username : null,

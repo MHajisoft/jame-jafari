@@ -23,6 +23,8 @@ public record PersonDto(
     bool IsDead,
     DateTime? DeathDate,
     string DisplayName,
+    PersonSummaryDto? FatherSummary,
+    PersonSummaryDto? MotherSummary,
     AuditInfoDto Audit);
 
 public record CreatePersonRequest(

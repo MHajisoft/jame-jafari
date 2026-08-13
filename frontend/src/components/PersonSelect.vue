@@ -2,9 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import api from '../api/client'
 import { ApiPaths } from '../api/paths'
-import PersonLifeStatus from './PersonLifeStatus.vue'
-import NickBadge from './NickBadge.vue'
-import EntityAvatar from './EntityAvatar.vue'
+import PersonCell from './PersonCell.vue'
 
 const props = defineProps({
   modelValue: { type: [String, Number], default: '' },
@@ -55,10 +53,7 @@ const canClear = computed(() => props.allowEmpty && hasValue.value)
 const canSearch = computed(() => query.value.trim().length >= props.minSearchLength)
 const hasMore = computed(() => canSearch.value && items.value.length < totalCount.value)
 
-const selectedLabel = computed(() => personFullName(selected.value))
-const selectedNickName = computed(() => selected.value?.nickName || '')
 const selectedParentHint = computed(() => parentHintName(selected.value))
-const selectedIsDead = computed(() => !!selected.value?.isDead)
 
 function personFullName(p) {
   if (!p) return ''
@@ -338,27 +333,13 @@ onBeforeUnmount(() => {
         :aria-expanded="open"
         @click="toggle"
       >
-        <span v-if="selected" class="trigger-avatar-slot" @click.stop>
-          <EntityAvatar
-            :src="selected.picturePath"
-            :name="selectedLabel"
-            :deceased="selectedIsDead"
-            :size="28"
-            previewable
-            :preview-title="selectedLabel"
-          />
-        </span>
-        <span class="select-value" :class="{ placeholder: !selected }">
-          <template v-if="selected">
-            <span class="select-main">
-              <span class="select-name" :class="{ deceased: selectedIsDead }">{{ selectedLabel }}</span>
-              <NickBadge :value="selectedNickName" />
-              <PersonLifeStatus :is-dead="selectedIsDead" />
-            </span>
-            <span v-if="selectedParentHint" class="select-parent">{{ selectedParentHint }}</span>
-          </template>
-          <template v-else>{{ placeholder }}</template>
-        </span>
+        <div v-if="selected" class="select-selected-block">
+          <div class="trigger-person-slot" @click.stop>
+            <PersonCell :person="selected" :size="28" />
+          </div>
+          <span v-if="selectedParentHint" class="select-parent">{{ selectedParentHint }}</span>
+        </div>
+        <span v-else class="select-value placeholder">{{ placeholder }}</span>
         <span class="select-caret" aria-hidden="true">▾</span>
       </button>
       <button
@@ -415,24 +396,11 @@ onBeforeUnmount(() => {
               :class="{ selected: sameId(modelValue, p.id) }"
               @click="selectPerson(p)"
             >
-              <div class="person-avatar-slot" @click.stop>
-                <EntityAvatar
-                  :src="p.picturePath"
-                  :name="personFullName(p)"
-                  :deceased="!!p.isDead"
-                  :size="40"
-                  previewable
-                  :preview-title="personFullName(p)"
-                />
-              </div>
               <div class="person-info">
-                <div class="person-name">
-                  <span class="first" :class="{ deceased: !!p.isDead }">{{ p.firstName }}</span>
-                  <span v-if="p.lastName" class="last">{{ p.lastName }}</span>
-                  <NickBadge :value="p.nickName" />
-                  <PersonLifeStatus :is-dead="!!p.isDead" />
+                <div class="person-option-cell" @click.stop>
+                  <PersonCell :person="p" :size="40" />
                 </div>
-                <div v-if="parentHintName(p)" class="person-parents">{{ parentHintName(p) }}</div>
+                <div v-if="parentsLine(p)" class="person-parents">{{ parentsLine(p) }}</div>
               </div>
             </button>
             <div v-if="!canSearch" class="option-status">برای جستجو تایپ کنید</div>
@@ -464,24 +432,11 @@ onBeforeUnmount(() => {
               :class="{ selected: sameId(modelValue, p.id) }"
               @click="selectPerson(p)"
             >
-              <div class="person-avatar-slot" @click.stop>
-                <EntityAvatar
-                  :src="p.picturePath"
-                  :name="personFullName(p)"
-                  :deceased="!!p.isDead"
-                  :size="40"
-                  previewable
-                  :preview-title="personFullName(p)"
-                />
-              </div>
               <div class="person-info">
-                <div class="person-name">
-                  <span class="first" :class="{ deceased: !!p.isDead }">{{ p.firstName }}</span>
-                  <span v-if="p.lastName" class="last">{{ p.lastName }}</span>
-                  <NickBadge :value="p.nickName" />
-                  <PersonLifeStatus :is-dead="!!p.isDead" />
+                <div class="person-option-cell" @click.stop>
+                  <PersonCell :person="p" :size="40" />
                 </div>
-                <div v-if="parentHintName(p)" class="person-parents">{{ parentHintName(p) }}</div>
+                <div v-if="parentsLine(p)" class="person-parents">{{ parentsLine(p) }}</div>
               </div>
             </button>
             <div v-if="!canSearch" class="option-status">برای جستجو تایپ کنید</div>
@@ -510,9 +465,21 @@ onBeforeUnmount(() => {
   padding-block: 0.35rem;
 }
 .select-trigger.has-avatar { gap: 0.55rem; }
-.trigger-avatar-slot {
+.select-selected-block {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+}
+.trigger-person-slot {
   flex-shrink: 0;
   display: inline-flex;
+  max-width: 100%;
+}
+.person-option-cell {
+  max-width: 100%;
 }
 .select-name.deceased,
 .person-name .first.deceased {
