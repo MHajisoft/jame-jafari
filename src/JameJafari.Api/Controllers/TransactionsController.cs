@@ -112,7 +112,10 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
         {
             try
             {
-                paths.Add(await storage.SaveAsync(document, "transactions"));
+                var profile = FileStorageService.IsImageUpload(document)
+                    ? ImageProcessProfile.Document
+                    : (ImageProcessProfile?)null;
+                paths.Add(await storage.SaveAsync(document, "transactions", profile));
             }
             catch (InvalidOperationException)
             {
@@ -224,7 +227,10 @@ public class CostTransactionsController(TransactionService service, FileStorageS
         {
             try
             {
-                paths.Add(await storage.SaveAsync(document, "transactions"));
+                var profile = FileStorageService.IsImageUpload(document)
+                    ? ImageProcessProfile.Document
+                    : (ImageProcessProfile?)null;
+                paths.Add(await storage.SaveAsync(document, "transactions", profile));
             }
             catch (InvalidOperationException)
             {

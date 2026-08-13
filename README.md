@@ -93,7 +93,7 @@ docker build -t jamejafari-web ./frontend
 |------|---------|
 | **Core** | مدل دامنه، DTO، `PermissionCodes`، `PasswordPolicy` — بدون وابستگی خارجی |
 | **Infrastructure** | `AppDbContext`، سرویس‌های concrete، FusionCache، password hasher |
-| **Api** | Controller نازک، `PermissionFilter`، `FileStorageService` |
+| **Api** | Controller نازک، `PermissionFilter`، `FileStorageService`، **`ImageProcessingService`** (آواتار/سند) |
 
 **الگوهای کلیدی:**
 - سرویس per-aggregate؛ بدون Repository/UoW جدا
@@ -110,7 +110,7 @@ docker build -t jamejafari-web ./frontend
 | `views/` | صفحات CRUD + گزارش (الگوی FormHost) |
 | `components/` | UI مشترک (ClearableInput، AppSelect، PersianDatePicker، …) |
 | `composables/` | `useEntityForm`، `useFormValidation`، `useFormPage`، **`useOverlayBack`** |
-| `stores/` | auth، lookups، theme، uiPrefs، toast، dialog |
+| `stores/` | auth، lookups، theme، uiPrefs، toast، dialog، **loading** (overlay سراسری API) |
 | `api/` | axios client + `ApiPaths` |
 
 **الگوهای کلیدی:**
@@ -119,6 +119,7 @@ docker build -t jamejafari-web ./frontend
 - دسترسی UI: `auth.hasPermission('module.action')`
 - تاریخ: نمایش شمسی، ذخیره ISO میلادی
 - فرم‌ها: `form-layout-adaptive` (۲ ستون / ۳ ستون در عرض زیاد)، `form-span-full` برای textarea/پیوست
+- **بارگذاری:** `AppGlobalLoader` برای همه درخواست‌های axios (به‌جز `skipGlobalLoader`); لیست‌ها قبل از داده → `AppSkeleton`
 
 ## قابلیت‌ها
 
@@ -128,6 +129,7 @@ docker build -t jamejafari-web ./frontend
 - **پیوست‌ها:** چند فایل تصویر/PDF per تراکنش (`TransactionAttachment`)
   - دسترسی‌ها (بدون منو): `attachments.view` (لیست/پیش‌نمایش)، `attachments.add` (آپلود)، `attachments.delete` (حذف)
   - **ایجاد/ویرایش:** `TransactionAttachmentsField` — افزودن چند فایل؛ حذف تکی (در ویرایش: فوری via API)
+  - **پردازش تصویر (سرور):** آپلود خام از مرورگر؛ API هنگام ذخیره — آواتار: تشخیص چهره + برش مربعی ۵۱۲px؛ تصویر پیوست: برش/چهارضلعی فاکتور (OpenCV) + JPEG؛ PDF بدون تغییر
   - **لیست:** آیکون per پیوست → پیش‌نمایش درون‌برنامه (`DocumentPreview`)
   - **API:** `POST/PUT` multipart — فیلد JSON `data` + چند فایل `documents`؛ `DELETE .../attachments/{attachmentId}` (`attachments.delete` + `income|cost.update`)
   - پیش‌نمایش موبایل: back (top bar / gesture) overlay را می‌بندد، نه خروج از صفحه
@@ -135,6 +137,7 @@ docker build -t jamejafari-web ./frontend
 ### مدیریت
 - **کاربران:** ایجاد/ویرایش، آواتار، **ماتریس دسترسی** (`PermissionMatrix`)، تغییر رمز جدا (`users.changepassword`)
 - **اشخاص:** درخت خانوادگی (پدر/مادر)، پیشوند نام، آواتار، **لقب**؛ وضعیت حیات فقط با بج «درگذشته» وقتی `IsDead` است (کنار نام، دسکتاپ/موبایل)
+- **آواتار:** آپلود خام؛ سرور تشخیص چهره (Haar) + برش + JPEG مربعی ۵۱۲px؛ جایگزینی/حذف، فایل قبلی از دیسک پاک می‌شود
 - **حساب‌ها، انواع هزینه، انواع عمومی** (واحد، پیشوند نام)
 
 ### تهیه غذا

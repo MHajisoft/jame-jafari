@@ -30,7 +30,10 @@ alwaysApply: false
 - In `useEntityForm` `onReset`: clear `existingAttachments` only when `!editing` (create mode)
 - `startEdit`: call `openEdit(...)` first, then set `existingAttachments` from `item.attachments`
 
-## Document preview
+## Mobile attach / avatar pickers
+- Bottom sheets for camera/gallery: **`useOverlayBack`** + **`scheduleInputClickAfterSheetClose`** (wait for sheet unmount before opening native picker)
+- Avatars: **`AvatarPicker`** with front camera (`capture="user"`); do not duplicate picker UI in views
+- Do not call `showPicker()` on `capture` inputs — opens gallery instead of camera on iOS/Android
 - **`DocumentPreview`**: in-app preview (image iframe/PDF); download link secondary
 - List rows: **`DocumentAttachmentList`** + **`DocumentAttachmentButton`**
 - Mobile preview uses `useOverlayBack` with `stateKey: 'appDocPreview'`

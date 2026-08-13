@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import api from '../api/client'
+import { useMobileAttachSheet } from '../composables/useMobileAttachSheet'
 import { useDialogStore } from '../stores/dialog'
 import { useToastStore } from '../stores/toast'
-import { documentKind, documentUrl } from '../utils/format'
+import { documentKind, documentUrl, isImageFile } from '../utils/format'
 import DocumentPreview from './DocumentPreview.vue'
 
 const props = defineProps({
@@ -26,18 +27,29 @@ const emit = defineEmits(['update:pending', 'update:existing'])
 const dialog = useDialogStore()
 const toast = useToastStore()
 
-const sheetOpen = ref(false)
-const isMobile = ref(false)
-const fileInput = ref(null)
-const cameraInput = ref(null)
 const previewOpen = ref(false)
 const previewSrc = ref('')
 const previewKind = ref('file')
 const pendingUrls = ref([])
 
-function checkMobile() {
-  isMobile.value = window.matchMedia('(max-width: 768px)').matches
-}
+const {
+  isMobile,
+  sheetOpen,
+  fileInput,
+  cameraInput,
+  captureAttr,
+  closeSheet,
+  onFileChange,
+  openSheetOrFile,
+  openGallery,
+  openCamera
+} = useMobileAttachSheet({
+  cameraFacing: 'environment',
+  enabled: () => props.canAdd && !props.disabled,
+  onFiles(files) {
+    addFiles(files)
+  }
+})
 
 function revokePendingUrls() {
   for (const url of pendingUrls.value) URL.revokeObjectURL(url)
@@ -49,7 +61,7 @@ watch(
   (files) => {
     revokePendingUrls()
     pendingUrls.value = files.map((file) => {
-      if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+      if (isImageFile(file) || file.type === 'application/pdf') {
         return URL.createObjectURL(file)
       }
       return ''
@@ -76,24 +88,17 @@ function openExisting(att) {
 function openPending(file, index) {
   const src = pendingUrls.value[index]
   if (!src) return
-  openPreview(src, documentKind('', file.type))
+  openPreview(src, documentKind(file.name, file.type))
 }
 
 function addFiles(fileList) {
   if (!fileList?.length || props.disabled || !props.canAdd) return
-  emit('update:pending', [...props.pending, ...fileList])
-  sheetOpen.value = false
-}
-
-function onFileChange(e) {
-  addFiles(Array.from(e.target.files || []))
-  e.target.value = ''
+  emit('update:pending', [...props.pending, ...Array.from(fileList)])
 }
 
 function openAttach() {
   if (props.disabled || !props.canAdd) return
-  if (isMobile.value) sheetOpen.value = true
-  else fileInput.value?.click()
+  openSheetOrFile()
 }
 
 function removePending(index) {
@@ -119,13 +124,7 @@ async function removeExisting(att) {
   emit('update:existing', props.existing.filter(a => a.id !== att.id))
 }
 
-onMounted(() => {
-  checkMobile()
-  window.addEventListener('resize', checkMobile)
-})
-
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', checkMobile)
   revokePendingUrls()
 })
 </script>
@@ -175,13 +174,13 @@ onBeforeUnmount(() => {
       >
         <button type="button" class="tx-attach-preview" @click="openPending(file, index)">
           <img
-            v-if="documentKind('', file.type) === 'image' && pendingUrls[index]"
+            v-if="isImageFile(file) && pendingUrls[index]"
             :src="pendingUrls[index]"
             alt="پیوست جدید"
             class="tx-attach-thumb"
           />
-          <span v-else class="tx-attach-icon" :class="`tx-attach-icon--${documentKind('', file.type)}`" aria-hidden="true">
-            <svg v-if="documentKind('', file.type) === 'pdf'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <span v-else class="tx-attach-icon" :class="`tx-attach-icon--${documentKind(file.name, file.type)}`" aria-hidden="true">
+            <svg v-if="documentKind(file.name, file.type) === 'pdf'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
@@ -218,22 +217,28 @@ onBeforeUnmount(() => {
     <DocumentPreview v-model:show="previewOpen" :src="previewSrc" :kind="previewKind" />
 
     <input ref="fileInput" type="file" :accept="accept" multiple hidden @change="onFileChange" />
-    <input ref="cameraInput" type="file" accept="image/*" capture="environment" hidden @change="onFileChange" />
+    <input ref="cameraInput" type="file" accept="image/*" :capture="captureAttr" hidden @change="onFileChange" />
 
     <Teleport to="body">
-      <div v-if="sheetOpen && isMobile" class="attach-overlay" @click.self="sheetOpen = false">
+      <div v-if="sheetOpen && isMobile" class="attach-overlay" @click.self="closeSheet">
         <div class="attach-sheet">
           <div class="sheet-handle" />
           <p class="sheet-title">انتخاب منبع</p>
-          <button type="button" class="sheet-option" @click="cameraInput?.click()">
-            <span class="option-icon camera">📷</span>
-            <span class="option-text"><strong>دوربین</strong><small>عکس فاکتور یا رسید</small></span>
+          <button type="button" class="sheet-option" @click="openCamera">
+            <span class="option-icon camera" aria-hidden="true">📷</span>
+            <span class="option-text">
+              <strong>دوربین</strong>
+              <small>عکس فاکتور یا رسید</small>
+            </span>
           </button>
-          <button type="button" class="sheet-option" @click="fileInput?.click()">
-            <span class="option-icon gallery">🖼️</span>
-            <span class="option-text"><strong>گالری / فایل</strong><small>انتخاب چند فایل</small></span>
+          <button type="button" class="sheet-option" @click="openGallery">
+            <span class="option-icon gallery" aria-hidden="true">🖼️</span>
+            <span class="option-text">
+              <strong>گالری / فایل</strong>
+              <small>انتخاب چند فایل</small>
+            </span>
           </button>
-          <button type="button" class="sheet-cancel" @click="sheetOpen = false">انصراف</button>
+          <button type="button" class="sheet-cancel" @click="closeSheet">انصراف</button>
         </div>
       </div>
     </Teleport>
@@ -346,7 +351,7 @@ onBeforeUnmount(() => {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
-  z-index: 1200;
+  z-index: 3000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -386,6 +391,43 @@ onBeforeUnmount(() => {
   color: var(--text);
   text-align: right;
   cursor: pointer;
+  min-height: 56px;
+}
+.sheet-option:last-of-type {
+  border-bottom: none;
+}
+.option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  font-size: 1.25rem;
+}
+.option-icon.camera {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+.option-icon.gallery {
+  background: color-mix(in srgb, var(--text-muted) 14%, transparent);
+}
+.option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+  text-align: start;
+}
+.option-text strong {
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+.option-text small {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.35;
 }
 
 .sheet-cancel {

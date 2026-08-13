@@ -23,7 +23,7 @@ const ACTION_LABELS = {
   changepassword: 'تغییر رمز'
 }
 
-const CORE_COLUMNS = [
+export const CORE_COLUMNS = [
   { key: 'view', label: 'مشاهده' },
   { key: 'create', label: 'ایجاد' },
   { key: 'update', label: 'ویرایش' },

@@ -37,7 +37,11 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (s) => !!s.token,
     hasPermission: (s) => (code) => s.permissions.includes(code),
     hasAnyPermission: (s) => (...codes) => codes.some((c) => s.permissions.includes(c)),
-    avatarUrl: (s) => (s.avatarPath ? `/uploads/${s.avatarPath}` : ''),
+    avatarUrl: (s) => {
+      if (!s.avatarPath) return ''
+      const q = encodeURIComponent(s.avatarPath.split('/').pop() || s.avatarPath)
+      return `/uploads/${s.avatarPath}?v=${q}`
+    },
     initials: (s) => (s.username?.charAt(0)?.toUpperCase() || '؟')
   },
   actions: {

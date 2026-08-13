@@ -37,14 +37,27 @@ public class ProfileController(AuthService authService) : ApiControllerBase
     {
         if (file is null || file.Length == 0)
             return BadRequest(new { message = "فایل الزامی است" });
-        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        if (!FileStorageService.IsImageUpload(file))
             return BadRequest(new { message = "فقط تصویر مجاز است" });
+
+        var current = await authService.GetProfileAsync(CurrentUserId);
+        var oldPath = current?.AvatarPath;
 
         try
         {
-            var path = await storage.SaveAsync(file, "avatars");
+            var path = await storage.SaveAsync(file, "avatars", ImageProcessProfile.Avatar);
             var profile = await authService.UpdateAvatarAsync(CurrentUserId, path);
-            return profile is null ? NotFound() : Ok(profile);
+            if (profile is null)
+            {
+                storage.TryDelete(path);
+                return NotFound();
+            }
+
+            if (!string.IsNullOrWhiteSpace(oldPath) &&
+                !string.Equals(oldPath, path, StringComparison.OrdinalIgnoreCase))
+                storage.TryDelete(oldPath);
+
+            return Ok(profile);
         }
         catch (InvalidOperationException ex)
         {
@@ -53,9 +66,17 @@ public class ProfileController(AuthService authService) : ApiControllerBase
     }
 
     [HttpDelete("avatar")]
-    public async Task<ActionResult<ProfileDto>> RemoveAvatar()
+    public async Task<ActionResult<ProfileDto>> RemoveAvatar([FromServices] FileStorageService storage)
     {
+        var current = await authService.GetProfileAsync(CurrentUserId);
+        var oldPath = current?.AvatarPath;
+
         var profile = await authService.UpdateAvatarAsync(CurrentUserId, null);
-        return profile is null ? NotFound() : Ok(profile);
+        if (profile is null) return NotFound();
+
+        if (!string.IsNullOrWhiteSpace(oldPath))
+            storage.TryDelete(oldPath);
+
+        return Ok(profile);
     }
 }

@@ -61,11 +61,30 @@ public class PersonsController(PersonService service) : ApiControllerBase
     [RequirePermission(PermissionCodes.PersonsUpdate, PermissionCodes.PersonsCreate)]
     public async Task<ActionResult<PersonDto>> UploadPicture(int id, IFormFile file, [FromServices] FileStorageService storage)
     {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { message = "فایل الزامی است" });
+        if (!FileStorageService.IsImageUpload(file))
+            return BadRequest(new { message = "فقط تصویر مجاز است" });
+
+        var existing = await service.GetByIdAsync(id);
+        if (existing is null) return NotFound();
+        var oldPath = existing.PicturePath;
+
         try
         {
-            var path = await storage.SaveAsync(file, "persons");
+            var path = await storage.SaveAsync(file, "persons", ImageProcessProfile.Avatar);
             var person = await service.UpdatePictureAsync(id, path, CurrentUserId);
-            return person is null ? NotFound() : Ok(person);
+            if (person is null)
+            {
+                storage.TryDelete(path);
+                return NotFound();
+            }
+
+            if (!string.IsNullOrWhiteSpace(oldPath) &&
+                !string.Equals(oldPath, path, StringComparison.OrdinalIgnoreCase))
+                storage.TryDelete(oldPath);
+
+            return Ok(person);
         }
         catch (InvalidOperationException ex)
         {
@@ -75,9 +94,18 @@ public class PersonsController(PersonService service) : ApiControllerBase
 
     [HttpDelete("{id:int}/picture")]
     [RequirePermission(PermissionCodes.PersonsUpdate)]
-    public async Task<ActionResult<PersonDto>> RemovePicture(int id)
+    public async Task<ActionResult<PersonDto>> RemovePicture(int id, [FromServices] FileStorageService storage)
     {
+        var existing = await service.GetByIdAsync(id);
+        if (existing is null) return NotFound();
+        var oldPath = existing.PicturePath;
+
         var person = await service.UpdatePictureAsync(id, null, CurrentUserId);
-        return person is null ? NotFound() : Ok(person);
+        if (person is null) return NotFound();
+
+        if (!string.IsNullOrWhiteSpace(oldPath))
+            storage.TryDelete(oldPath);
+
+        return Ok(person);
     }
 }

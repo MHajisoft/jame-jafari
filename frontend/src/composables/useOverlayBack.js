@@ -1,4 +1,5 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { deferOverlayHistoryPop, nativeFilePickerActive } from './useMobileFilePicker'
 
 /** @type {import('vue').Ref<null | { close: () => void }>} */
 export const activeOverlay = ref(null)
@@ -7,30 +8,29 @@ export function hasActiveOverlay() {
   return !!activeOverlay.value
 }
 
-/** Top-bar back: close the frontmost overlay. Returns true if handled. */
 export function closeActiveOverlay() {
   if (!activeOverlay.value) return false
   activeOverlay.value.close()
   return true
 }
 
+function isHistoryDeferred(deferPop) {
+  return deferPop() || nativeFilePickerActive.value || deferOverlayHistoryPop.value
+}
+
 /**
- * History + hardware/gesture back for mobile overlays (preview, bottom sheet, …).
- * Same contract as FormHost: pushState on open, pop on close, popstate closes overlay.
- *
- * Must spread `history.state` so Vue Router's position/current keys stay intact.
- *
  * @param {import('vue').Ref<boolean>} isOpen
  * @param {() => void} requestClose
- * @param {{ enabled?: () => boolean, stateKey?: string }} [options]
+ * @param {{ enabled?: () => boolean, stateKey?: string, deferPop?: () => boolean }} [options]
  */
 export function useOverlayBack(isOpen, requestClose, options = {}) {
   const stateKey = options.stateKey ?? 'appOverlay'
   const isEnabled = options.enabled ?? (() => true)
+  const deferPop = options.deferPop ?? (() => false)
 
   const pushed = ref(false)
   let closingFromPop = false
-  let closeFn = requestClose
+  const closeFn = requestClose
 
   function pushHistory() {
     if (!isEnabled()) return
@@ -40,15 +40,16 @@ export function useOverlayBack(isOpen, requestClose, options = {}) {
     }
   }
 
+  function releaseHistory() {
+    if (!pushed.value || closingFromPop) return
+    const shouldBack = !!history.state?.[stateKey]
+    pushed.value = false
+    if (shouldBack) history.back()
+  }
+
   function popHistory() {
-    // Always unwind our entry if we pushed — even if enabled flipped off (e.g. resize).
-    if (pushed.value && !closingFromPop) {
-      const shouldBack = !!history.state?.[stateKey]
-      pushed.value = false
-      if (shouldBack) history.back()
-    } else {
-      pushed.value = false
-    }
+    if (isHistoryDeferred(deferPop)) return
+    releaseHistory()
   }
 
   function syncRegistry(open) {
@@ -62,7 +63,7 @@ export function useOverlayBack(isOpen, requestClose, options = {}) {
 
   function onPopState() {
     if (!isOpen.value || !isEnabled()) return
-    // Still on this overlay's history entry — ignore unrelated pops (e.g. child closed).
+    if (nativeFilePickerActive.value || deferOverlayHistoryPop.value) return
     if (history.state?.[stateKey]) return
 
     closingFromPop = true
@@ -72,27 +73,28 @@ export function useOverlayBack(isOpen, requestClose, options = {}) {
     queueMicrotask(() => { closingFromPop = false })
   }
 
-  watch(
-    isOpen,
-    (open) => {
-      if (open) pushHistory()
-      else popHistory()
-      syncRegistry(open)
-    },
-    { immediate: true }
-  )
-
-  watch(
-    () => isEnabled(),
-    (ok) => {
-      if (!ok) {
-        if (isOpen.value) requestClose()
-        else syncRegistry(false)
-      } else {
-        syncRegistry(isOpen.value)
-      }
+  function maybeReleaseAfterPicker() {
+    if (!isHistoryDeferred(deferPop) && !isOpen.value && pushed.value) {
+      releaseHistory()
     }
-  )
+  }
+
+  watch(isOpen, (open) => {
+    if (open) pushHistory()
+    else popHistory()
+    syncRegistry(open)
+  }, { immediate: true })
+
+  watch([nativeFilePickerActive, deferOverlayHistoryPop], maybeReleaseAfterPicker)
+
+  watch(() => isEnabled(), (ok) => {
+    if (!ok) {
+      if (isOpen.value) requestClose()
+      else syncRegistry(false)
+    } else {
+      syncRegistry(isOpen.value)
+    }
+  })
 
   onMounted(() => window.addEventListener('popstate', onPopState))
   onBeforeUnmount(() => {
@@ -104,5 +106,5 @@ export function useOverlayBack(isOpen, requestClose, options = {}) {
     }
   })
 
-  return { requestClose: closeFn }
+  return { requestClose: closeFn, releaseHistory }
 }

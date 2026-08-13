@@ -1,25 +1,44 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { useIsMobile } from '../composables/useMediaQuery'
+import { useMobileAttachSheet } from '../composables/useMobileAttachSheet'
 import EntityAvatar from './EntityAvatar.vue'
 
 const props = defineProps({
-  /** Pending local file */
   modelValue: { type: File, default: null },
-  /** Existing server upload path */
   path: { type: String, default: '' },
   name: { type: String, default: '' },
   disabled: { type: Boolean, default: false },
-  label: { type: String, default: 'تصویر' }
+  label: { type: String, default: 'تصویر' },
+  size: { type: Number, default: 88 },
+  showHint: { type: Boolean, default: true },
+  /** Front camera for portraits; environment for documents */
+  cameraFacing: { type: String, default: 'user' }
 })
 
 const emit = defineEmits(['update:modelValue', 'update:path'])
 
-const isMobile = useIsMobile()
-const sheetOpen = ref(false)
-const fileInput = ref(null)
-const cameraInput = ref(null)
 const localPreview = ref('')
+
+const {
+  isMobile,
+  sheetOpen,
+  fileInput,
+  cameraInput,
+  captureAttr,
+  closeSheet,
+  onFileChange,
+  openSheetOrFile,
+  openGallery,
+  openCamera
+} = useMobileAttachSheet({
+  cameraFacing: () => props.cameraFacing,
+  onFiles(files) {
+    const file = files[0]
+    if (!file || props.disabled) return
+    if (props.path) emit('update:path', '')
+    emit('update:modelValue', file)
+  }
+})
 
 watch(
   () => props.modelValue,
@@ -34,37 +53,12 @@ onBeforeUnmount(() => {
   if (localPreview.value) URL.revokeObjectURL(localPreview.value)
 })
 
-const displayPath = computed(() => {
-  if (localPreview.value) return localPreview.value
-  return props.path || ''
-})
-
+const displayPath = computed(() => localPreview.value || props.path || '')
 const hasImage = computed(() => !!props.modelValue || !!props.path)
 
 function openPicker() {
   if (props.disabled) return
-  if (isMobile.value) sheetOpen.value = true
-  else fileInput.value?.click()
-}
-
-function closeSheet() {
-  sheetOpen.value = false
-}
-
-function openGallery() {
-  fileInput.value?.click()
-}
-
-function openCamera() {
-  cameraInput.value?.click()
-}
-
-function onFileChange(e) {
-  const file = e.target.files?.[0]
-  e.target.value = ''
-  sheetOpen.value = false
-  if (!file) return
-  emit('update:modelValue', file)
+  openSheetOrFile()
 }
 
 function clear() {
@@ -90,9 +84,8 @@ function clear() {
         :aria-label="hasImage ? 'تغییر تصویر پروفایل' : 'افزودن تصویر پروفایل'"
         @click="openPicker"
       >
-        <EntityAvatar :src="displayPath" :name="name" :size="88" />
+        <EntityAvatar :src="displayPath" :name="name" :size="size" />
         <span class="avatar-badge" aria-hidden="true">
-          <!-- Camera badge: clearer than +/pencil for “change photo” -->
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 8h3l2-2h6l2 2h3v11H4z" />
             <circle cx="12" cy="13" r="3.2" />
@@ -100,7 +93,7 @@ function clear() {
         </span>
       </button>
 
-      <p class="avatar-hint text-muted">
+      <p v-if="showHint" class="avatar-hint text-muted">
         برای {{ hasImage ? 'تغییر' : 'افزودن' }} تصویر، روی عکس بزنید
       </p>
 
@@ -116,7 +109,14 @@ function clear() {
     </div>
 
     <input ref="fileInput" type="file" accept="image/*" hidden @change="onFileChange" />
-    <input ref="cameraInput" type="file" accept="image/*" capture="environment" hidden @change="onFileChange" />
+    <input
+      ref="cameraInput"
+      type="file"
+      accept="image/*"
+      :capture="captureAttr"
+      hidden
+      @change="onFileChange"
+    />
 
     <Teleport to="body">
       <div v-if="sheetOpen && isMobile" class="attach-overlay" @click.self="closeSheet">

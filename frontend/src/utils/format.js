@@ -75,7 +75,7 @@ export function documentFileName(path) {
 }
 
 export function isImageDocument(path) {
-  return /\.(jpe?g|png|gif|webp)$/i.test(String(path || ''))
+  return /\.(jpe?g|png|gif|webp|heic|heif|bmp)$/i.test(String(path || ''))
 }
 
 export function isPdfDocument(path, mime = '') {
@@ -85,7 +85,14 @@ export function isPdfDocument(path, mime = '') {
 
 /** @returns {'image'|'pdf'|'file'} */
 export function documentKind(path, mime = '') {
-  if (mime.startsWith('image/') || isImageDocument(path)) return 'image'
+  if ((mime && mime.startsWith('image/')) || isImageDocument(path)) return 'image'
   if (isPdfDocument(path, mime)) return 'pdf'
   return 'file'
+}
+
+/** Local File object → image check (for pending upload previews). */
+export function isImageFile(file) {
+  if (!file) return false
+  if (file.type?.startsWith('image/')) return true
+  return isImageDocument(file.name)
 }

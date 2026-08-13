@@ -88,11 +88,30 @@ public class UsersController(UserService service) : ApiControllerBase
     [RequirePermission(PermissionCodes.UsersUpdate, PermissionCodes.UsersCreate)]
     public async Task<ActionResult<UserDto>> UploadAvatar(int id, IFormFile file, [FromServices] FileStorageService storage)
     {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { message = "فایل الزامی است" });
+        if (!FileStorageService.IsImageUpload(file))
+            return BadRequest(new { message = "فقط تصویر مجاز است" });
+
+        var existing = await service.GetByIdAsync(id);
+        if (existing is null) return NotFound();
+        var oldPath = existing.AvatarPath;
+
         try
         {
-            var path = await storage.SaveAsync(file, "avatars");
+            var path = await storage.SaveAsync(file, "avatars", ImageProcessProfile.Avatar);
             var user = await service.UpdateAvatarAsync(id, path, CurrentUserId);
-            return user is null ? NotFound() : Ok(user);
+            if (user is null)
+            {
+                storage.TryDelete(path);
+                return NotFound();
+            }
+
+            if (!string.IsNullOrWhiteSpace(oldPath) &&
+                !string.Equals(oldPath, path, StringComparison.OrdinalIgnoreCase))
+                storage.TryDelete(oldPath);
+
+            return Ok(user);
         }
         catch (InvalidOperationException ex)
         {
@@ -102,12 +121,21 @@ public class UsersController(UserService service) : ApiControllerBase
 
     [HttpDelete("{id:int}/avatar")]
     [RequirePermission(PermissionCodes.UsersUpdate)]
-    public async Task<ActionResult<UserDto>> RemoveAvatar(int id)
+    public async Task<ActionResult<UserDto>> RemoveAvatar(int id, [FromServices] FileStorageService storage)
     {
         try
         {
+            var existing = await service.GetByIdAsync(id);
+            if (existing is null) return NotFound();
+            var oldPath = existing.AvatarPath;
+
             var user = await service.UpdateAvatarAsync(id, null, CurrentUserId);
-            return user is null ? NotFound() : Ok(user);
+            if (user is null) return NotFound();
+
+            if (!string.IsNullOrWhiteSpace(oldPath))
+                storage.TryDelete(oldPath);
+
+            return Ok(user);
         }
         catch (InvalidOperationException ex)
         {

@@ -15,6 +15,7 @@ import { permissionTitle } from '../composables/usePermissionMatrix'
 import RowActions from '../components/RowActions.vue'
 import EntityAvatar from '../components/EntityAvatar.vue'
 import AvatarPicker from '../components/AvatarPicker.vue'
+import AppSkeleton from '../components/AppSkeleton.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -29,6 +30,7 @@ const {
   clearFieldError: clearPasswordFieldError
 } = useFormValidation()
 const items = ref([])
+const loading = ref(false)
 const permissions = ref([])
 const showForm = ref(false)
 const showPasswordForm = ref(false)
@@ -69,12 +71,17 @@ const passwordRules = {
 }
 
 async function load() {
-  const [u, p] = await Promise.all([
-    api.get('/users'),
-    api.get('/permissions')
-  ])
-  items.value = u.data.items
-  permissions.value = p.data
+  loading.value = true
+  try {
+    const [u, p] = await Promise.all([
+      api.get('/users'),
+      api.get('/permissions')
+    ])
+    items.value = u.data.items
+    permissions.value = p.data
+  } finally {
+    loading.value = false
+  }
 }
 
 async function syncUserAvatar(id) {
@@ -315,8 +322,9 @@ onMounted(load)
       </div>
     </Teleport>
 
-    <div v-show="!showForm || isMobile" class="card list-panel">
-      <table class="mobile-table">
+    <div v-show="!showForm || isMobile" class="card list-panel" :aria-busy="loading">
+      <AppSkeleton v-if="loading" :columns="6" />
+      <table v-else class="mobile-table">
         <thead>
           <tr><th>نام کاربری</th><th>ایمیل</th><th>موبایل</th><th>دسترسی‌ها</th><th>وضعیت</th><th v-if="auth.hasAnyPermission('users.update', 'users.delete', 'users.changepassword')"></th></tr>
         </thead>

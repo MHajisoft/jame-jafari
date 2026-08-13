@@ -1,27 +1,23 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
 import { useDialogStore } from '../stores/dialog'
 import { useFormValidation } from '../composables/useFormValidation'
 import { passwordFieldRules } from '../utils/passwordPolicy'
-import { useIsMobile } from '../composables/useMediaQuery'
+import AvatarPicker from '../components/AvatarPicker.vue'
 import ClearableInput from '../components/ClearableInput.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
 const toast = useToastStore()
 const dialog = useDialogStore()
-const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 
 const profileForm = reactive({ email: '', mobile: '' })
 const passwordForm = reactive({ currentPassword: '', newPassword: '', confirmPassword: '' })
 const avatarBusy = ref(false)
-const sheetOpen = ref(false)
-const fileInput = ref(null)
-const cameraInput = ref(null)
 
 const profileRules = {
   email: [{ type: 'email', msg: 'فرمت ایمیل نامعتبر است' }],
@@ -40,7 +36,24 @@ const passwordRules = {
   ]
 }
 
-const avatarSrc = computed(() => auth.avatarUrl)
+async function onAvatarFile(file) {
+  if (!file) return
+  avatarBusy.value = true
+  clearErrors()
+  try {
+    await auth.uploadAvatar(file)
+    toast.success('تصویر پروفایل به‌روز شد')
+  } catch (err) {
+    await trySubmit(async () => { throw err })
+  } finally {
+    avatarBusy.value = false
+  }
+}
+
+async function onAvatarPathUpdate(path) {
+  if (path !== '' || !auth.avatarPath) return
+  await removeAvatar()
+}
 
 function syncFormsFromAuth() {
   profileForm.email = auth.email || ''
@@ -82,43 +95,8 @@ async function savePassword() {
   passwordForm.confirmPassword = ''
 }
 
-function openAvatarPicker() {
-  if (isMobile.value) sheetOpen.value = true
-  else fileInput.value?.click()
-}
-
-function closeSheet() {
-  sheetOpen.value = false
-}
-
-function openGallery() {
-  fileInput.value?.click()
-}
-
-function openCamera() {
-  cameraInput.value?.click()
-}
-
-async function onAvatarChange(e) {
-  const file = e.target.files?.[0]
-  e.target.value = ''
-  if (!file) return
-  sheetOpen.value = false
-  avatarBusy.value = true
-  clearErrors()
-  try {
-    await auth.uploadAvatar(file)
-    toast.success('تصویر پروفایل به‌روز شد')
-  } catch (err) {
-    await trySubmit(async () => { throw err })
-  } finally {
-    avatarBusy.value = false
-  }
-}
-
 async function removeAvatar() {
   if (!auth.avatarPath) return
-  sheetOpen.value = false
   if (!(await dialog.confirmDelete('تصویر پروفایل'))) return
   avatarBusy.value = true
   clearErrors()
@@ -150,42 +128,23 @@ function logout() {
 
     <div class="profile-layout">
       <section class="card profile-avatar-card">
-        <button
-          type="button"
-          class="avatar-hit"
+        <AvatarPicker
+          :path="auth.avatarPath || ''"
+          :name="auth.username"
           :disabled="avatarBusy"
-          :aria-label="auth.avatarPath ? 'تغییر تصویر پروفایل' : 'افزودن تصویر پروفایل'"
-          @click="openAvatarPicker"
-        >
-          <span class="avatar-wrap">
-            <img v-if="avatarSrc" :src="avatarSrc" alt="" class="avatar-img" />
-            <span v-else class="avatar-fallback">{{ auth.initials }}</span>
-          </span>
-          <span class="avatar-badge" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 8h3l2-2h6l2 2h3v11H4z" />
-              <circle cx="12" cy="13" r="3.2" />
-            </svg>
-          </span>
-        </button>
-
+          :size="120"
+          label=""
+          :show-hint="false"
+          @update:model-value="onAvatarFile"
+          @update:path="onAvatarPathUpdate"
+        />
         <div class="avatar-meta">
           <h2 class="avatar-name">{{ auth.username }}</h2>
           <p class="text-muted">حساب کاربری شما</p>
-          <p class="avatar-hint text-muted">برای {{ auth.avatarPath ? 'تغییر' : 'افزودن' }} تصویر، روی عکس بزنید</p>
-          <button
-            v-if="auth.avatarPath"
-            type="button"
-            class="avatar-remove"
-            :disabled="avatarBusy"
-            @click="removeAvatar"
-          >
-            حذف تصویر
-          </button>
+          <p class="avatar-hint text-muted">
+            {{ avatarBusy ? 'در حال بارگذاری…' : `برای ${auth.avatarPath ? 'تغییر' : 'افزودن'} تصویر، روی عکس بزنید` }}
+          </p>
         </div>
-
-        <input ref="fileInput" type="file" accept="image/*" hidden @change="onAvatarChange" />
-        <input ref="cameraInput" type="file" accept="image/*" capture="environment" hidden @change="onAvatarChange" />
       </section>
 
       <div class="profile-forms">
@@ -271,42 +230,6 @@ function logout() {
     </div>
 
     <button type="button" class="logout-btn" @click="logout">خروج از حساب</button>
-
-    <Teleport to="body">
-      <div v-if="sheetOpen && isMobile" class="attach-overlay" @click.self="closeSheet">
-        <div class="attach-sheet" role="dialog" aria-modal="true" aria-label="تصویر پروفایل">
-          <div class="sheet-handle" />
-          <p class="sheet-title">تصویر پروفایل</p>
-          <button type="button" class="sheet-option" @click="openCamera">
-            <span class="option-icon camera" aria-hidden="true">📷</span>
-            <span class="option-text">
-              <strong>دوربین</strong>
-              <small>گرفتن عکس جدید</small>
-            </span>
-          </button>
-          <button type="button" class="sheet-option" @click="openGallery">
-            <span class="option-icon gallery" aria-hidden="true">🖼</span>
-            <span class="option-text">
-              <strong>گالری</strong>
-              <small>انتخاب از تصاویر دستگاه</small>
-            </span>
-          </button>
-          <button
-            v-if="auth.avatarPath"
-            type="button"
-            class="sheet-option danger"
-            @click="removeAvatar"
-          >
-            <span class="option-icon" aria-hidden="true">🗑</span>
-            <span class="option-text">
-              <strong>حذف تصویر</strong>
-              <small>بازگشت به حروف اول نام</small>
-            </span>
-          </button>
-          <button type="button" class="sheet-cancel" @click="closeSheet">انصراف</button>
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>
 

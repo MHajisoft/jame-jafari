@@ -19,6 +19,7 @@ import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import RowActions from '../components/RowActions.vue'
 import PageHeader from '../components/PageHeader.vue'
+import AppSkeleton from '../components/AppSkeleton.vue'
 
 const auth = useAuthStore()
 const dialog = useDialogStore()
@@ -256,8 +257,8 @@ onMounted(() => load().catch(() => {}))
       </form>
     </FormHost>
 
-    <div v-show="!showForm || isMobile" class="card list-panel">
-      <p v-if="loading" class="list-status">در حال بارگذاری…</p>
+    <div v-show="!showForm || isMobile" class="card list-panel" :aria-busy="loading">
+      <AppSkeleton v-if="loading" :columns="9" />
       <template v-else>
         <table class="mobile-table">
           <thead>

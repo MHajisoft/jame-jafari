@@ -1,6 +1,7 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { documentKind, documentUrl } from '../utils/format'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useMobileAttachSheet } from '../composables/useMobileAttachSheet'
+import { documentKind, documentUrl, isImageFile } from '../utils/format'
 import DocumentPreview from './DocumentPreview.vue'
 
 const props = defineProps({
@@ -14,10 +15,24 @@ const emit = defineEmits(['update:modelValue', 'update:path'])
 
 const blobUrl = ref('')
 const previewOpen = ref(false)
-const sheetOpen = ref(false)
-const isMobile = ref(false)
-const fileInput = ref(null)
-const cameraInput = ref(null)
+
+const {
+  isMobile,
+  sheetOpen,
+  fileInput,
+  cameraInput,
+  captureAttr,
+  closeSheet,
+  onFileChange,
+  openSheetOrFile,
+  openGallery,
+  openCamera
+} = useMobileAttachSheet({
+  cameraFacing: 'environment',
+  onFiles(files) {
+    emit('update:modelValue', files[0])
+  }
+})
 
 const hasAttachment = computed(() => !!props.modelValue || !!props.path)
 
@@ -28,15 +43,11 @@ const previewSrc = computed(() => {
 })
 
 const previewKind = computed(() => {
-  if (props.modelValue) return documentKind('', props.modelValue.type)
+  if (props.modelValue) return documentKind(props.modelValue.name, props.modelValue.type)
   return documentKind(props.path)
 })
 
 const showImageThumb = computed(() => previewKind.value === 'image' && !!previewSrc.value)
-
-function checkMobile() {
-  isMobile.value = window.matchMedia('(max-width: 768px)').matches
-}
 
 function revokeBlob() {
   if (blobUrl.value) {
@@ -50,42 +61,15 @@ watch(
   (file) => {
     revokeBlob()
     if (!file) return
-    if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+    if (isImageFile(file) || file.type === 'application/pdf') {
       blobUrl.value = URL.createObjectURL(file)
     }
   },
   { immediate: true }
 )
 
-function handleFile(file) {
-  if (!file) return
-  emit('update:modelValue', file)
-  sheetOpen.value = false
-}
-
-function onFileChange(e) {
-  handleFile(e.target.files?.[0])
-  e.target.value = ''
-}
-
 function openAttach() {
-  if (isMobile.value) {
-    sheetOpen.value = true
-    return
-  }
-  fileInput.value?.click()
-}
-
-function closeSheet() {
-  sheetOpen.value = false
-}
-
-function openGallery() {
-  fileInput.value?.click()
-}
-
-function openCamera() {
-  cameraInput.value?.click()
+  openSheetOrFile()
 }
 
 function openPreview() {
@@ -102,13 +86,7 @@ function clear() {
   if (props.path) emit('update:path', '')
 }
 
-onMounted(() => {
-  checkMobile()
-  window.addEventListener('resize', checkMobile)
-})
-
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', checkMobile)
   revokeBlob()
 })
 </script>
@@ -155,7 +133,7 @@ onBeforeUnmount(() => {
     />
 
     <input ref="fileInput" type="file" :accept="accept" hidden @change="onFileChange" />
-    <input ref="cameraInput" type="file" accept="image/*" capture="environment" hidden @change="onFileChange" />
+    <input ref="cameraInput" type="file" accept="image/*" :capture="captureAttr" hidden @change="onFileChange" />
 
     <Teleport to="body">
       <div v-if="sheetOpen && isMobile" class="attach-overlay" @click.self="closeSheet">
@@ -271,7 +249,7 @@ onBeforeUnmount(() => {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
-  z-index: 1200;
+  z-index: 3000;
   display: flex;
   align-items: flex-end;
   justify-content: center;

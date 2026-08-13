@@ -19,6 +19,7 @@ import EntityAvatar from '../components/EntityAvatar.vue'
 import AvatarPicker from '../components/AvatarPicker.vue'
 import PersonLifeStatus from '../components/PersonLifeStatus.vue'
 import NickBadge from '../components/NickBadge.vue'
+import AppSkeleton from '../components/AppSkeleton.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -28,6 +29,7 @@ const router = useRouter()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 const items = ref([])
+const loading = ref(false)
 const namePrefixes = ref([])
 const showForm = ref(false)
 const editing = ref(null)
@@ -53,12 +55,17 @@ const rules = {
 }
 
 async function load() {
-  const [p, t] = await Promise.all([
-    api.get('/persons', { params: { page: 1, pageSize: 20 } }),
-    lookups.getGeneralTypes('NamePrefix')
-  ])
-  items.value = p.data.items
-  namePrefixes.value = t
+  loading.value = true
+  try {
+    const [p, t] = await Promise.all([
+      api.get('/persons', { params: { page: 1, pageSize: 20 } }),
+      lookups.getGeneralTypes('NamePrefix')
+    ])
+    items.value = p.data.items
+    namePrefixes.value = t
+  } finally {
+    loading.value = false
+  }
 }
 
 async function syncPersonPicture(id) {
@@ -258,8 +265,9 @@ onMounted(load)
     </FormHost>
 
     <div v-show="!showForm || isMobile">
-      <div class="card list-panel">
-        <table class="mobile-table">
+      <div class="card list-panel" :aria-busy="loading">
+        <AppSkeleton v-if="loading" :columns="6" />
+        <table v-else class="mobile-table">
           <thead>
             <tr>
               <th>نام</th><th>جنسیت</th><th>موبایل</th><th>پدر</th><th>مادر</th>

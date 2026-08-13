@@ -15,6 +15,7 @@ import FormHost from '../components/FormHost.vue'
 import AppCheckbox from '../components/AppCheckbox.vue'
 import RowActions from '../components/RowActions.vue'
 import PageHeader from '../components/PageHeader.vue'
+import AppSkeleton from '../components/AppSkeleton.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -115,9 +116,10 @@ onMounted(() => load().catch(() => {}))
       </form>
     </FormHost>
 
-    <div v-show="!showForm || isMobile" class="card list-panel">
-      <p v-if="loading" class="list-status">در حال بارگذاری…</p>
-      <table v-else class="mobile-table">
+    <div v-show="!showForm || isMobile" class="card list-panel" :aria-busy="loading">
+      <AppSkeleton v-if="loading" :columns="4" />
+      <template v-else>
+        <table class="mobile-table">
         <thead>
           <tr>
             <th>نام</th>
@@ -146,6 +148,7 @@ onMounted(() => load().catch(() => {}))
           </tr>
         </tbody>
       </table>
+      </template>
     </div>
   </div>
 </template>

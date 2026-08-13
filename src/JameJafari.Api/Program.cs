@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using JameJafari.Api.Filters;
+using JameJafari.Api.Services;
 using JameJafari.Core.Constants;
 using JameJafari.Infrastructure;
 using JameJafari.Infrastructure.Data;
@@ -19,7 +20,8 @@ builder.Services.AddControllers(options =>
 });
 
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddScoped<JameJafari.Api.Services.FileStorageService>();
+builder.Services.AddScoped<ImageProcessingService>();
+builder.Services.AddScoped<FileStorageService>();
 
 builder.Services.AddCors(options =>
 {
