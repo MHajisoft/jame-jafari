@@ -76,3 +76,5 @@ Router: `meta: { permission: 'food.view' }`
 - Mobile breakpoint: 768px (`useIsMobile`)
 - Mobile datepicker mode (`stores/uiPrefs`): `sheet` (bottom wheels) | `modal` (calendar); Settings card only when `useIsMobile`; desktop always calendar modal
 - `PersianDatePicker` mobile overlay (sheet or modal): `useOverlayBack` with `stateKey: 'appDatePicker'`
+- **App updates:** `vite-plugin-pwa` `registerType: 'autoUpdate'` + `initPwaUpdate()` — new SW activates and reloads automatically; poll every 30m + on visibility restore
+- Install prompt: `usePwaInstall` / `PwaInstallBanner`
