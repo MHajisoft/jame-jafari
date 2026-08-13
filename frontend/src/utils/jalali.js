@@ -127,3 +127,14 @@ export function startOfJalaliMonthGregorian(date = new Date()) {
 export function maxJalaliYear(pad = 20) {
   return (toJalaliParts(todayGregorian())?.year || 1404) + pad
 }
+
+export const PERSIAN_SEASONS = ['بهار', 'تابستان', 'پاییز', 'زمستان']
+
+/** @param {number} jalaliMonth 1–12 */
+export function jalaliSeasonIndex(jalaliMonth) {
+  return Math.floor((jalaliMonth - 1) / 3)
+}
+
+export function jalaliSeasonLabel(jalaliMonth) {
+  return PERSIAN_SEASONS[jalaliSeasonIndex(jalaliMonth)] || ''
+}

@@ -28,7 +28,8 @@ export const navItems = [
   { to: '/users', label: 'کاربران', title: 'کاربران', permission: 'users.view', icon: '👤', group: 'config', section: 'more' },
   { to: '/settings', label: 'تنظیمات', title: 'تنظیمات', icon: '⚙️', group: 'config', section: 'more' },
   // Reports (sidebar last; bottom tab before «بیشتر»)
-  { to: '/reports', label: 'گزارشات', title: 'گزارشات', permission: 'reports.view', icon: '📊', group: 'reports', tab: 'reports' }
+  { to: '/reports', label: 'گزارشات', title: 'گزارشات', permission: 'reports.view', icon: '📊', group: 'reports', tab: 'reports' },
+  { to: '/reports/death-anniversaries', label: 'سالگرد وفات', title: 'گزارش سالگرد وفات', permission: 'deathanniversaries.view', icon: '🕯️', group: 'reports', section: 'more' }
 ]
 
 /**

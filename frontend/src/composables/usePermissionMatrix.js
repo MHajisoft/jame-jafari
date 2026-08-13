@@ -10,6 +10,7 @@ export const MODULE_LABELS = {
   costtypes: 'انواع هزینه',
   food: 'تهیه غذا',
   reports: 'گزارشات',
+  deathanniversaries: 'سالگرد وفات',
   generaltypes: 'انواع عمومی',
   attachments: 'پیوست‌ها'
 }
@@ -41,7 +42,7 @@ const MODULE_COLUMNS = {
 
 const MODULE_ORDER = [
   'accounts', 'cost', 'costtypes', 'generaltypes',
-  'income', 'persons', 'food', 'attachments', 'reports', 'users'
+  'income', 'persons', 'food', 'attachments', 'reports', 'deathanniversaries', 'users'
 ]
 
 const moduleIcons = Object.fromEntries(
@@ -53,6 +54,7 @@ const moduleIcons = Object.fromEntries(
     })
 )
 moduleIcons.attachments = '📎'
+moduleIcons.deathanniversaries = '🕯️'
 
 export function permActionLabel(code) {
   return ACTION_LABELS[code.split('.')[1]] || code.split('.')[1]

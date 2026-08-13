@@ -9,7 +9,7 @@ alwaysApply: false
 ## Permission naming
 Format: `{module}.{action}` — e.g. `income.create`, `users.changepassword`
 
-Modules: `accounts`, `income`, `cost`, `users`, `persons`, `costtypes`, `food`, `reports`, `generaltypes`, `attachments`
+Modules: `accounts`, `income`, `cost`, `users`, `persons`, `costtypes`, `food`, `reports`, `deathanniversaries`, `generaltypes`, `attachments`
 
 Standard actions: `view`, `create`, `update`, `delete` (+ `users.changepassword`, `attachments.add`)
 

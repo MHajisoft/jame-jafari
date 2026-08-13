@@ -40,6 +40,8 @@ public static class PermissionCodes
 
     public const string ReportsView = "reports.view";
 
+    public const string DeathAnniversariesView = "deathanniversaries.view";
+
     public const string GeneralTypesView = "generaltypes.view";
     public const string GeneralTypesCreate = "generaltypes.create";
     public const string GeneralTypesUpdate = "generaltypes.update";
@@ -62,6 +64,7 @@ public static class PermissionCodes
         CostTypesView, CostTypesCreate, CostTypesUpdate, CostTypesDelete,
         FoodView, FoodCreate, FoodUpdate, FoodDelete,
         ReportsView,
+        DeathAnniversariesView,
         GeneralTypesView, GeneralTypesCreate, GeneralTypesUpdate, GeneralTypesDelete,
         AttachmentsView, AttachmentsAdd, AttachmentsDelete
     ];

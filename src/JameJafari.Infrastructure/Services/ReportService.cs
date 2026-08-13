@@ -1,4 +1,6 @@
 using JameJafari.Core.DTOs;
+using JameJafari.Core.Enums;
+using JameJafari.Core.Helpers;
 using JameJafari.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -152,5 +154,82 @@ public class ReportService(AppDbContext db)
         return await query.OrderByDescending(f => f.CookDate)
             .Select(f => new FoodCostReportDto(f.Id, f.Name, f.CookDate, f.TotalCount, f.CostPerUnit, f.TotalCost))
             .ToListAsync();
+    }
+
+    public async Task<DeathAnniversaryReportDto> GetDeathAnniversaryReportAsync(
+        DeathAnniversaryScope scope,
+        DateTime? referenceDate = null)
+    {
+        var refDate = (referenceDate ?? DateTime.UtcNow).Date;
+        var reference = JalaliCalendarHelper.ToParts(refDate);
+
+        var rows = await db.Persons
+            .AsNoTracking()
+            .Where(p => p.IsDead && p.DeathDate != null)
+            .Select(p => new
+            {
+                p.Id,
+                p.FirstName,
+                p.LastName,
+                p.NickName,
+                p.PicturePath,
+                DeathDate = p.DeathDate!.Value,
+                Prefix = p.NamePrefix != null ? p.NamePrefix.Name : null
+            })
+            .ToListAsync();
+
+        var items = rows
+            .Select(p =>
+            {
+                var death = JalaliCalendarHelper.ToParts(p.DeathDate);
+                return (Person: p, Death: death);
+            })
+            .Where(x => JalaliCalendarHelper.MatchesDeathAnniversary(scope, x.Death, reference, refDate))
+            .Select(x =>
+            {
+                var p = x.Person;
+                var death = x.Death;
+                var prefix = p.Prefix;
+                var name = string.Join(" ", new[] { p.FirstName, p.LastName }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                var displayName = string.IsNullOrWhiteSpace(prefix) ? name : $"{prefix} {name}";
+                return new DeathAnniversaryPersonDto(
+                    p.Id,
+                    displayName,
+                    p.NickName,
+                    p.PicturePath,
+                    p.DeathDate.Date,
+                    death.Year,
+                    death.Month,
+                    death.Day,
+                    Math.Max(0, reference.Year - death.Year));
+            })
+            .OrderBy(x => x.JalaliDeathMonth)
+            .ThenBy(x => x.JalaliDeathDay)
+            .ThenBy(x => x.DisplayName)
+            .ToList();
+
+        return new DeathAnniversaryReportDto(
+            scope.ToString(),
+            refDate,
+            reference.Year,
+            reference.Month,
+            reference.Day,
+            JalaliCalendarHelper.Season(reference.Month),
+            BuildScopeLabelFa(scope, reference, refDate),
+            items);
+    }
+
+    static string BuildScopeLabelFa(DeathAnniversaryScope scope, JalaliParts reference, DateTime refDate)
+    {
+        var month = JalaliCalendarHelper.MonthNameFa(reference.Month);
+        return scope switch
+        {
+            DeathAnniversaryScope.Day => $"{reference.Day} {month} {reference.Year}",
+            DeathAnniversaryScope.Week => JalaliCalendarHelper.WeekRangeLabelFa(refDate),
+            DeathAnniversaryScope.Month => $"{month} {reference.Year}",
+            DeathAnniversaryScope.Season =>
+                $"{JalaliCalendarHelper.SeasonNameFa(JalaliCalendarHelper.Season(reference.Month))} {reference.Year}",
+            _ => ""
+        };
     }
 }

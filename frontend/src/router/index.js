@@ -38,6 +38,12 @@ const routes = [
       },
       { path: 'users', name: 'users', component: () => import('../views/UsersView.vue'), meta: { permission: 'users.view' } },
       { path: 'reports', name: 'reports', component: () => import('../views/ReportsView.vue'), meta: { permission: 'reports.view' } },
+      {
+        path: 'reports/death-anniversaries',
+        name: 'death-anniversaries-report',
+        component: () => import('../views/DeathAnniversariesReportView.vue'),
+        meta: { permission: 'deathanniversaries.view' }
+      },
       { path: 'settings', name: 'settings', component: () => import('../views/SettingsView.vue') },
       { path: 'profile', name: 'profile', component: () => import('../views/ProfileView.vue') },
       { path: 'more', name: 'more', component: () => import('../views/MoreView.vue') }

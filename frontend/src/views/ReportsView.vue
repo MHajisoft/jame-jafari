@@ -2,11 +2,14 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import api from '../api/client'
 import { ApiPaths } from '../api/paths'
+import { useAuthStore } from '../stores/auth'
 import { formatMoney } from '../utils/format'
 import { todayGregorian, startOfJalaliMonthGregorian } from '../utils/jalali'
 import DateDisplay from '../components/DateDisplay.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
 import NickBadge from '../components/NickBadge.vue'
+
+const auth = useAuthStore()
 
 const SECTIONS = [
   { id: 'accounts', label: 'حساب‌ها' },
@@ -83,6 +86,13 @@ onMounted(load)
       <div class="reports-hero-text">
         <h1 class="page-title">گزارشات</h1>
         <p class="reports-subtitle">خلاصه مالی و جزئیات بازه انتخابی</p>
+        <router-link
+          v-if="auth.hasPermission('deathanniversaries.view')"
+          to="/reports/death-anniversaries"
+          class="reports-alt-link"
+        >
+          گزارش سالگرد وفات →
+        </router-link>
       </div>
     </header>
 
@@ -281,6 +291,15 @@ onMounted(load)
   color: var(--text-muted);
   font-size: 0.9rem;
 }
+.reports-alt-link {
+  margin-top: 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  width: fit-content;
+}
+.reports-alt-link:hover { text-decoration: underline; }
 
 .reports-filters { padding: 1rem 1.15rem; }
 .reports-filter-grid {

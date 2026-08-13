@@ -1,6 +1,7 @@
 using JameJafari.Api.Authorization;
 using JameJafari.Core.Constants;
 using JameJafari.Core.DTOs;
+using JameJafari.Core.Enums;
 using JameJafari.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -39,4 +40,11 @@ public class ReportsController(ReportService service) : ApiControllerBase
     public async Task<ActionResult<IReadOnlyList<FoodCostReportDto>>> FoodCosts(
         [FromQuery] DateTime? from, [FromQuery] DateTime? to)
         => Ok(await service.GetFoodCostReportAsync(from, to));
+
+    [HttpGet("death-anniversaries")]
+    [RequirePermission(PermissionCodes.DeathAnniversariesView)]
+    public async Task<ActionResult<DeathAnniversaryReportDto>> DeathAnniversaries(
+        [FromQuery] DeathAnniversaryScope scope = DeathAnniversaryScope.Day,
+        [FromQuery] DateTime? referenceDate = null)
+        => Ok(await service.GetDeathAnniversaryReportAsync(scope, referenceDate));
 }

@@ -148,6 +148,7 @@ docker build -t jamejafari-web ./frontend
 ### گزارشات
 - انتهای سایدبار؛ در موبایل قبل از تب «بیشتر»: خلاصه KPI + تب‌های جزئیات (حساب‌ها، نوع هزینه، اشخاص، غذا)
 - فیلتر بازه تاریخ شمسی؛ نیاز به `reports.view`
+- **گزارش سالگرد وفات** (`/reports/death-anniversaries`): درگذشتگان با `DeathDate` — تطابق سالگرد شمسی با **امروز / هفته جاری (شنبه–جمعه) / ماه جاری / فصل جاری**؛ نیاز به **`deathanniversaries.view`** (جدا از `reports.view`)
 
 ### PWA و UI
 - تم‌ها: **زمردی**، **تیره**، **زعفرانی**، **یاسی**، **آبی براق**، **آبی تیره**
@@ -177,6 +178,7 @@ docker build -t jamejafari-web ./frontend
 | costtypes | `view`, `create`, `update`, `delete` |
 | food | `view`, `create`, `update`, `delete` |
 | reports | `view` |
+| deathanniversaries | `view` |
 | generaltypes | `view`, `create`, `update`, `delete` |
 
 **Lookups (فرم‌ها):** کاربر با `income.create` / `cost.create` بدون `accounts.view` می‌تواند از `GET /api/lookups/accounts` و `GET /api/lookups/cost-types` برای dropdown استفاده کند؛ APIهای مدیریت (`/api/accounts`, …) همچنان نیاز به `*.view` دارند.

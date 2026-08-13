@@ -48,7 +48,7 @@ Apply on user delete/update/password/avatar for admin account.
 - **`GET /api/lookups/accounts`** — `{ id, name }[]`; allowed with `accounts.view` **or** any income/cost view/create/update
 - **`GET /api/lookups/cost-types`** — `{ id, name, unitName? }[]`; allowed with `costtypes.view` **or** income/cost/food view/create/update
 - **`GET /api/lookups/persons`** — paged PersonSelect search; ALL tokens match FirstName/LastName/NickName of person + father + mother; FusionCache slim list + in-memory filter (includes `IsDead`; **no** `DeathDate`); invalidate with LookupCache.InvalidatePersonsAsync
-- Person **`DeathDate`**: nullable `date` column; required when `IsDead`; cleared when living; validated in `PersonService.ValidateLifeStatus`
+- **`GET /api/reports/death-anniversaries?scope=Day|Week|Month|Season&referenceDate=`** — `[RequirePermission(PermissionCodes.DeathAnniversariesView)]` (`deathanniversaries.view`); deceased persons whose Jalali death anniversary matches reference; week = Sat–Fri containing reference
 - Admin list APIs (`/api/accounts`, `/api/cost-types`) stay behind module `*.view` for CRUD pages only
 - `LookupService` + separate cache keys; invalidated with account/cost-type/person writes
 
