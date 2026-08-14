@@ -32,57 +32,41 @@ public abstract class ApiControllerBase : ControllerBase
 
     protected static readonly AuditInfoDto NoAudit = new(default, null, null, null);
 
-    protected AccountDto ApplyAuditVisibility(AccountDto dto) =>
-        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
+    protected T ApplyIfDenied<T>(T value, string permission, Func<T, T> strip) =>
+        HasPermission(permission) ? value : strip(value);
 
-    protected IReadOnlyList<AccountDto> ApplyAuditVisibility(IReadOnlyList<AccountDto> items) =>
-        HasPermission(PermissionCodes.AuditView) ? items : items.Select(ApplyAuditVisibility).ToList();
+    protected IReadOnlyList<T> ApplyIfDenied<T>(
+        IReadOnlyList<T> items,
+        string permission,
+        Func<T, T> strip) =>
+        HasPermission(permission) ? items : items.Select(strip).ToList();
 
-    protected PersonDto ApplyAuditVisibility(PersonDto dto) =>
-        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
-
-    protected PagedResult<PersonDto> ApplyAuditVisibility(PagedResult<PersonDto> page) =>
-        HasPermission(PermissionCodes.AuditView)
+    protected PagedResult<T> ApplyIfDenied<T>(
+        PagedResult<T> page,
+        string permission,
+        Func<T, T> strip) =>
+        HasPermission(permission)
             ? page
-            : page with { Items = page.Items.Select(ApplyAuditVisibility).ToList() };
+            : page with { Items = page.Items.Select(strip).ToList() };
 
-    protected UserDto ApplyAuditVisibility(UserDto dto) =>
-        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
+    protected T ApplyAuditVisibility<T>(T dto, Func<T, T> strip) =>
+        ApplyIfDenied(dto, PermissionCodes.AuditView, strip);
 
-    protected PagedResult<UserDto> ApplyAuditVisibility(PagedResult<UserDto> page) =>
-        HasPermission(PermissionCodes.AuditView)
-            ? page
-            : page with { Items = page.Items.Select(ApplyAuditVisibility).ToList() };
+    protected IReadOnlyList<T> ApplyAuditVisibility<T>(IReadOnlyList<T> items, Func<T, T> strip) =>
+        ApplyIfDenied(items, PermissionCodes.AuditView, strip);
 
-    protected CostTypeDto ApplyAuditVisibility(CostTypeDto dto) =>
-        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
-
-    protected IReadOnlyList<CostTypeDto> ApplyAuditVisibility(IReadOnlyList<CostTypeDto> items) =>
-        HasPermission(PermissionCodes.AuditView) ? items : items.Select(ApplyAuditVisibility).ToList();
-
-    protected FoodGenerationDto ApplyAuditVisibility(FoodGenerationDto dto) =>
-        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
-
-    protected IReadOnlyList<FoodGenerationDto> ApplyAuditVisibility(IReadOnlyList<FoodGenerationDto> items) =>
-        HasPermission(PermissionCodes.AuditView) ? items : items.Select(ApplyAuditVisibility).ToList();
-
-    protected IncomeTransactionDto ApplyAuditVisibility(IncomeTransactionDto dto) =>
-        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
-
-    protected CostTransactionDto ApplyAuditVisibility(CostTransactionDto dto) =>
-        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
+    protected PagedResult<T> ApplyAuditVisibility<T>(PagedResult<T> page, Func<T, T> strip) =>
+        ApplyIfDenied(page, PermissionCodes.AuditView, strip);
 
     protected IncomeTransactionDto ApplyIncomeVisibility(IncomeTransactionDto dto) =>
-        ApplyAuditVisibility(ApplyAttachmentVisibility(dto));
+        ApplyAuditVisibility(
+            ApplyIfDenied(dto, PermissionCodes.AttachmentsView, static d => d with { Attachments = NoAttachments }),
+            static d => d with { Audit = NoAudit });
 
     protected CostTransactionDto ApplyCostVisibility(CostTransactionDto dto) =>
-        ApplyAuditVisibility(ApplyAttachmentVisibility(dto));
-
-    protected IncomeTransactionDto ApplyAttachmentVisibility(IncomeTransactionDto dto) =>
-        HasPermission(PermissionCodes.AttachmentsView) ? dto : dto with { Attachments = NoAttachments };
-
-    protected CostTransactionDto ApplyAttachmentVisibility(CostTransactionDto dto) =>
-        HasPermission(PermissionCodes.AttachmentsView) ? dto : dto with { Attachments = NoAttachments };
+        ApplyAuditVisibility(
+            ApplyIfDenied(dto, PermissionCodes.AttachmentsView, static d => d with { Attachments = NoAttachments }),
+            static d => d with { Audit = NoAudit });
 
     protected PagedResult<IncomeTransactionDto> ApplyIncomeVisibility(PagedResult<IncomeTransactionDto> page) =>
         page with { Items = page.Items.Select(ApplyIncomeVisibility).ToList() };
