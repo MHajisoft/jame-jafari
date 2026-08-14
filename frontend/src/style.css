@@ -701,6 +701,26 @@ button.field-invalid:focus {
 .list-panel {
   width: 100%;
 }
+.list-panel--paged {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+.list-panel--paged .list-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.list-panel--paged .list-panel-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding-block: 0.75rem;
+  padding-inline: 1.15rem 0.5rem;
+}
+.list-panel--paged .mobile-table {
+  width: 100%;
+  border-collapse: collapse;
+}
 .list-panel .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -721,6 +741,27 @@ button.field-invalid:focus {
 .list-toolbar .form-control {
   flex: 1;
   min-width: 200px;
+}
+
+@media (min-width: 769px) {
+  .list-panel--paged .list-panel-body {
+    padding: 0;
+  }
+  .list-panel--paged .mobile-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--surface);
+    box-shadow: 0 1px 0 var(--border);
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+  }
+  .list-panel--paged .list-panel-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    box-shadow: 0 -1px 0 var(--border);
+  }
 }
 
 @media (max-width: 768px) {
@@ -1000,7 +1041,6 @@ button.field-invalid:focus {
 
   .list-panel.card {
     padding: 0;
-    overflow: hidden;
   }
   .list-panel .mobile-table th,
   .list-panel .mobile-table td {
@@ -1027,6 +1067,20 @@ button.field-invalid:focus {
     gap: 0.15rem;
     justify-content: flex-end;
     white-space: nowrap;
+  }
+  .list-panel--paged .list-panel-footer {
+    width: calc(100% - 4.5rem);
+    margin-inline-start: auto;
+    margin-top: 0.65rem;
+    margin-bottom: 0.25rem;
+    padding-inline: 1rem;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  .list-panel--paged {
+    padding-bottom: 0.5rem;
   }
 }
 

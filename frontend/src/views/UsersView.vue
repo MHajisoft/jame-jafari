@@ -16,7 +16,8 @@ import { permissionTitle } from '../composables/usePermissionMatrix'
 import RowActions from '../components/RowActions.vue'
 import EntityAvatar from '../components/EntityAvatar.vue'
 import AvatarPicker from '../components/AvatarPicker.vue'
-import AppSkeleton from '../components/AppSkeleton.vue'
+import { usePagedList } from '../composables/usePagedList'
+import PagedListPanel from '../components/PagedListPanel.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -30,9 +31,26 @@ const {
   clearErrors: clearPasswordErrors,
   clearFieldError: clearPasswordFieldError
 } = useFormValidation()
-const items = ref([])
-const loading = ref(false)
 const permissions = ref([])
+const {
+  items,
+  loading,
+  page,
+  totalPages,
+  totalCount,
+  hasPrev,
+  hasNext,
+  showPagination,
+  rangeStart,
+  rangeEnd,
+  load: loadUsers,
+  goPrev,
+  goNext,
+  reload: reloadUsers
+} = usePagedList(async ({ page, pageSize }) => {
+  const { data } = await api.get('/users', { params: { page, pageSize } })
+  return data
+})
 const showForm = ref(false)
 const showPasswordForm = ref(false)
 const passwordTarget = ref(null)
@@ -79,17 +97,13 @@ const passwordRules = {
 }
 
 async function load() {
-  loading.value = true
   try {
-    const [u, p] = await Promise.all([
-      api.get('/users'),
-      api.get('/permissions')
-    ])
-    items.value = u.data.items
-    permissions.value = p.data
-  } finally {
-    loading.value = false
+    const { data } = await api.get('/permissions')
+    permissions.value = data
+  } catch {
+    permissions.value = []
   }
+  await loadUsers()
 }
 
 async function submit() {
@@ -132,7 +146,7 @@ async function submit() {
   if (!ok) return
   permMatrixRef.value?.markSaved?.()
   closeForm()
-  await load()
+  await reloadUsers()
 }
 
 function openCreate() {
@@ -188,7 +202,7 @@ async function remove(id) {
   if (!(await dialog.confirmDelete('این کاربر'))) return
   await api.delete(`/users/${id}`)
   toast.success('کاربر حذف شد')
-  await load()
+  await reloadUsers()
 }
 
 onMounted(load)
@@ -310,9 +324,22 @@ onMounted(load)
       </div>
     </Teleport>
 
-    <div v-show="!showForm || isMobile" class="card list-panel" :aria-busy="loading">
-      <AppSkeleton v-if="loading" :columns="6" />
-      <table v-else class="mobile-table">
+    <div v-show="!showForm || isMobile">
+      <PagedListPanel
+        :loading="loading"
+        :skeleton-columns="6"
+        :show-pagination="showPagination"
+        :page="page"
+        :total-pages="totalPages"
+        :total-count="totalCount"
+        :range-start="rangeStart"
+        :range-end="rangeEnd"
+        :has-prev="hasPrev"
+        :has-next="hasNext"
+        @prev="goPrev"
+        @next="goNext"
+      >
+        <table class="mobile-table">
         <thead>
           <tr><th>نام کاربری</th><th>ایمیل</th><th>موبایل</th><th>دسترسی‌ها</th><th>وضعیت</th><th v-if="auth.hasAnyPermission('users.update', 'users.delete', 'users.changepassword', 'audit.view')"></th></tr>
         </thead>
@@ -360,6 +387,7 @@ onMounted(load)
           </tr>
         </tbody>
       </table>
+      </PagedListPanel>
     </div>
   </div>
 </template>

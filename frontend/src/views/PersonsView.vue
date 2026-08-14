@@ -18,7 +18,8 @@ import FormHost from '../components/FormHost.vue'
 import AppCheckbox from '../components/AppCheckbox.vue'
 import RowActions from '../components/RowActions.vue'
 import AvatarPicker from '../components/AvatarPicker.vue'
-import AppSkeleton from '../components/AppSkeleton.vue'
+import { usePagedList } from '../composables/usePagedList'
+import PagedListPanel from '../components/PagedListPanel.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
 
 const auth = useAuthStore()
@@ -28,8 +29,25 @@ const lookups = useLookupsStore()
 const router = useRouter()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
-const items = ref([])
-const loading = ref(false)
+const {
+  items,
+  loading,
+  page,
+  totalPages,
+  totalCount,
+  hasPrev,
+  hasNext,
+  showPagination,
+  rangeStart,
+  rangeEnd,
+  load: loadPersons,
+  goPrev,
+  goNext,
+  reload: reloadPersons
+} = usePagedList(async ({ page, pageSize }) => {
+  const { data } = await api.get('/persons', { params: { page, pageSize } })
+  return data
+})
 const namePrefixes = ref([])
 const showForm = ref(false)
 const editing = ref(null)
@@ -77,17 +95,12 @@ watch(() => form.value.isDead, (dead) => {
 })
 
 async function load() {
-  loading.value = true
   try {
-    const [p, t] = await Promise.all([
-      api.get('/persons', { params: { page: 1, pageSize: 20 } }),
-      lookups.getGeneralTypes('NamePrefix')
-    ])
-    items.value = p.data.items
-    namePrefixes.value = t
-  } finally {
-    loading.value = false
+    namePrefixes.value = await lookups.getGeneralTypes('NamePrefix')
+  } catch {
+    namePrefixes.value = []
   }
+  await loadPersons()
 }
 
 async function submit() {
@@ -118,7 +131,7 @@ async function submit() {
   if (!ok) return
   closeForm()
   editing.value = null
-  await load()
+  await reloadPersons()
 }
 
 function openCreate() {
@@ -152,9 +165,8 @@ async function remove(id) {
   if (!(await dialog.confirmDelete('این شخص'))) return
   await api.delete(`/persons/${id}`)
   toast.success('شخص حذف شد')
-  await load()
+  await reloadPersons()
 }
-
 onMounted(load)
 </script>
 
@@ -277,9 +289,21 @@ onMounted(load)
     </FormHost>
 
     <div v-show="!showForm || isMobile">
-      <div class="card list-panel" :aria-busy="loading">
-        <AppSkeleton v-if="loading" :columns="6" />
-        <table v-else class="mobile-table">
+      <PagedListPanel
+        :loading="loading"
+        :skeleton-columns="6"
+        :show-pagination="showPagination"
+        :page="page"
+        :total-pages="totalPages"
+        :total-count="totalCount"
+        :range-start="rangeStart"
+        :range-end="rangeEnd"
+        :has-prev="hasPrev"
+        :has-next="hasNext"
+        @prev="goPrev"
+        @next="goNext"
+      >
+        <table class="mobile-table">
           <thead>
             <tr>
               <th>نام</th><th>جنسیت</th><th>موبایل</th><th>پدر</th><th>مادر</th>
@@ -320,7 +344,7 @@ onMounted(load)
             </tr>
           </tbody>
         </table>
-      </div>
+      </PagedListPanel>
     </div>
   </div>
 </template>

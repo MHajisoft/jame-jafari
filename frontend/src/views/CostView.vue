@@ -19,7 +19,8 @@ import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import RowActions from '../components/RowActions.vue'
 import PageHeader from '../components/PageHeader.vue'
-import AppSkeleton from '../components/AppSkeleton.vue'
+import { usePagedList } from '../composables/usePagedList'
+import PagedListPanel from '../components/PagedListPanel.vue'
 
 const auth = useAuthStore()
 const dialog = useDialogStore()
@@ -27,10 +28,27 @@ const lookups = useLookupsStore()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 
-const items = ref([])
+const {
+  items,
+  loading,
+  page,
+  totalPages,
+  totalCount,
+  hasPrev,
+  hasNext,
+  showPagination,
+  rangeStart,
+  rangeEnd,
+  load: loadTransactions,
+  goPrev,
+  goNext,
+  reload: reloadTransactions
+} = usePagedList(async ({ page, pageSize }) => {
+  const { data } = await api.get(ApiPaths.costTransactions, { params: { page, pageSize } })
+  return data
+})
 const accounts = ref([])
 const costTypes = ref([])
-const loading = ref(false)
 const formLookupsReady = ref(false)
 const pendingDocuments = ref([])
 const existingAttachments = ref([])
@@ -66,11 +84,9 @@ const pageTitle = computed(() => {
 const formTitle = computed(() => (editing.value ? 'ویرایش هزینه' : 'ثبت هزینه جدید'))
 
 async function load() {
-  loading.value = true
   formLookupsReady.value = false
   try {
-    const t = await api.get(ApiPaths.costTransactions)
-    items.value = t.data.items
+    await loadTransactions()
     try {
       const [a, c] = await Promise.all([
         lookups.getAccounts({ activeOnly: true }),
@@ -83,8 +99,8 @@ async function load() {
       accounts.value = []
       costTypes.value = []
     }
-  } finally {
-    loading.value = false
+  } catch {
+    /* list error toast via interceptor */
   }
 }
 
@@ -144,7 +160,7 @@ async function submit() {
   closeForm()
   pendingDocuments.value = []
   existingAttachments.value = []
-  await load()
+  await reloadTransactions()
 }
 
 async function remove(id) {
@@ -153,7 +169,7 @@ async function remove(id) {
     await api.delete(ApiPaths.costTransaction(id))
   }, { successMessage: 'تراکنش حذف شد' })
   if (!ok) return
-  await load()
+  await reloadTransactions()
 }
 
 onMounted(() => load().catch(() => {}))
@@ -257,10 +273,22 @@ onMounted(() => load().catch(() => {}))
       </form>
     </FormHost>
 
-    <div v-show="!showForm || isMobile" class="card list-panel" :aria-busy="loading">
-      <AppSkeleton v-if="loading" :columns="9" />
-      <template v-else>
-        <table class="mobile-table">
+    <PagedListPanel
+      v-show="!showForm || isMobile"
+      :loading="loading"
+      :skeleton-columns="9"
+      :show-pagination="showPagination"
+      :page="page"
+      :total-pages="totalPages"
+      :total-count="totalCount"
+      :range-start="rangeStart"
+      :range-end="rangeEnd"
+      :has-prev="hasPrev"
+      :has-next="hasNext"
+      @prev="goPrev"
+      @next="goNext"
+    >
+      <table class="mobile-table">
           <thead>
             <tr>
               <th>تاریخ</th><th>حساب</th><th>مبلغ</th><th>نوع هزینه</th><th>کد رهگیری</th><th>توضیحات</th>
@@ -291,9 +319,8 @@ onMounted(() => load().catch(() => {}))
               </td>
             </tr>
           </tbody>
-        </table>
-        <div v-if="!items.length" class="empty-state">تراکنشی ثبت نشده</div>
-      </template>
-    </div>
+      </table>
+      <div v-if="!items.length" class="empty-state">تراکنشی ثبت نشده</div>
+    </PagedListPanel>
   </div>
 </template>

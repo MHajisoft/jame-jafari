@@ -85,6 +85,6 @@ Router: `meta: { permission: 'food.view' }`
 - `PersianDatePicker` mobile overlay (sheet or modal): `useOverlayBack` with `stateKey: 'appDatePicker'`
 - **App updates:** `vite-plugin-pwa` `registerType: 'autoUpdate'` + `initPwaUpdate()` — new SW activates and reloads automatically; poll every 30m + on visibility restore
 - **Exit on back (mobile):** `initPwaExitBack()` — on primary tabs, system back shows a bottom hint then leaves on second press within 2s; overlays/forms/nested routes still consume back first
-- Bottom tabs: `router-link replace` so tab switches do not stack history
+- **List pagination:** `PagedListPanel` — desktop: page scroll + sticky thead/footer; mobile: inline bar after list (no fixed overlap with FAB)
 - Install prompt: `usePwaInstall` / `PwaInstallBanner`
 - `AppSelect` / `PersonSelect` mobile sheets: `useOverlayBack` (`appSelect` / `appPersonSelect`)
