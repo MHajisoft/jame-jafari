@@ -1,4 +1,5 @@
 using JameJafari.Api.Authorization;
+using JameJafari.Api.Services;
 using JameJafari.Core.Constants;
 using JameJafari.Core.DTOs;
 using JameJafari.Infrastructure.Services;
@@ -9,7 +10,7 @@ namespace JameJafari.Api.Controllers;
 
 [Authorize]
 [Route("api/food")]
-public class FoodController(FoodService service) : ApiControllerBase
+public class FoodController(FoodService service, ResponseVisibilityService visibility) : ApiControllerBase
 {
     [HttpGet("recommendations")]
     [RequirePermission(
@@ -25,9 +26,7 @@ public class FoodController(FoodService service) : ApiControllerBase
         PermissionCodes.FoodCreate,
         PermissionCodes.FoodUpdate)]
     public async Task<ActionResult<IReadOnlyList<FoodGenerationDto>>> GetByDate([FromQuery] DateTime date)
-    {
-        return Ok(ApplyAuditVisibility(await service.GetByDateAsync(date, OwnRecordsFilter(PermissionCodes.FoodView)), static d => d with { Audit = NoAudit }));
-    }
+        => Ok(visibility.ForResponse(await service.GetByDateAsync(date, OwnRecordsFilter(PermissionCodes.FoodView)), User));
 
     [HttpGet("{id:int}")]
     [RequirePermission(
@@ -37,19 +36,19 @@ public class FoodController(FoodService service) : ApiControllerBase
     public async Task<ActionResult<FoodGenerationDto>> GetById(int id)
     {
         var item = await service.GetByIdAsync(id, OwnRecordsFilter(PermissionCodes.FoodView));
-        return item is null ? NotFound() : Ok(ApplyAuditVisibility(item, static d => d with { Audit = NoAudit }));
+        return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
     }
 
     [HttpPost]
     [RequirePermission(PermissionCodes.FoodCreate)]
     public async Task<ActionResult<FoodGenerationDto>> Create([FromBody] CreateFoodGenerationRequest request)
-        => Ok(ApplyAuditVisibility(await service.CreateAsync(request, CurrentUserId), static d => d with { Audit = NoAudit }));
+        => Ok(visibility.ForResponse(await service.CreateAsync(request, CurrentUserId), User));
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.FoodUpdate)]
     public async Task<ActionResult<FoodGenerationDto>> Update(int id, [FromBody] UpdateFoodGenerationRequest request)
     {
         var item = await service.UpdateAsync(id, request, CurrentUserId, OwnRecordsFilter(PermissionCodes.FoodView));
-        return item is null ? NotFound() : Ok(ApplyAuditVisibility(item, static d => d with { Audit = NoAudit }));
+        return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
     }
 }

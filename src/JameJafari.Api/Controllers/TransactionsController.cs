@@ -13,7 +13,10 @@ namespace JameJafari.Api.Controllers;
 
 [Authorize]
 [Route("api/income-transactions")]
-public class IncomeTransactionsController(TransactionService service, FileStorageService storage) : ApiControllerBase
+public class IncomeTransactionsController(
+    TransactionService service,
+    FileStorageService storage,
+    ResponseVisibilityService visibility) : ApiControllerBase
 {
     private static readonly JsonSerializerOptions FormJsonOptions = new()
     {
@@ -32,7 +35,7 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
     {
         int? ownOnly = OwnRecordsFilter(PermissionCodes.IncomeView);
         var result = await service.GetIncomePagedAsync(from, to, accountId, page, pageSize, ownOnly);
-        return Ok(ApplyIncomeVisibility(result));
+        return Ok(visibility.ForIncomeResponse(result, User));
     }
 
     [HttpPost]
@@ -52,7 +55,7 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
         var paths = await SaveDocumentsAsync(documents);
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
-        return Ok(ApplyIncomeVisibility(await service.CreateIncomeAsync(request, CurrentUserId, paths)));
+        return Ok(visibility.ForIncomeResponse(await service.CreateIncomeAsync(request, CurrentUserId, paths), User));
     }
 
     [HttpPut("{id:int}")]
@@ -74,7 +77,7 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
 
         var updated = await service.UpdateIncomeAsync(
             id, request, CurrentUserId, paths, OwnRecordsFilter(PermissionCodes.IncomeView));
-        return updated is null ? NotFound() : Ok(ApplyIncomeVisibility(updated));
+        return updated is null ? NotFound() : Ok(visibility.ForIncomeResponse(updated, User));
     }
 
     [HttpDelete("{id:int}/attachments/{attachmentId:int}")]
@@ -128,7 +131,10 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
 
 [Authorize]
 [Route("api/cost-transactions")]
-public class CostTransactionsController(TransactionService service, FileStorageService storage) : ApiControllerBase
+public class CostTransactionsController(
+    TransactionService service,
+    FileStorageService storage,
+    ResponseVisibilityService visibility) : ApiControllerBase
 {
     private static readonly JsonSerializerOptions FormJsonOptions = new()
     {
@@ -147,7 +153,7 @@ public class CostTransactionsController(TransactionService service, FileStorageS
     {
         int? ownOnly = OwnRecordsFilter(PermissionCodes.CostView);
         var result = await service.GetCostPagedAsync(from, to, accountId, page, pageSize, ownOnly);
-        return Ok(ApplyCostVisibility(result));
+        return Ok(visibility.ForCostResponse(result, User));
     }
 
     [HttpPost]
@@ -167,7 +173,7 @@ public class CostTransactionsController(TransactionService service, FileStorageS
         var paths = await SaveDocumentsAsync(documents);
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
-        return Ok(ApplyCostVisibility(await service.CreateCostAsync(request, CurrentUserId, paths)));
+        return Ok(visibility.ForCostResponse(await service.CreateCostAsync(request, CurrentUserId, paths), User));
     }
 
     [HttpPut("{id:int}")]
@@ -189,7 +195,7 @@ public class CostTransactionsController(TransactionService service, FileStorageS
 
         var updated = await service.UpdateCostAsync(
             id, request, CurrentUserId, paths, OwnRecordsFilter(PermissionCodes.CostView));
-        return updated is null ? NotFound() : Ok(ApplyCostVisibility(updated));
+        return updated is null ? NotFound() : Ok(visibility.ForCostResponse(updated, User));
     }
 
     [HttpDelete("{id:int}/attachments/{attachmentId:int}")]

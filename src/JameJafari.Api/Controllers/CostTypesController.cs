@@ -1,4 +1,5 @@
 using JameJafari.Api.Authorization;
+using JameJafari.Api.Services;
 using JameJafari.Core.Constants;
 using JameJafari.Core.DTOs;
 using JameJafari.Infrastructure.Services;
@@ -9,26 +10,26 @@ namespace JameJafari.Api.Controllers;
 
 [Authorize]
 [Route("api/cost-types")]
-public class CostTypesController(CostTypeService service) : ApiControllerBase
+public class CostTypesController(CostTypeService service, ResponseVisibilityService visibility) : ApiControllerBase
 {
     [HttpGet]
     [RequirePermission(PermissionCodes.CostTypesView)]
     public async Task<ActionResult<IReadOnlyList<CostTypeDto>>> GetAll(
         [FromQuery] bool? isIngredient,
         [FromQuery] bool activeOnly = true)
-        => Ok(ApplyAuditVisibility(await service.GetAllAsync(isIngredient, activeOnly), static d => d with { Audit = NoAudit }));
+        => Ok(visibility.ForResponse(await service.GetAllAsync(isIngredient, activeOnly), User));
 
     [HttpPost]
     [RequirePermission(PermissionCodes.CostTypesCreate)]
     public async Task<ActionResult<CostTypeDto>> Create([FromBody] CreateCostTypeRequest request)
-        => Ok(ApplyAuditVisibility(await service.CreateAsync(request, CurrentUserId), static d => d with { Audit = NoAudit }));
+        => Ok(visibility.ForResponse(await service.CreateAsync(request, CurrentUserId), User));
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.CostTypesUpdate)]
     public async Task<ActionResult<CostTypeDto>> Update(int id, [FromBody] UpdateCostTypeRequest request)
     {
         var item = await service.UpdateAsync(id, request, CurrentUserId);
-        return item is null ? NotFound() : Ok(ApplyAuditVisibility(item, static d => d with { Audit = NoAudit }));
+        return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
     }
 
     [HttpDelete("{id:int}")]

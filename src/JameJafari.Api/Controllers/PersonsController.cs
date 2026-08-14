@@ -12,7 +12,7 @@ namespace JameJafari.Api.Controllers;
 
 [Authorize]
 [Route("api/persons")]
-public class PersonsController(PersonService service) : ApiControllerBase
+public class PersonsController(PersonService service, ResponseVisibilityService visibility) : ApiControllerBase
 {
     [HttpGet]
     [RequirePermission(
@@ -25,7 +25,7 @@ public class PersonsController(PersonService service) : ApiControllerBase
         [FromQuery] Gender? gender,
         [FromQuery, Range(1, 100)] int page = 1,
         [FromQuery, Range(1, 200)] int pageSize = 20)
-        => Ok(ApplyAuditVisibility(await service.GetPagedAsync(search, gender, page, pageSize), static d => d with { Audit = NoAudit }));
+        => Ok(visibility.ForResponse(await service.GetPagedAsync(search, gender, page, pageSize), User));
 
     [HttpGet("{id:int}")]
     [RequirePermission(
@@ -36,7 +36,7 @@ public class PersonsController(PersonService service) : ApiControllerBase
     public async Task<ActionResult<PersonDto>> GetById(int id)
     {
         var item = await service.GetByIdAsync(id);
-        return item is null ? NotFound() : Ok(ApplyAuditVisibility(item, static d => d with { Audit = NoAudit }));
+        return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
     }
 
     [HttpPost]
@@ -45,7 +45,7 @@ public class PersonsController(PersonService service) : ApiControllerBase
     {
         try
         {
-            return Ok(ApplyAuditVisibility(await service.CreateAsync(request, CurrentUserId), static d => d with { Audit = NoAudit }));
+            return Ok(visibility.ForResponse(await service.CreateAsync(request, CurrentUserId), User));
         }
         catch (InvalidOperationException ex)
         {
@@ -60,7 +60,7 @@ public class PersonsController(PersonService service) : ApiControllerBase
         try
         {
             var item = await service.UpdateAsync(id, request, CurrentUserId);
-            return item is null ? NotFound() : Ok(ApplyAuditVisibility(item, static d => d with { Audit = NoAudit }));
+            return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
         }
         catch (InvalidOperationException ex)
         {
@@ -100,7 +100,7 @@ public class PersonsController(PersonService service) : ApiControllerBase
                 !string.Equals(oldPath, path, StringComparison.OrdinalIgnoreCase))
                 storage.TryDelete(oldPath);
 
-            return Ok(ApplyAuditVisibility(person, static d => d with { Audit = NoAudit }));
+            return Ok(visibility.ForResponse(person, User));
         }
         catch (InvalidOperationException ex)
         {
@@ -122,6 +122,6 @@ public class PersonsController(PersonService service) : ApiControllerBase
         if (!string.IsNullOrWhiteSpace(oldPath))
             storage.TryDelete(oldPath);
 
-        return Ok(ApplyAuditVisibility(person, static d => d with { Audit = NoAudit }));
+        return Ok(visibility.ForResponse(person, User));
     }
 }

@@ -22,6 +22,7 @@ builder.Services.AddControllers(options =>
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<ImageProcessingService>();
 builder.Services.AddScoped<FileStorageService>();
+builder.Services.AddScoped<ResponseVisibilityService>();
 
 builder.Services.AddCors(options =>
 {
