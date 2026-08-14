@@ -31,6 +31,11 @@ const { showForm, editing, form, openCreate, openEdit, closeForm } = useEntityFo
 ## Transaction attachments (income/cost)
 - Permissions (no nav): `attachments.view` (list + preview), `attachments.add` (upload), `attachments.delete` (remove saved)
 - **List:** `DocumentAttachmentList` only when `attachments.view`
+
+## Audit metadata (all CRUD lists)
+- Permission (no nav): `audit.view`
+- **List/card:** no audit columns — clock icon in `RowActions` opens `AuditInfoPanel` (modal desktop / bottom sheet mobile with `useOverlayBack`)
+- API strips `audit` when caller lacks `audit.view` (same pattern as attachments)
 - **Form:** `TransactionAttachmentsField` with `canView` / `canAdd` / `canDelete`
 - **Preview:** `DocumentPreview` — image/PDF in modal (desktop) / bottom sheet (mobile)
 - Edit mode: load `item.attachments` **after** `openEdit()` (not before — `onReset` clears them)

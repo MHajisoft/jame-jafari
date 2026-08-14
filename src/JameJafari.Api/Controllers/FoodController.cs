@@ -26,7 +26,7 @@ public class FoodController(FoodService service) : ApiControllerBase
         PermissionCodes.FoodUpdate)]
     public async Task<ActionResult<IReadOnlyList<FoodGenerationDto>>> GetByDate([FromQuery] DateTime date)
     {
-        return Ok(await service.GetByDateAsync(date, OwnRecordsFilter(PermissionCodes.FoodView)));
+        return Ok(ApplyAuditVisibility(await service.GetByDateAsync(date, OwnRecordsFilter(PermissionCodes.FoodView))));
     }
 
     [HttpGet("{id:int}")]
@@ -37,19 +37,19 @@ public class FoodController(FoodService service) : ApiControllerBase
     public async Task<ActionResult<FoodGenerationDto>> GetById(int id)
     {
         var item = await service.GetByIdAsync(id, OwnRecordsFilter(PermissionCodes.FoodView));
-        return item is null ? NotFound() : Ok(item);
+        return item is null ? NotFound() : Ok(ApplyAuditVisibility(item));
     }
 
     [HttpPost]
     [RequirePermission(PermissionCodes.FoodCreate)]
     public async Task<ActionResult<FoodGenerationDto>> Create([FromBody] CreateFoodGenerationRequest request)
-        => Ok(await service.CreateAsync(request, CurrentUserId));
+        => Ok(ApplyAuditVisibility(await service.CreateAsync(request, CurrentUserId)));
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.FoodUpdate)]
     public async Task<ActionResult<FoodGenerationDto>> Update(int id, [FromBody] UpdateFoodGenerationRequest request)
     {
         var item = await service.UpdateAsync(id, request, CurrentUserId, OwnRecordsFilter(PermissionCodes.FoodView));
-        return item is null ? NotFound() : Ok(item);
+        return item is null ? NotFound() : Ok(ApplyAuditVisibility(item));
     }
 }

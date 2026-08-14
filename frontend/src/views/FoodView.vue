@@ -358,8 +358,10 @@ onMounted(load)
             </div>
           </dl>
           <RowActions
-            v-if="auth.hasPermission('food.update')"
-            :show-edit="true"
+            v-if="auth.hasAnyPermission('food.update', 'audit.view')"
+            :show-edit="auth.hasPermission('food.update')"
+            :show-audit="auth.hasPermission('audit.view')"
+            :audit="food.audit"
             @edit="startEdit(food)"
           />
         </header>

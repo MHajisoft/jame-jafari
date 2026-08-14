@@ -283,7 +283,7 @@ onMounted(load)
           <thead>
             <tr>
               <th>نام</th><th>جنسیت</th><th>موبایل</th><th>پدر</th><th>مادر</th>
-              <th v-if="auth.hasAnyPermission('persons.update', 'persons.delete')"></th>
+              <th v-if="auth.hasAnyPermission('persons.update', 'persons.delete', 'audit.view')"></th>
             </tr>
           </thead>
           <tbody>
@@ -307,10 +307,12 @@ onMounted(load)
                   :previewable="!!item.motherSummary"
                 />
               </td>
-              <td v-if="auth.hasAnyPermission('persons.update', 'persons.delete')">
+              <td v-if="auth.hasAnyPermission('persons.update', 'persons.delete', 'audit.view')">
                 <RowActions
                   :show-edit="auth.hasPermission('persons.update')"
                   :show-delete="auth.hasPermission('persons.delete')"
+                  :show-audit="auth.hasPermission('audit.view')"
+                  :audit="item.audit"
                   @edit="openEdit(item)"
                   @delete="remove(item.id)"
                 />

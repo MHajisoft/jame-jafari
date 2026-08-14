@@ -39,6 +39,7 @@ const form = ref({ name: '', description: '', isIngredient: false, unitId: '', i
 const canCreate = computed(() => auth.hasPermission('costtypes.create'))
 const canUpdate = computed(() => auth.hasPermission('costtypes.update'))
 const canDelete = computed(() => auth.hasPermission('costtypes.delete'))
+const canViewAudit = computed(() => auth.hasPermission('audit.view'))
 const canManageUnits = computed(() =>
   auth.hasAnyPermission('generaltypes.view', 'generaltypes.create', 'generaltypes.update', 'generaltypes.delete')
 )
@@ -197,7 +198,7 @@ onMounted(load)
             <th class="hide-mobile">مواد اولیه</th>
             <th class="hide-mobile">واحد</th>
             <th class="hide-mobile">وضعیت</th>
-            <th v-if="canUpdate || canDelete"></th>
+            <th v-if="canUpdate || canDelete || canViewAudit"></th>
           </tr>
         </thead>
         <tbody>
@@ -222,10 +223,12 @@ onMounted(load)
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>
             </td>
-            <td v-if="canUpdate || canDelete">
+            <td v-if="canUpdate || canDelete || canViewAudit">
               <RowActions
                 :show-edit="canUpdate"
                 :show-delete="canDelete"
+                :show-audit="canViewAudit"
+                :audit="item.audit"
                 @edit="openEdit(item)"
                 @delete="remove(item.id)"
               />

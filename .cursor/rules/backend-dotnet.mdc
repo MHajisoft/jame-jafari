@@ -30,6 +30,8 @@ alwaysApply: false
 - Entity: `TransactionAttachment` (`Path`, FK to income or cost transaction)
 - DTO: `attachments: [{ id, path }]` — stripped when caller lacks `attachments.view`
 - Permissions (no menu): `attachments.view` | `attachments.add` | `attachments.delete`
+- DTO: `audit: { createdAt, createdBy, updatedAt, updatedBy }` — stripped when caller lacks `audit.view` (`ApplyAuditVisibility` in `ApiControllerBase`)
+- Permission (no menu): `audit.view`
 - Uploading `documents` on create/update requires `attachments.add`
 - FK delete behavior: **`Restrict`** (not Cascade) — SQL Server multiple-cascade-path limitation
 - Attachments removed individually in service; soft-deleted transactions keep attachment rows

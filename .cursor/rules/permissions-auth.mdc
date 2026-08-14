@@ -9,11 +9,13 @@ alwaysApply: false
 ## Permission naming
 Format: `{module}.{action}` — e.g. `income.create`, `users.changepassword`
 
-Modules: `accounts`, `income`, `cost`, `users`, `persons`, `costtypes`, `food`, `reports`, `deathanniversaries`, `generaltypes`, `attachments`
+Modules: `accounts`, `income`, `cost`, `users`, `persons`, `costtypes`, `food`, `reports`, `deathanniversaries`, `generaltypes`, `attachments`, `audit`
 
 Standard actions: `view`, `create`, `update`, `delete` (+ `users.changepassword`, `attachments.add`)
 
 `attachments` has no menu — `view` = list/preview, `add` = upload, `delete` = remove saved file
+
+`audit` has no menu — `view` = on-demand created/updated metadata panel (stripped from API without permission)
 
 ## Source of truth
 - Backend: `PermissionCodes.cs` — `All` array drives DB seed

@@ -314,7 +314,7 @@ onMounted(load)
       <AppSkeleton v-if="loading" :columns="6" />
       <table v-else class="mobile-table">
         <thead>
-          <tr><th>نام کاربری</th><th>ایمیل</th><th>موبایل</th><th>دسترسی‌ها</th><th>وضعیت</th><th v-if="auth.hasAnyPermission('users.update', 'users.delete', 'users.changepassword')"></th></tr>
+          <tr><th>نام کاربری</th><th>ایمیل</th><th>موبایل</th><th>دسترسی‌ها</th><th>وضعیت</th><th v-if="auth.hasAnyPermission('users.update', 'users.delete', 'users.changepassword', 'audit.view')"></th></tr>
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
@@ -345,12 +345,13 @@ onMounted(load)
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>
             </td>
-            <td v-if="auth.hasAnyPermission('users.update', 'users.delete', 'users.changepassword')">
+            <td v-if="auth.hasAnyPermission('users.update', 'users.delete', 'users.changepassword', 'audit.view')">
               <RowActions
-                v-if="!item.isSystemAdmin"
-                :show-edit="auth.hasPermission('users.update')"
-                :show-change-password="auth.hasPermission('users.changepassword')"
-                :show-delete="auth.hasPermission('users.delete')"
+                :show-edit="!item.isSystemAdmin && auth.hasPermission('users.update')"
+                :show-change-password="!item.isSystemAdmin && auth.hasPermission('users.changepassword')"
+                :show-delete="!item.isSystemAdmin && auth.hasPermission('users.delete')"
+                :show-audit="auth.hasPermission('audit.view')"
+                :audit="item.audit"
                 @edit="openEdit(item)"
                 @change-password="openChangePassword(item)"
                 @delete="remove(item.id)"

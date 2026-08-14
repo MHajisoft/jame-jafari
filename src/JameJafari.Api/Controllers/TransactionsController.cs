@@ -32,7 +32,7 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
     {
         int? ownOnly = OwnRecordsFilter(PermissionCodes.IncomeView);
         var result = await service.GetIncomePagedAsync(from, to, accountId, page, pageSize, ownOnly);
-        return Ok(ApplyAttachmentVisibility(result));
+        return Ok(ApplyIncomeVisibility(result));
     }
 
     [HttpPost]
@@ -52,7 +52,7 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
         var paths = await SaveDocumentsAsync(documents);
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
-        return Ok(ApplyAttachmentVisibility(await service.CreateIncomeAsync(request, CurrentUserId, paths)));
+        return Ok(ApplyIncomeVisibility(await service.CreateIncomeAsync(request, CurrentUserId, paths)));
     }
 
     [HttpPut("{id:int}")]
@@ -74,7 +74,7 @@ public class IncomeTransactionsController(TransactionService service, FileStorag
 
         var updated = await service.UpdateIncomeAsync(
             id, request, CurrentUserId, paths, OwnRecordsFilter(PermissionCodes.IncomeView));
-        return updated is null ? NotFound() : Ok(ApplyAttachmentVisibility(updated));
+        return updated is null ? NotFound() : Ok(ApplyIncomeVisibility(updated));
     }
 
     [HttpDelete("{id:int}/attachments/{attachmentId:int}")]
@@ -147,7 +147,7 @@ public class CostTransactionsController(TransactionService service, FileStorageS
     {
         int? ownOnly = OwnRecordsFilter(PermissionCodes.CostView);
         var result = await service.GetCostPagedAsync(from, to, accountId, page, pageSize, ownOnly);
-        return Ok(ApplyAttachmentVisibility(result));
+        return Ok(ApplyCostVisibility(result));
     }
 
     [HttpPost]
@@ -167,7 +167,7 @@ public class CostTransactionsController(TransactionService service, FileStorageS
         var paths = await SaveDocumentsAsync(documents);
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
-        return Ok(ApplyAttachmentVisibility(await service.CreateCostAsync(request, CurrentUserId, paths)));
+        return Ok(ApplyCostVisibility(await service.CreateCostAsync(request, CurrentUserId, paths)));
     }
 
     [HttpPut("{id:int}")]
@@ -189,7 +189,7 @@ public class CostTransactionsController(TransactionService service, FileStorageS
 
         var updated = await service.UpdateCostAsync(
             id, request, CurrentUserId, paths, OwnRecordsFilter(PermissionCodes.CostView));
-        return updated is null ? NotFound() : Ok(ApplyAttachmentVisibility(updated));
+        return updated is null ? NotFound() : Ok(ApplyCostVisibility(updated));
     }
 
     [HttpDelete("{id:int}/attachments/{attachmentId:int}")]

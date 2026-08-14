@@ -1,18 +1,45 @@
 <script setup>
+import { ref } from 'vue'
+import AuditInfoPanel from './AuditInfoPanel.vue'
+
 defineProps({
   showEdit: { type: Boolean, default: false },
   showDelete: { type: Boolean, default: false },
   showChangePassword: { type: Boolean, default: false },
+  showAudit: { type: Boolean, default: false },
+  audit: { type: Object, default: null },
   editLabel: { type: String, default: 'ویرایش' },
   deleteLabel: { type: String, default: 'حذف' },
-  changePasswordLabel: { type: String, default: 'تغییر رمز' }
+  changePasswordLabel: { type: String, default: 'تغییر رمز' },
+  auditLabel: { type: String, default: 'اطلاعات ثبت' }
 })
 
 defineEmits(['edit', 'delete', 'change-password'])
+
+const auditOpen = ref(false)
 </script>
 
 <template>
   <div class="row-actions" role="group" aria-label="عملیات">
+    <button
+      v-if="showAudit && audit"
+      type="button"
+      class="icon-btn"
+      :aria-label="auditLabel"
+      :title="auditLabel"
+      @click.stop="auditOpen = true"
+    >
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75" />
+        <path
+          d="M12 7v5l3 2"
+          stroke="currentColor"
+          stroke-width="1.75"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
     <button
       v-if="showEdit"
       type="button"
@@ -90,6 +117,8 @@ defineEmits(['edit', 'delete', 'change-password'])
       </svg>
     </button>
   </div>
+
+  <AuditInfoPanel v-model:show="auditOpen" :audit="audit" />
 </template>
 
 <style scoped>

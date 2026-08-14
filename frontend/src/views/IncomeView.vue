@@ -294,7 +294,7 @@ onMounted(() => load().catch(() => {}))
               <th>تاریخ</th><th>شخص</th><th>حساب</th><th>مبلغ</th><th>نوع پرداخت</th>
               <th>نوع هزینه</th><th>کد رهگیری</th><th>توضیحات</th>
               <th v-if="auth.hasPermission('attachments.view')">پیوست</th>
-              <th v-if="auth.hasAnyPermission('income.update', 'income.delete')"></th>
+              <th v-if="auth.hasAnyPermission('income.update', 'income.delete', 'audit.view')"></th>
             </tr>
           </thead>
           <tbody>
@@ -316,10 +316,12 @@ onMounted(() => load().catch(() => {}))
               <td v-if="auth.hasPermission('attachments.view')" data-label="پیوست">
                 <DocumentAttachmentList :attachments="item.attachments" />
               </td>
-              <td v-if="auth.hasAnyPermission('income.update', 'income.delete')">
+              <td v-if="auth.hasAnyPermission('income.update', 'income.delete', 'audit.view')">
                 <RowActions
                   :show-edit="auth.hasPermission('income.update')"
                   :show-delete="auth.hasPermission('income.delete')"
+                  :show-audit="auth.hasPermission('audit.view')"
+                  :audit="item.audit"
                   @edit="startEdit(item)"
                   @delete="remove(item.id)"
                 />

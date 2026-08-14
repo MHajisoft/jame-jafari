@@ -30,21 +30,65 @@ public abstract class ApiControllerBase : ControllerBase
     protected static readonly IReadOnlyList<TransactionAttachmentDto> NoAttachments =
         Array.Empty<TransactionAttachmentDto>();
 
+    protected static readonly AuditInfoDto NoAudit = new(default, null, null, null);
+
+    protected AccountDto ApplyAuditVisibility(AccountDto dto) =>
+        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
+
+    protected IReadOnlyList<AccountDto> ApplyAuditVisibility(IReadOnlyList<AccountDto> items) =>
+        HasPermission(PermissionCodes.AuditView) ? items : items.Select(ApplyAuditVisibility).ToList();
+
+    protected PersonDto ApplyAuditVisibility(PersonDto dto) =>
+        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
+
+    protected PagedResult<PersonDto> ApplyAuditVisibility(PagedResult<PersonDto> page) =>
+        HasPermission(PermissionCodes.AuditView)
+            ? page
+            : page with { Items = page.Items.Select(ApplyAuditVisibility).ToList() };
+
+    protected UserDto ApplyAuditVisibility(UserDto dto) =>
+        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
+
+    protected PagedResult<UserDto> ApplyAuditVisibility(PagedResult<UserDto> page) =>
+        HasPermission(PermissionCodes.AuditView)
+            ? page
+            : page with { Items = page.Items.Select(ApplyAuditVisibility).ToList() };
+
+    protected CostTypeDto ApplyAuditVisibility(CostTypeDto dto) =>
+        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
+
+    protected IReadOnlyList<CostTypeDto> ApplyAuditVisibility(IReadOnlyList<CostTypeDto> items) =>
+        HasPermission(PermissionCodes.AuditView) ? items : items.Select(ApplyAuditVisibility).ToList();
+
+    protected FoodGenerationDto ApplyAuditVisibility(FoodGenerationDto dto) =>
+        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
+
+    protected IReadOnlyList<FoodGenerationDto> ApplyAuditVisibility(IReadOnlyList<FoodGenerationDto> items) =>
+        HasPermission(PermissionCodes.AuditView) ? items : items.Select(ApplyAuditVisibility).ToList();
+
+    protected IncomeTransactionDto ApplyAuditVisibility(IncomeTransactionDto dto) =>
+        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
+
+    protected CostTransactionDto ApplyAuditVisibility(CostTransactionDto dto) =>
+        HasPermission(PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
+
+    protected IncomeTransactionDto ApplyIncomeVisibility(IncomeTransactionDto dto) =>
+        ApplyAuditVisibility(ApplyAttachmentVisibility(dto));
+
+    protected CostTransactionDto ApplyCostVisibility(CostTransactionDto dto) =>
+        ApplyAuditVisibility(ApplyAttachmentVisibility(dto));
+
     protected IncomeTransactionDto ApplyAttachmentVisibility(IncomeTransactionDto dto) =>
         HasPermission(PermissionCodes.AttachmentsView) ? dto : dto with { Attachments = NoAttachments };
 
     protected CostTransactionDto ApplyAttachmentVisibility(CostTransactionDto dto) =>
         HasPermission(PermissionCodes.AttachmentsView) ? dto : dto with { Attachments = NoAttachments };
 
-    protected PagedResult<IncomeTransactionDto> ApplyAttachmentVisibility(PagedResult<IncomeTransactionDto> page) =>
-        HasPermission(PermissionCodes.AttachmentsView)
-            ? page
-            : page with { Items = page.Items.Select(ApplyAttachmentVisibility).ToList() };
+    protected PagedResult<IncomeTransactionDto> ApplyIncomeVisibility(PagedResult<IncomeTransactionDto> page) =>
+        page with { Items = page.Items.Select(ApplyIncomeVisibility).ToList() };
 
-    protected PagedResult<CostTransactionDto> ApplyAttachmentVisibility(PagedResult<CostTransactionDto> page) =>
-        HasPermission(PermissionCodes.AttachmentsView)
-            ? page
-            : page with { Items = page.Items.Select(ApplyAttachmentVisibility).ToList() };
+    protected PagedResult<CostTransactionDto> ApplyCostVisibility(PagedResult<CostTransactionDto> page) =>
+        page with { Items = page.Items.Select(ApplyCostVisibility).ToList() };
 
     /// <summary>Returns null when OK; otherwise a BadRequest result.</summary>
     protected ActionResult? EnsureCanAddAttachments(IFormFileCollection? documents)

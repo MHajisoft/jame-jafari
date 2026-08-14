@@ -12,7 +12,8 @@ export const MODULE_LABELS = {
   reports: 'گزارشات',
   deathanniversaries: 'سالگرد وفات',
   generaltypes: 'انواع عمومی',
-  attachments: 'پیوست‌ها'
+  attachments: 'پیوست‌ها',
+  audit: 'ردیابی'
 }
 
 const ACTION_LABELS = {
@@ -37,12 +38,15 @@ const MODULE_COLUMNS = {
     { key: 'view', label: 'مشاهده' },
     { key: 'add', label: 'افزودن' },
     { key: 'delete', label: 'حذف' }
+  ],
+  audit: [
+    { key: 'view', label: 'مشاهده' }
   ]
 }
 
 const MODULE_ORDER = [
   'accounts', 'cost', 'costtypes', 'generaltypes',
-  'income', 'persons', 'food', 'attachments', 'reports', 'deathanniversaries', 'users'
+  'income', 'persons', 'food', 'attachments', 'audit', 'reports', 'deathanniversaries', 'users'
 ]
 
 const moduleIcons = Object.fromEntries(
@@ -54,6 +58,7 @@ const moduleIcons = Object.fromEntries(
     })
 )
 moduleIcons.attachments = '📎'
+moduleIcons.audit = '🕒'
 moduleIcons.deathanniversaries = '🕯️'
 
 export function permActionLabel(code) {

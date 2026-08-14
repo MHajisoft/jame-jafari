@@ -54,6 +54,9 @@ public static class PermissionCodes
     /// <summary>Delete an existing attachment from a transaction.</summary>
     public const string AttachmentsDelete = "attachments.delete";
 
+    /// <summary>View created/updated metadata on persisted records (no menu).</summary>
+    public const string AuditView = "audit.view";
+
     public static readonly string[] All =
     [
         AccountsView, AccountsCreate, AccountsUpdate, AccountsDelete,
@@ -66,6 +69,7 @@ public static class PermissionCodes
         ReportsView,
         DeathAnniversariesView,
         GeneralTypesView, GeneralTypesCreate, GeneralTypesUpdate, GeneralTypesDelete,
-        AttachmentsView, AttachmentsAdd, AttachmentsDelete
+        AttachmentsView, AttachmentsAdd, AttachmentsDelete,
+        AuditView
     ];
 }

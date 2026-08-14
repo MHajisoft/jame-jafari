@@ -26,6 +26,11 @@ alwaysApply: false
 ## Transaction attachments
 - Use **`TransactionAttachmentsField`** (not single `FileUpload`) for income/cost forms
 - Gate with `attachments.view` / `attachments.add` / `attachments.delete` (`canView` / `canAdd` / `canDelete`)
+
+## Audit metadata (persisted records)
+- Gate with `audit.view` — **`RowActions`** `:show-audit` + `:audit="item.audit"`; opens **`AuditInfoPanel`**
+- Never show created/updated columns in list tables or cards
+- Mobile: `AuditInfoPanel` uses `useOverlayBack` (`stateKey: 'appAuditInfo'`)
 - `form-span-full`; multipart sends multiple `documents`
 - In `useEntityForm` `onReset`: clear `existingAttachments` only when `!editing` (create mode)
 - `startEdit`: call `openEdit(...)` first, then set `existingAttachments` from `item.attachments`

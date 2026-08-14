@@ -123,7 +123,7 @@ onMounted(() => load().catch(() => {}))
             <th>نام</th>
             <th>توضیحات</th>
             <th>وضعیت</th>
-            <th v-if="auth.hasAnyPermission('accounts.update', 'accounts.delete')"></th>
+            <th v-if="auth.hasAnyPermission('accounts.update', 'accounts.delete', 'audit.view')"></th>
           </tr>
         </thead>
         <tbody>
@@ -135,10 +135,12 @@ onMounted(() => load().catch(() => {}))
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>
             </td>
-            <td v-if="auth.hasAnyPermission('accounts.update', 'accounts.delete')">
+            <td v-if="auth.hasAnyPermission('accounts.update', 'accounts.delete', 'audit.view')">
               <RowActions
                 :show-edit="auth.hasPermission('accounts.update')"
                 :show-delete="auth.hasPermission('accounts.delete')"
+                :show-audit="auth.hasPermission('audit.view')"
+                :audit="item.audit"
                 @edit="startEdit(item)"
                 @delete="remove(item.id)"
               />

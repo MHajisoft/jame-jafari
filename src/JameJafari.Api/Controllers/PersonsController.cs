@@ -25,7 +25,7 @@ public class PersonsController(PersonService service) : ApiControllerBase
         [FromQuery] Gender? gender,
         [FromQuery, Range(1, 100)] int page = 1,
         [FromQuery, Range(1, 200)] int pageSize = 20)
-        => Ok(await service.GetPagedAsync(search, gender, page, pageSize));
+        => Ok(ApplyAuditVisibility(await service.GetPagedAsync(search, gender, page, pageSize)));
 
     [HttpGet("{id:int}")]
     [RequirePermission(
@@ -36,7 +36,7 @@ public class PersonsController(PersonService service) : ApiControllerBase
     public async Task<ActionResult<PersonDto>> GetById(int id)
     {
         var item = await service.GetByIdAsync(id);
-        return item is null ? NotFound() : Ok(item);
+        return item is null ? NotFound() : Ok(ApplyAuditVisibility(item));
     }
 
     [HttpPost]
@@ -45,7 +45,7 @@ public class PersonsController(PersonService service) : ApiControllerBase
     {
         try
         {
-            return Ok(await service.CreateAsync(request, CurrentUserId));
+            return Ok(ApplyAuditVisibility(await service.CreateAsync(request, CurrentUserId)));
         }
         catch (InvalidOperationException ex)
         {
@@ -60,7 +60,7 @@ public class PersonsController(PersonService service) : ApiControllerBase
         try
         {
             var item = await service.UpdateAsync(id, request, CurrentUserId);
-            return item is null ? NotFound() : Ok(item);
+            return item is null ? NotFound() : Ok(ApplyAuditVisibility(item));
         }
         catch (InvalidOperationException ex)
         {
@@ -100,7 +100,7 @@ public class PersonsController(PersonService service) : ApiControllerBase
                 !string.Equals(oldPath, path, StringComparison.OrdinalIgnoreCase))
                 storage.TryDelete(oldPath);
 
-            return Ok(person);
+            return Ok(ApplyAuditVisibility(person));
         }
         catch (InvalidOperationException ex)
         {
@@ -122,6 +122,6 @@ public class PersonsController(PersonService service) : ApiControllerBase
         if (!string.IsNullOrWhiteSpace(oldPath))
             storage.TryDelete(oldPath);
 
-        return Ok(person);
+        return Ok(ApplyAuditVisibility(person));
     }
 }

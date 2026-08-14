@@ -16,14 +16,14 @@ public class UsersController(UserService service) : ApiControllerBase
     [HttpGet]
     [RequirePermission(PermissionCodes.UsersView)]
     public async Task<ActionResult<PagedResult<UserDto>>> GetAll([FromQuery, Range(1, 100)] int page = 1, [FromQuery, Range(1, 200)] int pageSize = 20)
-        => Ok(await service.GetPagedAsync(page, pageSize));
+        => Ok(ApplyAuditVisibility(await service.GetPagedAsync(page, pageSize)));
 
     [HttpGet("{id:int}")]
     [RequirePermission(PermissionCodes.UsersView)]
     public async Task<ActionResult<UserDto>> GetById(int id)
     {
         var item = await service.GetByIdAsync(id);
-        return item is null ? NotFound() : Ok(item);
+        return item is null ? NotFound() : Ok(ApplyAuditVisibility(item));
     }
 
     [HttpPost]
@@ -32,7 +32,7 @@ public class UsersController(UserService service) : ApiControllerBase
     {
         try
         {
-            return Ok(await service.CreateAsync(request, CurrentUserId));
+            return Ok(ApplyAuditVisibility(await service.CreateAsync(request, CurrentUserId)));
         }
         catch (InvalidOperationException ex)
         {
@@ -47,7 +47,7 @@ public class UsersController(UserService service) : ApiControllerBase
         try
         {
             var item = await service.UpdateAsync(id, request, CurrentUserId);
-            return item is null ? NotFound() : Ok(item);
+            return item is null ? NotFound() : Ok(ApplyAuditVisibility(item));
         }
         catch (InvalidOperationException ex)
         {
@@ -62,7 +62,7 @@ public class UsersController(UserService service) : ApiControllerBase
         try
         {
             var item = await service.ChangePasswordAsync(id, request, CurrentUserId);
-            return item is null ? NotFound() : Ok(item);
+            return item is null ? NotFound() : Ok(ApplyAuditVisibility(item));
         }
         catch (InvalidOperationException ex)
         {
@@ -111,7 +111,7 @@ public class UsersController(UserService service) : ApiControllerBase
                 !string.Equals(oldPath, path, StringComparison.OrdinalIgnoreCase))
                 storage.TryDelete(oldPath);
 
-            return Ok(user);
+            return Ok(ApplyAuditVisibility(user));
         }
         catch (InvalidOperationException ex)
         {
@@ -135,7 +135,7 @@ public class UsersController(UserService service) : ApiControllerBase
             if (!string.IsNullOrWhiteSpace(oldPath))
                 storage.TryDelete(oldPath);
 
-            return Ok(user);
+            return Ok(ApplyAuditVisibility(user));
         }
         catch (InvalidOperationException ex)
         {
