@@ -194,18 +194,30 @@ onMounted(load)
         <thead>
           <tr>
             <th>نام</th>
-            <th>مواد اولیه</th>
-            <th>واحد</th>
-            <th>وضعیت</th>
+            <th class="hide-mobile">مواد اولیه</th>
+            <th class="hide-mobile">واحد</th>
+            <th class="hide-mobile">وضعیت</th>
             <th v-if="canUpdate || canDelete"></th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in items" :key="item.id">
-            <td data-label="نام"><strong>{{ item.name }}</strong></td>
-            <td data-label="مواد اولیه">{{ item.isIngredient ? '✓' : '—' }}</td>
-            <td data-label="واحد">{{ item.unitName || '—' }}</td>
-            <td data-label="وضعیت">
+          <tr
+            v-for="item in items"
+            :key="item.id"
+            :class="item.isActive ? 'type-row-active' : 'type-row-inactive'"
+          >
+            <td data-label="نام">
+              <span class="cost-type-title">
+                <strong>{{ item.name }}</strong>
+                <span
+                  v-if="item.isIngredient && item.unitName"
+                  class="badge unit-badge"
+                >{{ item.unitName }}</span>
+              </span>
+            </td>
+            <td data-label="مواد اولیه" class="hide-mobile">{{ item.isIngredient ? '✓' : '—' }}</td>
+            <td data-label="واحد" class="hide-mobile">{{ item.unitName || '—' }}</td>
+            <td data-label="وضعیت" class="hide-mobile">
               <span :class="item.isActive ? 'badge badge-success' : 'badge badge-danger'">
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>
@@ -238,4 +250,36 @@ onMounted(load)
   padding: 0;
 }
 .link-btn:hover { text-decoration: underline; }
+.cost-type-title {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.unit-badge {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .unit-badge {
+    display: inline-flex;
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    padding: 0.12rem 0.45rem;
+    background: color-mix(in srgb, var(--primary) 14%, transparent);
+    color: var(--primary);
+    border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+  }
+  .mobile-table tbody tr.type-row-active {
+    box-shadow:
+      inset -4px 0 0 var(--success),
+      0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+  .mobile-table tbody tr.type-row-inactive {
+    box-shadow:
+      inset -4px 0 0 var(--danger),
+      0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+}
 </style>
