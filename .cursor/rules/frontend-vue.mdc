@@ -78,6 +78,8 @@ Router: `meta: { permission: 'food.view' }`
 
 ## PWA
 - Themes via `data-theme` on `<html>` (emerald, midnight, saffron, slate, plastic, plastic-dark)
+- **Android standalone:** requires **HTTPS** (secure context) + registered service worker + manifest; HTTP home-screen shortcuts open inside Chrome with address bar — Settings shows `needsHttps` hint
+- Production: serve `frontend/dist` over HTTPS; Docker default is HTTP `:8080` only (shortcut mode on phones)
 - Mobile breakpoint: 768px (`useIsMobile`)
 - Mobile datepicker mode (`stores/uiPrefs`): `sheet` (bottom wheels) | `modal` (calendar); Settings card only when `useIsMobile`; desktop always calendar modal
 - `PersianDatePicker` mobile overlay (sheet or modal): `useOverlayBack` with `stateKey: 'appDatePicker'`

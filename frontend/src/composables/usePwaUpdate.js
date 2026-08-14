@@ -1,4 +1,5 @@
 import { registerSW } from 'virtual:pwa-register'
+import { markPwaServiceWorkerRegistered } from './usePwaInstall'
 
 /** How often to poll for a new service worker while the app stays open. */
 const CHECK_INTERVAL_MS = 30 * 60 * 1000
@@ -34,7 +35,11 @@ export function initPwaUpdate() {
   registerSW({
     immediate: true,
     onRegisteredSW(_swUrl, registration) {
+      markPwaServiceWorkerRegistered()
       scheduleChecks(registration)
+    },
+    onRegisterError() {
+      // leave swRegistered false — Settings shows reinstall hint
     }
   })
 

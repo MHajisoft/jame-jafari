@@ -8,6 +8,7 @@ const standalone = ref(false)
 const ios = ref(false)
 const dismissed = ref(false)
 const installed = ref(false)
+const swRegistered = ref(false)
 let listenersBound = false
 let displayModeMql = null
 let consumerCount = 0
@@ -25,6 +26,20 @@ function isIos() {
   if (typeof navigator === 'undefined') return false
   return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+}
+
+function isAndroid() {
+  if (typeof navigator === 'undefined') return false
+  return /android/i.test(navigator.userAgent)
+}
+
+function isSecureContext() {
+  if (typeof window === 'undefined') return false
+  return window.isSecureContext === true
+}
+
+export function markPwaServiceWorkerRegistered() {
+  swRegistered.value = true
 }
 
 function isDismissedRecently() {
@@ -81,6 +96,9 @@ function releaseListeners() {
 export function usePwaInstall() {
   const canPrompt = computed(() => !!deferredPrompt.value && !standalone.value && !installed.value)
   const showIosHint = computed(() => ios.value && !standalone.value && !installed.value)
+  const secureContext = computed(() => isSecureContext())
+  const android = computed(() => isAndroid())
+  const needsHttps = computed(() => android.value && !secureContext.value && !standalone.value)
   const canShowBanner = computed(() => {
     if (standalone.value || installed.value || dismissed.value) return false
     return canPrompt.value || showIosHint.value
@@ -117,6 +135,10 @@ export function usePwaInstall() {
   return {
     standalone: readonly(standalone),
     ios: readonly(ios),
+    android,
+    secureContext,
+    needsHttps,
+    swRegistered: readonly(swRegistered),
     canPrompt,
     showIosHint,
     canShowBanner,

@@ -10,6 +10,9 @@ const isMobile = useIsMobile()
 const {
   standalone,
   ios,
+  android,
+  needsHttps,
+  swRegistered,
   canPrompt,
   showIosHint,
   promptInstall
@@ -99,9 +102,16 @@ async function installApp() {
       </div>
 
       <div v-if="standalone" class="pwa-status success">
-        در حال اجرا به‌صورت برنامه نصب‌شده هستید.
+        در حال اجرا به‌صورت برنامه نصب‌شده هستید (بدون نوار آدرس Chrome).
       </div>
       <div v-else class="pwa-install-block">
+        <div v-if="needsHttps" class="pwa-status warn">
+          <strong>HTTPS لازم است.</strong>
+          اگر سایت را با <code>http://</code> (مثلاً IP یا پورت 8080 بدون SSL) باز کرده‌اید،
+          «افزودن به صفحه اصلی» فقط یک میانبر Chrome می‌سازد — با نوار آدرس و تب.
+          برای حالت تمام‌صفحه مثل اپ، سایت باید روی <strong>HTTPS</strong> (دامنه + گواهی) مستقر شود،
+          سپس از دکمه «نصب برنامه» یا Install app در Chrome نصب کنید.
+        </div>
         <button
           v-if="canPrompt"
           type="button"
@@ -117,8 +127,18 @@ async function installApp() {
             <li>روی Add بزنید تا آیکون «جامعه جعفری» روی صفحه اصلی بیاید.</li>
           </ol>
         </div>
+        <div v-else-if="android && !needsHttps" class="pwa-android-steps">
+          <ol>
+            <li>چند ثانیه صبر کنید تا صفحه کامل بارگذاری شود.</li>
+            <li>منوی Chrome (⋮) → <strong>Install app</strong> / <strong>نصب برنامه</strong>.</li>
+            <li>آیکون جدید را از صفحه اصلی باز کنید — نه از تب Chrome.</li>
+          </ol>
+          <p v-if="!swRegistered" class="text-muted pwa-fallback">
+            سرویس‌ورکر هنوز فعال نشده؛ یک بار صفحه را رفرش کنید و دوباره نصب کنید.
+          </p>
+        </div>
         <p v-else class="text-muted pwa-fallback">
-          در Chrome اندروید از منوی مرورگر گزینه «Install app» / «Add to Home screen» را بزنید.
+          در Chrome اندروید (روی HTTPS) از منوی مرورگر گزینه «Install app» / «نصب برنامه» را بزنید.
           برای iOS از Safari استفاده کنید.
         </p>
       </div>
@@ -293,19 +313,37 @@ async function installApp() {
 .pwa-card {
   margin-top: 1rem;
 }
-.pwa-status.success {
+.pwa-install-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.pwa-status.success,
+.pwa-status.warn {
   padding: 0.75rem 0.9rem;
   border-radius: 10px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+.pwa-status.success {
   background: var(--success-soft);
   color: var(--success-soft-text);
-  font-size: 0.9rem;
+}
+.pwa-status.warn {
+  background: color-mix(in srgb, var(--warning, #c9a227) 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--warning, #c9a227) 35%, var(--border));
+  color: var(--text);
+}
+.pwa-status.warn code {
+  font-size: 0.85em;
 }
 .pwa-install-block .btn {
   width: 100%;
   justify-content: center;
   min-height: 44px;
 }
-.pwa-ios-steps ol {
+.pwa-ios-steps ol,
+.pwa-android-steps ol {
   margin: 0;
   padding-right: 1.2rem;
   color: var(--text);
