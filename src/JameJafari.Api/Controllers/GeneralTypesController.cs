@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using JameJafari.Api.Authorization;
 using JameJafari.Api.Services;
 using JameJafari.Core.Constants;
@@ -15,9 +16,11 @@ public class GeneralTypesController(GeneralTypeService service, ResponseVisibili
 {
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<IReadOnlyList<GeneralTypeDto>>> GetByCategory(
+    public async Task<ActionResult<PagedResult<GeneralTypeDto>>> GetByCategory(
         [FromQuery] string category,
-        [FromQuery] bool includeInactive = false)
+        [FromQuery] bool includeInactive = false,
+        [FromQuery, Range(1, 100)] int page = 1,
+        [FromQuery, Range(1, 200)] int pageSize = 20)
     {
         if (!Enum.TryParse<GeneralTypeCategory>(category, true, out var cat))
             return BadRequest("Invalid category");
@@ -31,7 +34,8 @@ public class GeneralTypesController(GeneralTypeService service, ResponseVisibili
                 || user.HasClaim("permission", PermissionCodes.GeneralTypesDelete);
             if (!canManage) return Forbid();
         }
-        return Ok(visibility.ForResponse(await service.GetByCategoryAsync(cat, includeInactive), User));
+        return Ok(visibility.ForResponse(
+            await service.GetPagedByCategoryAsync(cat, includeInactive, page, pageSize), User));
     }
 
     [HttpPost]

@@ -7,9 +7,11 @@ import { useDialogStore } from '../stores/dialog'
 import { useLookupsStore } from '../stores/lookups'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useIsMobile } from '../composables/useMediaQuery'
+import { usePagedList } from '../composables/usePagedList'
 import AppCheckbox from '../components/AppCheckbox.vue'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
+import PagedListPanel from '../components/PagedListPanel.vue'
 import RowActions from '../components/RowActions.vue'
 
 const CATEGORIES = [
@@ -26,10 +28,36 @@ const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
 
 const category = ref(resolveInitialCategory())
-const items = ref([])
 const showForm = ref(false)
 const editing = ref(null)
 const form = ref({ name: '', code: '', sortOrder: 0, isActive: true })
+
+const {
+  items,
+  loading,
+  page,
+  totalPages,
+  totalCount,
+  hasPrev,
+  hasNext,
+  showPagination,
+  rangeStart,
+  rangeEnd,
+  goPrev,
+  goNext,
+  reload: reloadGeneralTypes,
+  resetPage
+} = usePagedList(async ({ page, pageSize, category: cat }) => {
+  const { data } = await api.get('/general-types', {
+    params: {
+      category: cat ?? category.value,
+      includeInactive: true,
+      page,
+      pageSize
+    }
+  })
+  return data
+})
 
 const canCreate = computed(() => auth.hasPermission('generaltypes.create'))
 const canUpdate = computed(() => auth.hasPermission('generaltypes.update'))
@@ -48,14 +76,6 @@ function resolveInitialCategory() {
   const q = String(route.query.category || '')
   if (CATEGORIES.some((c) => c.key === q)) return q
   return 'Unit'
-}
-
-async function load() {
-  items.value = await lookups.getGeneralTypes(category.value, {
-    includeInactive: true,
-    force: true,
-    admin: true
-  })
 }
 
 async function submit() {
@@ -86,7 +106,7 @@ async function submit() {
   if (!ok) return
   lookups.invalidateGeneralTypes()
   closeForm()
-  await load()
+  await reloadGeneralTypes()
 }
 
 function openCreate() {
@@ -94,7 +114,7 @@ function openCreate() {
   form.value = {
     name: '',
     code: '',
-    sortOrder: items.value.length + 1,
+    sortOrder: totalCount.value + 1,
     isActive: true
   }
   clearErrors()
@@ -124,7 +144,7 @@ async function remove(id) {
   }, { successMessage: `${currentMeta.value.singular} حذف شد` })
   if (!ok) return
   lookups.invalidateGeneralTypes()
-  await load()
+  await reloadGeneralTypes()
 }
 
 function switchCategory(next) {
@@ -136,10 +156,10 @@ function switchCategory(next) {
 }
 
 watch(category, () => {
-  load()
+  resetPage({ category: category.value })
 })
 
-onMounted(load)
+onMounted(() => resetPage({ category: category.value }))
 </script>
 
 <template>
@@ -210,51 +230,66 @@ onMounted(load)
       </form>
     </FormHost>
 
-    <div v-show="!showForm || isMobile" class="card list-panel">
-      <table class="mobile-table">
-        <thead>
-          <tr>
-            <th>نام</th>
-            <th class="hide-mobile">کد</th>
-            <th class="hide-mobile">ترتیب</th>
-            <th class="hide-mobile">وضعیت</th>
-            <th v-if="canUpdate || canDelete || canViewAudit"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="item in items"
-            :key="item.id"
-            :class="item.isActive ? 'type-row-active' : 'type-row-inactive'"
-          >
-            <td data-label="نام">
-              <strong>{{ item.name }}</strong>
-            </td>
-            <td data-label="کد" class="hide-mobile">{{ item.code || '—' }}</td>
-            <td data-label="ترتیب" class="hide-mobile">{{ item.sortOrder }}</td>
-            <td data-label="وضعیت" class="hide-mobile">
-              <span :class="item.isActive ? 'badge badge-success' : 'badge badge-danger'">
-                {{ item.isActive ? 'فعال' : 'غیرفعال' }}
-              </span>
-            </td>
-            <td v-if="canUpdate || canDelete || canViewAudit">
-              <RowActions
-                :show-edit="canUpdate"
-                :show-delete="canDelete"
-                :show-audit="canViewAudit"
-                :audit="item.audit"
-                @edit="openEdit(item)"
-                @delete="remove(item.id)"
-              />
-            </td>
-          </tr>
-          <tr v-if="!items.length">
-            <td :colspan="(canUpdate || canDelete || canViewAudit) ? 5 : 4" class="text-muted" style="text-align:center">
-              هنوز موردی تعریف نشده است
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-show="!showForm || isMobile">
+      <PagedListPanel
+        :loading="loading"
+        :skeleton-columns="5"
+        :show-pagination="showPagination"
+        :page="page"
+        :total-pages="totalPages"
+        :total-count="totalCount"
+        :range-start="rangeStart"
+        :range-end="rangeEnd"
+        :has-prev="hasPrev"
+        :has-next="hasNext"
+        @prev="goPrev"
+        @next="goNext"
+      >
+        <table class="mobile-table">
+          <thead>
+            <tr>
+              <th>نام</th>
+              <th class="hide-mobile">کد</th>
+              <th class="hide-mobile">ترتیب</th>
+              <th class="hide-mobile">وضعیت</th>
+              <th v-if="canUpdate || canDelete || canViewAudit"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="item in items"
+              :key="item.id"
+              :class="item.isActive ? 'type-row-active' : 'type-row-inactive'"
+            >
+              <td data-label="نام">
+                <strong>{{ item.name }}</strong>
+              </td>
+              <td data-label="کد" class="hide-mobile">{{ item.code || '—' }}</td>
+              <td data-label="ترتیب" class="hide-mobile">{{ item.sortOrder }}</td>
+              <td data-label="وضعیت" class="hide-mobile">
+                <span :class="item.isActive ? 'badge badge-success' : 'badge badge-danger'">
+                  {{ item.isActive ? 'فعال' : 'غیرفعال' }}
+                </span>
+              </td>
+              <td v-if="canUpdate || canDelete || canViewAudit">
+                <RowActions
+                  :show-edit="canUpdate"
+                  :show-delete="canDelete"
+                  :show-audit="canViewAudit"
+                  :audit="item.audit"
+                  @edit="openEdit(item)"
+                  @delete="remove(item.id)"
+                />
+              </td>
+            </tr>
+            <tr v-if="!items.length && !loading">
+              <td :colspan="(canUpdate || canDelete || canViewAudit) ? 5 : 4" class="text-muted" style="text-align:center">
+                هنوز موردی تعریف نشده است
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </PagedListPanel>
     </div>
   </div>
 </template>

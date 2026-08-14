@@ -16,14 +16,35 @@ public class GeneralTypeService(AppDbContext db, IFusionCache cache)
             CacheKeys.GeneralTypes(category, includeInactive),
             async _ =>
             {
-                var query = db.GeneralTypes.AsNoTracking().Where(g => g.Category == category);
-                if (!includeInactive)
-                    query = query.Where(g => g.IsActive);
+                var query = FilterByCategory(category, includeInactive);
                 return await Project(query.OrderBy(g => g.SortOrder).ThenBy(g => g.Name))
                     .ToListAsync();
             },
             options => options.SetDuration(LookupCache.GeneralTypesDuration));
     }
+
+    public async Task<PagedResult<GeneralTypeDto>> GetPagedByCategoryAsync(
+        GeneralTypeCategory category, bool includeInactive, int page, int pageSize)
+    {
+        var query = FilterByCategory(category, includeInactive);
+        var total = await query.CountAsync();
+        var items = await Project(
+                query.OrderBy(g => g.SortOrder).ThenBy(g => g.Name)
+                    .Skip((page - 1) * pageSize).Take(pageSize))
+            .ToListAsync();
+        return new PagedResult<GeneralTypeDto>(items, total, page, pageSize);
+    }
+
+    static IQueryable<GeneralType> FilterByCategory(AppDbContext db, GeneralTypeCategory category, bool includeInactive)
+    {
+        var query = db.GeneralTypes.AsNoTracking().Where(g => g.Category == category);
+        if (!includeInactive)
+            query = query.Where(g => g.IsActive);
+        return query;
+    }
+
+    IQueryable<GeneralType> FilterByCategory(GeneralTypeCategory category, bool includeInactive) =>
+        FilterByCategory(db, category, includeInactive);
 
     public async Task<GeneralTypeDto?> GetByIdAsync(int id) =>
         await Project(db.GeneralTypes.AsNoTracking().Where(g => g.Id == id))

@@ -79,13 +79,16 @@ export const useLookupsStore = defineStore('lookups', {
       const cached = this.generalTypes[key]
       if (!force && isFresh(cached, GENERAL_TYPES_TTL_MS)) return cached.data
 
-      const params = useAdmin ? { category, includeInactive } : { category }
+      const params = useAdmin
+        ? { category, includeInactive, page: 1, pageSize: 200 }
+        : { category }
       const { data } = await api.get(generalTypesPath(useAdmin), {
         params,
         skipErrorToast: !useAdmin
       })
-      this.generalTypes[key] = { data, at: Date.now() }
-      return data
+      const items = useAdmin ? (data?.items ?? []) : data
+      this.generalTypes[key] = { data: items, at: Date.now() }
+      return items
     },
 
     invalidateAccounts() {

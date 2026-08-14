@@ -60,6 +60,11 @@ public class ResponseVisibilityService
             ? items
             : items.Select(d => d with { Audit = NoAudit }).ToList();
 
+    public PagedResult<GeneralTypeDto> ForResponse(PagedResult<GeneralTypeDto> page, ClaimsPrincipal user) =>
+        HasPermission(user, PermissionCodes.AuditView)
+            ? page
+            : page with { Items = page.Items.Select(d => d with { Audit = NoAudit }).ToList() };
+
     public IncomeTransactionDto ForIncomeResponse(IncomeTransactionDto dto, ClaimsPrincipal user)
     {
         if (HasPermission(user, PermissionCodes.AttachmentsView) && HasPermission(user, PermissionCodes.AuditView))

@@ -27,7 +27,7 @@ export function usePagedList(fetchPage, { pageSize: defaultPageSize = 20 } = {})
   )
   const hasPrev = computed(() => page.value > 1)
   const hasNext = computed(() => page.value < totalPages.value)
-  const showPagination = computed(() => totalCount.value > 0)
+  const showPagination = computed(() => totalPages.value > 1)
   const rangeStart = computed(() =>
     totalCount.value === 0 ? 0 : (page.value - 1) * pageSize + 1
   )
@@ -77,9 +77,9 @@ export function usePagedList(fetchPage, { pageSize: defaultPageSize = 20 } = {})
     await load()
   }
 
-  async function resetPage() {
+  async function resetPage(params) {
     page.value = 1
-    await load()
+    await load(params)
   }
 
   return {
