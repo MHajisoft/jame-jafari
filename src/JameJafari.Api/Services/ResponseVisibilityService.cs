@@ -10,7 +10,7 @@ public class ResponseVisibilityService
     private static readonly IReadOnlyList<TransactionAttachmentDto> NoAttachments =
         Array.Empty<TransactionAttachmentDto>();
 
-    private static readonly AuditInfoDto NoAudit = new(default, null, null, null);
+    private static readonly AuditInfoDto NoAudit = new(default, null, null, null, null, null);
 
     public AccountDto ForResponse(AccountDto dto, ClaimsPrincipal user) =>
         HasPermission(user, PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
@@ -48,6 +48,14 @@ public class ResponseVisibilityService
         HasPermission(user, PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
 
     public IReadOnlyList<FoodGenerationDto> ForResponse(IReadOnlyList<FoodGenerationDto> items, ClaimsPrincipal user) =>
+        HasPermission(user, PermissionCodes.AuditView)
+            ? items
+            : items.Select(d => d with { Audit = NoAudit }).ToList();
+
+    public GeneralTypeDto ForResponse(GeneralTypeDto dto, ClaimsPrincipal user) =>
+        HasPermission(user, PermissionCodes.AuditView) ? dto : dto with { Audit = NoAudit };
+
+    public IReadOnlyList<GeneralTypeDto> ForResponse(IReadOnlyList<GeneralTypeDto> items, ClaimsPrincipal user) =>
         HasPermission(user, PermissionCodes.AuditView)
             ? items
             : items.Select(d => d with { Audit = NoAudit }).ToList();

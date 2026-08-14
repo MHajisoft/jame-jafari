@@ -34,7 +34,7 @@ const { showForm, editing, form, openCreate, openEdit, closeForm } = useEntityFo
 
 ## Audit metadata (all CRUD lists)
 - Permission (no nav): `audit.view`
-- **List/card:** no audit columns — clock icon in `RowActions` opens `AuditInfoPanel` (modal desktop / bottom sheet mobile with `useOverlayBack`)
+- **List/card:** no audit columns — clock icon in `RowActions` opens `AuditInfoPanel` (modal desktop / bottom sheet mobile with `useOverlayBack`); wire on accounts, persons, users, cost-types, general-types, food, income, cost
 - API strips `audit` when caller lacks `audit.view` (same pattern as attachments)
 - **Form:** `TransactionAttachmentsField` with `canView` / `canAdd` / `canDelete`
 - **Preview:** `DocumentPreview` — image/PDF in modal (desktop) / bottom sheet (mobile)

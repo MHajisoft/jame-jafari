@@ -31,7 +31,7 @@ alwaysApply: false
 - Entity: `TransactionAttachment` (`Path`, FK to income or cost transaction)
 - DTO: `attachments: [{ id, path }]` — stripped when caller lacks `attachments.view`
 - Permissions (no menu): `attachments.view` | `attachments.add` | `attachments.delete`
-- DTO: `audit: { createdAt, createdBy, updatedAt, updatedBy }` — stripped when caller lacks `audit.view` via `ResponseVisibilityService` (Api layer; not Infrastructure)
+- DTO: `audit: { createdAt, createdBy, createdByAvatarPath, updatedAt, updatedBy, updatedByAvatarPath }` — stripped when caller lacks `audit.view` via `ResponseVisibilityService` (Api layer; not Infrastructure)
 - Permission (no menu): `audit.view`
 - Uploading `documents` on create/update requires `attachments.add`
 - FK delete behavior: **`Restrict`** (not Cascade) — SQL Server multiple-cascade-path limitation

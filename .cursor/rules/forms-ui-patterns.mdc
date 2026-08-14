@@ -29,6 +29,8 @@ alwaysApply: false
 
 ## Audit metadata (persisted records)
 - Gate with `audit.view` — **`RowActions`** `:show-audit` + `:audit="item.audit"`; opens **`AuditInfoPanel`**
+- Wire on **every** auditable CRUD list: accounts, persons, users, cost-types, **general-types**, food, income, cost
+- **`AuditInfoPanel`:** creator/editor username + **`EntityAvatar`** (`createdByAvatarPath` / `updatedByAvatarPath`)
 - Never show created/updated columns in list tables or cards
 - Mobile: `AuditInfoPanel` uses `useOverlayBack` (`stateKey: 'appAuditInfo'`)
 - `form-span-full`; multipart sends multiple `documents`

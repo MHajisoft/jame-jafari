@@ -34,6 +34,7 @@ const form = ref({ name: '', code: '', sortOrder: 0, isActive: true })
 const canCreate = computed(() => auth.hasPermission('generaltypes.create'))
 const canUpdate = computed(() => auth.hasPermission('generaltypes.update'))
 const canDelete = computed(() => auth.hasPermission('generaltypes.delete'))
+const canViewAudit = computed(() => auth.hasPermission('audit.view'))
 
 const currentMeta = computed(() =>
   CATEGORIES.find((c) => c.key === category.value) || CATEGORIES[0]
@@ -217,7 +218,7 @@ onMounted(load)
             <th class="hide-mobile">کد</th>
             <th class="hide-mobile">ترتیب</th>
             <th class="hide-mobile">وضعیت</th>
-            <th v-if="canUpdate || canDelete"></th>
+            <th v-if="canUpdate || canDelete || canViewAudit"></th>
           </tr>
         </thead>
         <tbody>
@@ -236,17 +237,19 @@ onMounted(load)
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>
             </td>
-            <td v-if="canUpdate || canDelete">
+            <td v-if="canUpdate || canDelete || canViewAudit">
               <RowActions
                 :show-edit="canUpdate"
                 :show-delete="canDelete"
+                :show-audit="canViewAudit"
+                :audit="item.audit"
                 @edit="openEdit(item)"
                 @delete="remove(item.id)"
               />
             </td>
           </tr>
           <tr v-if="!items.length">
-            <td :colspan="(canUpdate || canDelete) ? 5 : 4" class="text-muted" style="text-align:center">
+            <td :colspan="(canUpdate || canDelete || canViewAudit) ? 5 : 4" class="text-muted" style="text-align:center">
               هنوز موردی تعریف نشده است
             </td>
           </tr>

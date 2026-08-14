@@ -1,4 +1,5 @@
 using JameJafari.Api.Authorization;
+using JameJafari.Api.Services;
 using JameJafari.Core.Constants;
 using JameJafari.Core.DTOs;
 using JameJafari.Core.Enums;
@@ -10,7 +11,7 @@ namespace JameJafari.Api.Controllers;
 
 [Authorize]
 [Route("api/general-types")]
-public class GeneralTypesController(GeneralTypeService service) : ApiControllerBase
+public class GeneralTypesController(GeneralTypeService service, ResponseVisibilityService visibility) : ApiControllerBase
 {
     [HttpGet]
     [Authorize]
@@ -30,20 +31,20 @@ public class GeneralTypesController(GeneralTypeService service) : ApiControllerB
                 || user.HasClaim("permission", PermissionCodes.GeneralTypesDelete);
             if (!canManage) return Forbid();
         }
-        return Ok(await service.GetByCategoryAsync(cat, includeInactive));
+        return Ok(visibility.ForResponse(await service.GetByCategoryAsync(cat, includeInactive), User));
     }
 
     [HttpPost]
     [RequirePermission(PermissionCodes.GeneralTypesCreate)]
     public async Task<ActionResult<GeneralTypeDto>> Create([FromBody] CreateGeneralTypeRequest request)
-        => Ok(await service.CreateAsync(request, CurrentUserId));
+        => Ok(visibility.ForResponse(await service.CreateAsync(request, CurrentUserId), User));
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.GeneralTypesUpdate)]
     public async Task<ActionResult<GeneralTypeDto>> Update(int id, [FromBody] UpdateGeneralTypeRequest request)
     {
         var item = await service.UpdateAsync(id, request, CurrentUserId);
-        return item is null ? NotFound() : Ok(item);
+        return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
     }
 
     [HttpDelete("{id:int}")]

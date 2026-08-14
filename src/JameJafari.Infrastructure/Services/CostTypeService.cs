@@ -85,6 +85,8 @@ public class CostTypeService(AppDbContext db, IFusionCache cache)
             new AuditInfoDto(
                 c.CreatedAt,
                 c.CreatedBy != null ? c.CreatedBy.Username : null,
+                c.CreatedBy != null ? c.CreatedBy.AvatarPath : null,
                 c.UpdatedAt,
-                c.UpdatedBy != null ? c.UpdatedBy.Username : null)));
+                c.UpdatedBy != null ? c.UpdatedBy.Username : null,
+                c.UpdatedBy != null ? c.UpdatedBy.AvatarPath : null)));
 }

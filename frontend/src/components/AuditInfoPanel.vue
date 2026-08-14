@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, toRef, watch } from 'vue'
 import { useIsMobile } from '../composables/useMediaQuery'
 import { useOverlayBack } from '../composables/useOverlayBack'
 import DateDisplay from './DateDisplay.vue'
+import EntityAvatar from './EntityAvatar.vue'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -71,8 +72,15 @@ watch(
                   <DateDisplay :value="audit.createdAt" show-time />
                 </p>
                 <p class="audit-entry-meta">
-                  توسط:
-                  <strong>{{ audit.createdBy || '—' }}</strong>
+                  <span class="audit-user-label">توسط:</span>
+                  <span class="audit-user-row">
+                    <EntityAvatar
+                      :src="audit.createdByAvatarPath"
+                      :name="audit.createdBy || '?'"
+                      :size="32"
+                    />
+                    <strong>{{ audit.createdBy || '—' }}</strong>
+                  </span>
                 </p>
               </div>
             </div>
@@ -86,8 +94,15 @@ watch(
                     <DateDisplay :value="audit.updatedAt" show-time />
                   </p>
                   <p class="audit-entry-meta">
-                    توسط:
-                    <strong>{{ audit.updatedBy || '—' }}</strong>
+                    <span class="audit-user-label">توسط:</span>
+                    <span class="audit-user-row">
+                      <EntityAvatar
+                        :src="audit.updatedByAvatarPath"
+                        :name="audit.updatedBy || '?'"
+                        :size="32"
+                      />
+                      <strong>{{ audit.updatedBy || '—' }}</strong>
+                    </span>
                   </p>
                 </template>
                 <p v-else class="audit-entry-empty">ویرایش نشده</p>
@@ -236,6 +251,19 @@ watch(
   margin: 0;
   font-size: 0.88rem;
   color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.audit-user-label {
+  font-size: 0.82rem;
+}
+
+.audit-user-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .audit-entry-meta strong {

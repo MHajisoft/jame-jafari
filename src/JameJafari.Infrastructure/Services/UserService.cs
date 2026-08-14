@@ -136,6 +136,8 @@ public class UserService(AppDbContext db, IAppPasswordHasher passwordHasher)
             new AuditInfoDto(
                 u.CreatedAt,
                 u.CreatedBy != null ? u.CreatedBy.Username : null,
+                u.CreatedBy != null ? u.CreatedBy.AvatarPath : null,
                 u.UpdatedAt,
-                u.UpdatedBy != null ? u.UpdatedBy.Username : null)));
+                u.UpdatedBy != null ? u.UpdatedBy.Username : null,
+                u.UpdatedBy != null ? u.UpdatedBy.AvatarPath : null)));
 }

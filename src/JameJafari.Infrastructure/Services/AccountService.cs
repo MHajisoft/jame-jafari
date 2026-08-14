@@ -77,6 +77,8 @@ public class AccountService(AppDbContext db, IFusionCache cache)
             new AuditInfoDto(
                 a.CreatedAt,
                 a.CreatedBy != null ? a.CreatedBy.Username : null,
+                a.CreatedBy != null ? a.CreatedBy.AvatarPath : null,
                 a.UpdatedAt,
-                a.UpdatedBy != null ? a.UpdatedBy.Username : null)));
+                a.UpdatedBy != null ? a.UpdatedBy.Username : null,
+                a.UpdatedBy != null ? a.UpdatedBy.AvatarPath : null)));
 }

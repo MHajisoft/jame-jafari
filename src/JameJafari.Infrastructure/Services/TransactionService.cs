@@ -288,8 +288,10 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
             new AuditInfoDto(
                 t.CreatedAt,
                 t.CreatedBy != null ? t.CreatedBy.Username : null,
+                t.CreatedBy != null ? t.CreatedBy.AvatarPath : null,
                 t.UpdatedAt,
-                t.UpdatedBy != null ? t.UpdatedBy.Username : null)));
+                t.UpdatedBy != null ? t.UpdatedBy.Username : null,
+                t.UpdatedBy != null ? t.UpdatedBy.AvatarPath : null)));
 
     private static IQueryable<CostTransactionDto> ProjectCost(IQueryable<CostTransaction> query) =>
         query.Select(t => new CostTransactionDto(
@@ -309,6 +311,8 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
             new AuditInfoDto(
                 t.CreatedAt,
                 t.CreatedBy != null ? t.CreatedBy.Username : null,
+                t.CreatedBy != null ? t.CreatedBy.AvatarPath : null,
                 t.UpdatedAt,
-                t.UpdatedBy != null ? t.UpdatedBy.Username : null)));
+                t.UpdatedBy != null ? t.UpdatedBy.Username : null,
+                t.UpdatedBy != null ? t.UpdatedBy.AvatarPath : null)));
 }

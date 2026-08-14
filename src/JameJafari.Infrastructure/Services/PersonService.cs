@@ -185,6 +185,8 @@ public class PersonService(AppDbContext db, IFusionCache cache)
             new AuditInfoDto(
                 p.CreatedAt,
                 p.CreatedBy != null ? p.CreatedBy.Username : null,
+                p.CreatedBy != null ? p.CreatedBy.AvatarPath : null,
                 p.UpdatedAt,
-                p.UpdatedBy != null ? p.UpdatedBy.Username : null)));
+                p.UpdatedBy != null ? p.UpdatedBy.Username : null,
+                p.UpdatedBy != null ? p.UpdatedBy.AvatarPath : null)));
 }

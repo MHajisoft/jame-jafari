@@ -19,13 +19,15 @@ public class GeneralTypeService(AppDbContext db, IFusionCache cache)
                 var query = db.GeneralTypes.AsNoTracking().Where(g => g.Category == category);
                 if (!includeInactive)
                     query = query.Where(g => g.IsActive);
-                return await query
-                    .OrderBy(g => g.SortOrder).ThenBy(g => g.Name)
-                    .Select(g => new GeneralTypeDto(g.Id, g.Name, g.Code, g.Category.ToString(), g.SortOrder, g.IsActive))
+                return await Project(query.OrderBy(g => g.SortOrder).ThenBy(g => g.Name))
                     .ToListAsync();
             },
             options => options.SetDuration(LookupCache.GeneralTypesDuration));
     }
+
+    public async Task<GeneralTypeDto?> GetByIdAsync(int id) =>
+        await Project(db.GeneralTypes.AsNoTracking().Where(g => g.Id == id))
+            .FirstOrDefaultAsync();
 
     public async Task<GeneralTypeDto> CreateAsync(CreateGeneralTypeRequest request, int userId)
     {
@@ -44,7 +46,7 @@ public class GeneralTypeService(AppDbContext db, IFusionCache cache)
         db.GeneralTypes.Add(entity);
         await db.SaveChangesAsync();
         await LookupCache.InvalidateGeneralTypesAsync(cache);
-        return Map(entity);
+        return (await GetByIdAsync(entity.Id))!;
     }
 
     public async Task<GeneralTypeDto?> UpdateAsync(int id, UpdateGeneralTypeRequest request, int userId)
@@ -58,7 +60,7 @@ public class GeneralTypeService(AppDbContext db, IFusionCache cache)
         entity.UpdatedById = userId;
         await db.SaveChangesAsync();
         await LookupCache.InvalidateGeneralTypesAsync(cache);
-        return Map(entity);
+        return await GetByIdAsync(id);
     }
 
     public async Task<bool> DeleteAsync(int id, int userId)
@@ -73,6 +75,19 @@ public class GeneralTypeService(AppDbContext db, IFusionCache cache)
         return true;
     }
 
-    private static GeneralTypeDto Map(GeneralType g) =>
-        new(g.Id, g.Name, g.Code, g.Category.ToString(), g.SortOrder, g.IsActive);
+    private static IQueryable<GeneralTypeDto> Project(IQueryable<GeneralType> query) =>
+        query.Select(g => new GeneralTypeDto(
+            g.Id,
+            g.Name,
+            g.Code,
+            g.Category.ToString(),
+            g.SortOrder,
+            g.IsActive,
+            new AuditInfoDto(
+                g.CreatedAt,
+                g.CreatedBy != null ? g.CreatedBy.Username : null,
+                g.CreatedBy != null ? g.CreatedBy.AvatarPath : null,
+                g.UpdatedAt,
+                g.UpdatedBy != null ? g.UpdatedBy.Username : null,
+                g.UpdatedBy != null ? g.UpdatedBy.AvatarPath : null)));
 }
