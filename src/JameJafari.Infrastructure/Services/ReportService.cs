@@ -8,7 +8,7 @@ namespace JameJafari.Infrastructure.Services;
 
 public class ReportService(AppDbContext db)
 {
-    public async Task<IReadOnlyList<AccountBalanceReportDto>> GetAccountBalancesAsync(DateTime? from, DateTime? to)
+    public async Task<IReadOnlyList<AccountBalanceReportResponse>> GetAccountBalancesAsync(DateTime? from, DateTime? to)
     {
         var accounts = await db.Accounts
             .AsNoTracking()
@@ -43,11 +43,11 @@ public class ReportService(AppDbContext db)
         {
             incomes.TryGetValue(a.Id, out var income);
             costs.TryGetValue(a.Id, out var cost);
-            return new AccountBalanceReportDto(a.Id, a.Name, income, cost, income - cost);
+            return new AccountBalanceReportResponse(a.Id, a.Name, income, cost, income - cost);
         }).ToList();
     }
 
-    public async Task<IReadOnlyList<CostTypeReportDto>> GetCostTypeReportAsync(DateTime? from, DateTime? to)
+    public async Task<IReadOnlyList<CostTypeReportResponse>> GetCostTypeReportAsync(DateTime? from, DateTime? to)
     {
         var costTypes = await db.CostTypes
             .AsNoTracking()
@@ -82,13 +82,13 @@ public class ReportService(AppDbContext db)
             {
                 incomes.TryGetValue(ct.Id, out var income);
                 costs.TryGetValue(ct.Id, out var cost);
-                return new CostTypeReportDto(ct.Id, ct.Name, income, cost, income - cost);
+                return new CostTypeReportResponse(ct.Id, ct.Name, income, cost, income - cost);
             })
             .OrderByDescending(r => r.TotalCost + r.TotalIncome)
             .ToList();
     }
 
-    public async Task<DateRangeReportDto> GetSummaryAsync(DateTime from, DateTime to)
+    public async Task<DateRangeReportResponse> GetSummaryAsync(DateTime from, DateTime to)
     {
         var income = await db.IncomeTransactions
             .AsNoTracking()
@@ -98,10 +98,10 @@ public class ReportService(AppDbContext db)
             .AsNoTracking()
             .Where(t => t.TransactionDate >= from && t.TransactionDate <= to)
             .SumAsync(t => t.Amount);
-        return new DateRangeReportDto(from, to, income, cost, income - cost);
+        return new DateRangeReportResponse(from, to, income, cost, income - cost);
     }
 
-    public async Task<IReadOnlyList<PersonIncomeReportDto>> GetPersonIncomeReportAsync(DateTime? from, DateTime? to)
+    public async Task<IReadOnlyList<PersonIncomeReportResponse>> GetPersonIncomeReportAsync(DateTime? from, DateTime? to)
     {
         var query = db.IncomeTransactions.AsNoTracking().AsQueryable();
         if (from.HasValue) query = query.Where(t => t.TransactionDate >= from.Value);
@@ -119,13 +119,20 @@ public class ReportService(AppDbContext db)
             .ToListAsync();
 
         if (aggregates.Count == 0)
-            return Array.Empty<PersonIncomeReportDto>();
+            return Array.Empty<PersonIncomeReportResponse>();
 
         var personIds = aggregates.Select(a => a.PersonId).ToList();
         var people = await db.Persons
             .AsNoTracking()
             .Where(p => personIds.Contains(p.Id))
-            .Select(p => new { p.Id, p.FirstName, p.LastName, p.NickName })
+            .Select(p => new
+            {
+                p.Id,
+                p.FirstName,
+                p.LastName,
+                p.NickName,
+                NamePrefixName = p.NamePrefix != null ? p.NamePrefix.Name : null
+            })
             .ToDictionaryAsync(p => p.Id);
 
         return aggregates
@@ -134,8 +141,8 @@ public class ReportService(AppDbContext db)
                 people.TryGetValue(a.PersonId, out var person);
                 var name = person is null
                     ? ""
-                    : ((person.FirstName ?? "") + " " + (person.LastName ?? "")).Trim();
-                return new PersonIncomeReportDto(
+                    : PersonDisplayNameHelper.Format(person.FirstName, person.LastName, person.NamePrefixName);
+                return new PersonIncomeReportResponse(
                     a.PersonId,
                     name,
                     person?.NickName,
@@ -145,18 +152,26 @@ public class ReportService(AppDbContext db)
             .ToList();
     }
 
-    public async Task<IReadOnlyList<FoodCostReportDto>> GetFoodCostReportAsync(DateTime? from, DateTime? to)
+    public async Task<IReadOnlyList<FoodCostReportResponse>> GetFoodCostReportAsync(DateTime? from, DateTime? to)
     {
         var query = db.FoodGenerations.AsNoTracking().AsQueryable();
         if (from.HasValue) query = query.Where(f => f.CookDate >= from.Value);
         if (to.HasValue) query = query.Where(f => f.CookDate <= to.Value);
 
         return await query.OrderByDescending(f => f.CookDate)
-            .Select(f => new FoodCostReportDto(f.Id, f.Name, f.CookDate, f.TotalCount, f.CostPerUnit, f.TotalCost))
+            .Select(f => new FoodCostReportResponse
+            {
+                FoodId = f.Id,
+                FoodName = f.Name,
+                CookDate = f.CookDate,
+                TotalCount = f.TotalCount,
+                CostPerUnit = f.CostPerUnit,
+                TotalCost = f.TotalCost
+            })
             .ToListAsync();
     }
 
-    public async Task<DeathAnniversaryReportDto> GetDeathAnniversaryReportAsync(
+    public async Task<DeathAnniversaryReportResponse> GetDeathAnniversaryReportAsync(
         DeathAnniversaryScope scope,
         DateTime? referenceDate = null)
     {
@@ -189,34 +204,35 @@ public class ReportService(AppDbContext db)
             {
                 var p = x.Person;
                 var death = x.Death;
-                var prefix = p.Prefix;
-                var name = string.Join(" ", new[] { p.FirstName, p.LastName }.Where(s => !string.IsNullOrWhiteSpace(s)));
-                var displayName = string.IsNullOrWhiteSpace(prefix) ? name : $"{prefix} {name}";
-                return new DeathAnniversaryPersonDto(
-                    p.Id,
-                    displayName,
-                    p.NickName,
-                    p.PicturePath,
-                    p.DeathDate.Date,
-                    death.Year,
-                    death.Month,
-                    death.Day,
-                    Math.Max(0, reference.Year - death.Year));
+                return new DeathAnniversaryPersonResponse
+                {
+                    PersonId = p.Id,
+                    DisplayName = PersonDisplayNameHelper.Format(p.FirstName, p.LastName, p.Prefix),
+                    NickName = p.NickName,
+                    PicturePath = p.PicturePath,
+                    DeathDate = p.DeathDate.Date,
+                    JalaliDeathYear = death.Year,
+                    JalaliDeathMonth = death.Month,
+                    JalaliDeathDay = death.Day,
+                    YearsSinceDeath = Math.Max(0, reference.Year - death.Year)
+                };
             })
             .OrderBy(x => x.JalaliDeathMonth)
             .ThenBy(x => x.JalaliDeathDay)
             .ThenBy(x => x.DisplayName)
             .ToList();
 
-        return new DeathAnniversaryReportDto(
-            scope.ToString(),
-            refDate,
-            reference.Year,
-            reference.Month,
-            reference.Day,
-            JalaliCalendarHelper.Season(reference.Month),
-            BuildScopeLabelFa(scope, reference, refDate),
-            items);
+        return new DeathAnniversaryReportResponse
+        {
+            Scope = scope.ToString(),
+            ReferenceDate = refDate,
+            JalaliReferenceYear = reference.Year,
+            JalaliReferenceMonth = reference.Month,
+            JalaliReferenceDay = reference.Day,
+            JalaliReferenceSeason = JalaliCalendarHelper.Season(reference.Month),
+            ScopeLabelFa = BuildScopeLabelFa(scope, reference, refDate),
+            Items = items
+        };
     }
 
     static string BuildScopeLabelFa(DeathAnniversaryScope scope, JalaliParts reference, DateTime refDate)

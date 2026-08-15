@@ -8,7 +8,7 @@ namespace JameJafari.Infrastructure.Services;
 
 public class PermissionService(AppDbContext db, IFusionCache cache)
 {
-    public async Task<IReadOnlyList<PermissionDto>> GetAllAsync()
+    public async Task<IReadOnlyList<PermissionResponse>> GetAllAsync()
     {
         return await cache.GetOrSetAsync(
             CacheKeys.PermissionsAll,
@@ -25,7 +25,7 @@ public class PermissionService(AppDbContext db, IFusionCache cache)
                     {
                         var dot = p.Code.IndexOf('.');
                         var module = dot > 0 ? p.Code[..dot] : p.Code;
-                        return new PermissionDto(p.Id, p.Code, p.Name, p.Description, module);
+                        return new PermissionResponse(p.Id, p.Code, p.Name, p.Description, module);
                     })
                     .ToList();
             },

@@ -3,16 +3,17 @@ using JameJafari.Core.Validation;
 
 namespace JameJafari.Core.DTOs;
 
-public record UserDto(
-    int Id,
-    string Username,
-    string? Email,
-    string? Mobile,
-    string? AvatarPath,
-    bool IsActive,
-    bool IsSystemAdmin,
-    IReadOnlyList<string> Permissions,
-    AuditInfoDto Audit);
+public class UserResponse : ResponseBase
+{
+    public int Id { get; init; }
+    public string Username { get; init; } = "";
+    public string? Email { get; init; }
+    public string? Mobile { get; init; }
+    public string? AvatarPath { get; init; }
+    public bool IsActive { get; init; }
+    public bool IsSystemAdmin { get; init; }
+    public IReadOnlyList<string> Permissions { get; init; } = [];
+}
 
 public record CreateUserRequest(
     [Required(ErrorMessage = "نام کاربری الزامی است")]

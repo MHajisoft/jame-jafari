@@ -3,29 +3,30 @@ using JameJafari.Core.Enums;
 
 namespace JameJafari.Core.DTOs;
 
-public record PersonDto(
-    int Id,
-    string FirstName,
-    string? LastName,
-    string? NickName,
-    Gender Gender,
-    int? FatherId,
-    string? FatherName,
-    int? MotherId,
-    string? MotherName,
-    string? FatherFirstName,
-    string? MotherFirstName,
-    string? PicturePath,
-    string? Mobile,
-    string? Address,
-    int? NamePrefixId,
-    string? NamePrefixName,
-    bool IsDead,
-    DateTime? DeathDate,
-    string DisplayName,
-    PersonSummaryDto? FatherSummary,
-    PersonSummaryDto? MotherSummary,
-    AuditInfoDto Audit);
+public class PersonResponse : ResponseBase
+{
+    public int Id { get; init; }
+    public string FirstName { get; init; } = "";
+    public string? LastName { get; init; }
+    public string? NickName { get; init; }
+    public Gender Gender { get; init; }
+    public int? FatherId { get; init; }
+    public string? FatherName { get; init; }
+    public int? MotherId { get; init; }
+    public string? MotherName { get; init; }
+    public string? FatherFirstName { get; init; }
+    public string? MotherFirstName { get; init; }
+    public string? PicturePath { get; init; }
+    public string? Mobile { get; init; }
+    public string? Address { get; init; }
+    public int? NamePrefixId { get; init; }
+    public string? NamePrefixName { get; init; }
+    public bool IsDead { get; init; }
+    public DateTime? DeathDate { get; init; }
+    public string DisplayName { get; init; } = "";
+    public PersonSummaryResponse? FatherSummary { get; init; }
+    public PersonSummaryResponse? MotherSummary { get; init; }
+}
 
 public record CreatePersonRequest(
     [Required(ErrorMessage = "نام الزامی است")]

@@ -9,19 +9,31 @@ alwaysApply: false
 ## Services
 - Concrete scoped classes in `Infrastructure/Services/` (no interfaces unless required)
 - Inject `AppDbContext`; use `AsNoTracking()` for reads
-- Map to DTOs via LINQ projection or static `Map()` helpers
+- Map large responses via `ProjectRows` + in-memory `ToDto` (named properties); small lookups may still project directly
 - Business rule failures: `throw new InvalidOperationException("پیام فارسی")` → controller returns `BadRequest`
 - Stamp `CreatedById` / `UpdatedById` from caller's user id
 - Respect soft delete — do not hard-delete auditable entities
 
-## DTOs (Core)
-- Use `record` types with DataAnnotations; Persian `ErrorMessage`
+## Contracts (Core) — Request vs Response
+- **Requests:** `*Request` positional `record` + DataAnnotations; Persian `ErrorMessage`
+- **Responses:** `*Response` — never `*Dto`
+  - Auditable: extend `ResponseBase` (`Audit` + `CloneResponse` / `WithoutAudit` once — do not redeclare Audit)
+  - With attachments: extend `AttachmentResponseBase` (`Attachments` + `ApplyVisibility` / `WithoutAttachments`)
+  - Markers: bases implement `IHasAudit` / `IHasAttachments`
+  - Small (≤5 fields): positional `record` OK (`LookupItemResponse`, `TransactionAttachmentResponse`, small reports)
+- **Visibility:** static `ResponseVisibility.Apply<T>()` / `ApplyAttachments<T>()` — deep-clone via `ExpressionDeepClone`, never mutate cache (not DI)
 - Password fields: `[PasswordStrength]` → `PasswordPolicy` (min 6, letter, digit, symbol)
 - Optional password on update: `[PasswordStrength(AllowEmpty = true)]`
 
+## Service projections
+- Prefer **slim SQL row** (`ProjectRows` → EF `Select` with named property init) then **in-memory `ToDto`/`ToResponse`**
+- Computed display names: `PersonDisplayNameHelper` in Core — do **not** concat prefix/first/last in SQL
+- Audit: project username/avatar scalars onto the row; assemble with `AuditHelper.FromProjection` in memory
+- Never mutate FusionCache response instances — strip on a deep clone only
+
 ## Controllers (Api)
 - Extend `ApiControllerBase`; keep thin — delegate to services
-- Shape permission-gated response fields via injected `ResponseVisibilityService` (`ForResponse`, `ForIncomeResponse`, `ForCostResponse`)
+- Shape permission-gated fields via static `ResponseVisibility.Apply<T>` / `ApplyAttachments<T>`
 - Gate with `[RequirePermission(PermissionCodes.X)]` (OR logic for multiple codes)
 - `[Authorize]` on controller; `[AllowAnonymous]` only on login
 - Multipart transactions: JSON in `data` form field + optional **`documents`** files (same field name, multiple files)
@@ -29,9 +41,9 @@ alwaysApply: false
 
 ## Transaction attachments
 - Entity: `TransactionAttachment` (`Path`, FK to income or cost transaction)
-- DTO: `attachments: [{ id, path }]` — stripped when caller lacks `attachments.view`
+- Response: `attachments: [{ id, path }]` — stripped when caller lacks `attachments.view`
 - Permissions (no menu): `attachments.view` | `attachments.add` | `attachments.delete`
-- DTO: `audit: { createdAt, createdBy, createdByAvatarPath, updatedAt, updatedBy, updatedByAvatarPath }` — stripped when caller lacks `audit.view` via `ResponseVisibilityService` (Api layer; not Infrastructure)
+- Response: `audit: { createdAt, createdBy, createdByAvatarPath, updatedAt, updatedBy, updatedByAvatarPath }` — stripped when caller lacks `audit.view` via static `ResponseVisibility` (Api layer; not Infrastructure)
 - Permission (no menu): `audit.view`
 - Uploading `documents` on create/update requires `attachments.add`
 - FK delete behavior: **`Restrict`** (not Cascade) — SQL Server multiple-cascade-path limitation

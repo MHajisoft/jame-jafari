@@ -15,8 +15,7 @@ namespace JameJafari.Api.Controllers;
 [Route("api/income-transactions")]
 public class IncomeTransactionsController(
     TransactionService service,
-    FileStorageService storage,
-    ResponseVisibilityService visibility) : ApiControllerBase
+    FileStorageService storage) : ApiControllerBase
 {
     private static readonly JsonSerializerOptions FormJsonOptions = new()
     {
@@ -29,18 +28,18 @@ public class IncomeTransactionsController(
         PermissionCodes.IncomeView,
         PermissionCodes.IncomeCreate,
         PermissionCodes.IncomeUpdate)]
-    public async Task<ActionResult<PagedResult<IncomeTransactionDto>>> GetAll(
+    public async Task<ActionResult<PagedResult<IncomeTransactionResponse>>> GetAll(
         [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int? accountId,
         [FromQuery, Range(1, 100)] int page = 1, [FromQuery, Range(1, 200)] int pageSize = 20)
     {
         int? ownOnly = OwnRecordsFilter(PermissionCodes.IncomeView);
         var result = await service.GetIncomePagedAsync(from, to, accountId, page, pageSize, ownOnly);
-        return Ok(visibility.ForIncomeResponse(result, User));
+        return Ok(ResponseVisibility.ApplyAttachments(result, User));
     }
 
     [HttpPost]
     [RequirePermission(PermissionCodes.IncomeCreate)]
-    public async Task<ActionResult<IncomeTransactionDto>> Create([FromForm] string data, [FromForm] IFormFileCollection? documents)
+    public async Task<ActionResult<IncomeTransactionResponse>> Create([FromForm] string data, [FromForm] IFormFileCollection? documents)
     {
         if (string.IsNullOrWhiteSpace(data))
             return BadRequest("داده ارسالی نامعتبر است");
@@ -55,12 +54,12 @@ public class IncomeTransactionsController(
         var paths = await SaveDocumentsAsync(documents);
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
-        return Ok(visibility.ForIncomeResponse(await service.CreateIncomeAsync(request, CurrentUserId, paths), User));
+        return Ok(ResponseVisibility.ApplyAttachments(await service.CreateIncomeAsync(request, CurrentUserId, paths), User));
     }
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.IncomeUpdate)]
-    public async Task<ActionResult<IncomeTransactionDto>> Update(int id, [FromForm] string data, [FromForm] IFormFileCollection? documents)
+    public async Task<ActionResult<IncomeTransactionResponse>> Update(int id, [FromForm] string data, [FromForm] IFormFileCollection? documents)
     {
         if (string.IsNullOrWhiteSpace(data))
             return BadRequest("داده ارسالی نامعتبر است");
@@ -77,7 +76,7 @@ public class IncomeTransactionsController(
 
         var updated = await service.UpdateIncomeAsync(
             id, request, CurrentUserId, paths, OwnRecordsFilter(PermissionCodes.IncomeView));
-        return updated is null ? NotFound() : Ok(visibility.ForIncomeResponse(updated, User));
+        return updated is null ? NotFound() : Ok(ResponseVisibility.ApplyAttachments(updated, User));
     }
 
     [HttpDelete("{id:int}/attachments/{attachmentId:int}")]
@@ -133,8 +132,7 @@ public class IncomeTransactionsController(
 [Route("api/cost-transactions")]
 public class CostTransactionsController(
     TransactionService service,
-    FileStorageService storage,
-    ResponseVisibilityService visibility) : ApiControllerBase
+    FileStorageService storage) : ApiControllerBase
 {
     private static readonly JsonSerializerOptions FormJsonOptions = new()
     {
@@ -147,18 +145,18 @@ public class CostTransactionsController(
         PermissionCodes.CostView,
         PermissionCodes.CostCreate,
         PermissionCodes.CostUpdate)]
-    public async Task<ActionResult<PagedResult<CostTransactionDto>>> GetAll(
+    public async Task<ActionResult<PagedResult<CostTransactionResponse>>> GetAll(
         [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int? accountId,
         [FromQuery, Range(1, 100)] int page = 1, [FromQuery, Range(1, 200)] int pageSize = 20)
     {
         int? ownOnly = OwnRecordsFilter(PermissionCodes.CostView);
         var result = await service.GetCostPagedAsync(from, to, accountId, page, pageSize, ownOnly);
-        return Ok(visibility.ForCostResponse(result, User));
+        return Ok(ResponseVisibility.ApplyAttachments(result, User));
     }
 
     [HttpPost]
     [RequirePermission(PermissionCodes.CostCreate)]
-    public async Task<ActionResult<CostTransactionDto>> Create([FromForm] string data, [FromForm] IFormFileCollection? documents)
+    public async Task<ActionResult<CostTransactionResponse>> Create([FromForm] string data, [FromForm] IFormFileCollection? documents)
     {
         if (string.IsNullOrWhiteSpace(data))
             return BadRequest("داده ارسالی نامعتبر است");
@@ -173,12 +171,12 @@ public class CostTransactionsController(
         var paths = await SaveDocumentsAsync(documents);
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
-        return Ok(visibility.ForCostResponse(await service.CreateCostAsync(request, CurrentUserId, paths), User));
+        return Ok(ResponseVisibility.ApplyAttachments(await service.CreateCostAsync(request, CurrentUserId, paths), User));
     }
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.CostUpdate)]
-    public async Task<ActionResult<CostTransactionDto>> Update(int id, [FromForm] string data, [FromForm] IFormFileCollection? documents)
+    public async Task<ActionResult<CostTransactionResponse>> Update(int id, [FromForm] string data, [FromForm] IFormFileCollection? documents)
     {
         if (string.IsNullOrWhiteSpace(data))
             return BadRequest("داده ارسالی نامعتبر است");
@@ -195,7 +193,7 @@ public class CostTransactionsController(
 
         var updated = await service.UpdateCostAsync(
             id, request, CurrentUserId, paths, OwnRecordsFilter(PermissionCodes.CostView));
-        return updated is null ? NotFound() : Ok(visibility.ForCostResponse(updated, User));
+        return updated is null ? NotFound() : Ok(ResponseVisibility.ApplyAttachments(updated, User));
     }
 
     [HttpDelete("{id:int}/attachments/{attachmentId:int}")]

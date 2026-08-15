@@ -10,32 +10,32 @@ namespace JameJafari.Api.Controllers;
 
 [Authorize]
 [Route("api/accounts")]
-public class AccountsController(AccountService service, ResponseVisibilityService visibility) : ApiControllerBase
+public class AccountsController(AccountService service) : ApiControllerBase
 {
     [HttpGet]
     [RequirePermission(PermissionCodes.AccountsView)]
-    public async Task<ActionResult<IReadOnlyList<AccountDto>>> GetAll([FromQuery] bool activeOnly = true)
-        => Ok(visibility.ForResponse(await service.GetAllAsync(activeOnly), User));
+    public async Task<ActionResult<IReadOnlyList<AccountResponse>>> GetAll([FromQuery] bool activeOnly = true)
+        => Ok(ResponseVisibility.Apply(await service.GetAllAsync(activeOnly), User));
 
     [HttpGet("{id:int}")]
     [RequirePermission(PermissionCodes.AccountsView)]
-    public async Task<ActionResult<AccountDto>> GetById(int id)
+    public async Task<ActionResult<AccountResponse>> GetById(int id)
     {
         var item = await service.GetByIdAsync(id);
-        return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
+        return item is null ? NotFound() : Ok(ResponseVisibility.Apply(item, User));
     }
 
     [HttpPost]
     [RequirePermission(PermissionCodes.AccountsCreate)]
-    public async Task<ActionResult<AccountDto>> Create([FromBody] CreateAccountRequest request)
-        => Ok(visibility.ForResponse(await service.CreateAsync(request, CurrentUserId), User));
+    public async Task<ActionResult<AccountResponse>> Create([FromBody] CreateAccountRequest request)
+        => Ok(ResponseVisibility.Apply(await service.CreateAsync(request, CurrentUserId), User));
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.AccountsUpdate)]
-    public async Task<ActionResult<AccountDto>> Update(int id, [FromBody] UpdateAccountRequest request)
+    public async Task<ActionResult<AccountResponse>> Update(int id, [FromBody] UpdateAccountRequest request)
     {
         var item = await service.UpdateAsync(id, request, CurrentUserId);
-        return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
+        return item is null ? NotFound() : Ok(ResponseVisibility.Apply(item, User));
     }
 
     [HttpDelete("{id:int}")]

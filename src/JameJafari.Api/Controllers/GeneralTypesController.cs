@@ -12,11 +12,11 @@ namespace JameJafari.Api.Controllers;
 
 [Authorize]
 [Route("api/general-types")]
-public class GeneralTypesController(GeneralTypeService service, ResponseVisibilityService visibility) : ApiControllerBase
+public class GeneralTypesController(GeneralTypeService service) : ApiControllerBase
 {
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<PagedResult<GeneralTypeDto>>> GetByCategory(
+    public async Task<ActionResult<PagedResult<GeneralTypeResponse>>> GetByCategory(
         [FromQuery] string category,
         [FromQuery] bool includeInactive = false,
         [FromQuery, Range(1, 100)] int page = 1,
@@ -34,21 +34,21 @@ public class GeneralTypesController(GeneralTypeService service, ResponseVisibili
                 || user.HasClaim("permission", PermissionCodes.GeneralTypesDelete);
             if (!canManage) return Forbid();
         }
-        return Ok(visibility.ForResponse(
+        return Ok(ResponseVisibility.Apply(
             await service.GetPagedByCategoryAsync(cat, includeInactive, page, pageSize), User));
     }
 
     [HttpPost]
     [RequirePermission(PermissionCodes.GeneralTypesCreate)]
-    public async Task<ActionResult<GeneralTypeDto>> Create([FromBody] CreateGeneralTypeRequest request)
-        => Ok(visibility.ForResponse(await service.CreateAsync(request, CurrentUserId), User));
+    public async Task<ActionResult<GeneralTypeResponse>> Create([FromBody] CreateGeneralTypeRequest request)
+        => Ok(ResponseVisibility.Apply(await service.CreateAsync(request, CurrentUserId), User));
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.GeneralTypesUpdate)]
-    public async Task<ActionResult<GeneralTypeDto>> Update(int id, [FromBody] UpdateGeneralTypeRequest request)
+    public async Task<ActionResult<GeneralTypeResponse>> Update(int id, [FromBody] UpdateGeneralTypeRequest request)
     {
         var item = await service.UpdateAsync(id, request, CurrentUserId);
-        return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
+        return item is null ? NotFound() : Ok(ResponseVisibility.Apply(item, User));
     }
 
     [HttpDelete("{id:int}")]

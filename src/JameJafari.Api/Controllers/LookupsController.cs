@@ -25,7 +25,7 @@ public class LookupsController(LookupService service) : ApiControllerBase
         PermissionCodes.CostView,
         PermissionCodes.CostCreate,
         PermissionCodes.CostUpdate)]
-    public async Task<ActionResult<IReadOnlyList<LookupItemDto>>> GetAccounts([FromQuery] bool activeOnly = true)
+    public async Task<ActionResult<IReadOnlyList<LookupItemResponse>>> GetAccounts([FromQuery] bool activeOnly = true)
         => Ok(await service.GetAccountsAsync(activeOnly));
 
     [HttpGet("cost-types")]
@@ -40,7 +40,7 @@ public class LookupsController(LookupService service) : ApiControllerBase
         PermissionCodes.FoodView,
         PermissionCodes.FoodCreate,
         PermissionCodes.FoodUpdate)]
-    public async Task<ActionResult<IReadOnlyList<CostTypeLookupItemDto>>> GetCostTypes(
+    public async Task<ActionResult<IReadOnlyList<CostTypeLookupItemResponse>>> GetCostTypes(
         [FromQuery] bool? isIngredient,
         [FromQuery] bool activeOnly = true)
         => Ok(await service.GetCostTypesAsync(isIngredient, activeOnly));
@@ -63,7 +63,7 @@ public class LookupsController(LookupService service) : ApiControllerBase
         PermissionCodes.FoodView,
         PermissionCodes.FoodCreate,
         PermissionCodes.FoodUpdate)]
-    public async Task<ActionResult<IReadOnlyList<LookupItemDto>>> GetGeneralTypes([FromQuery] string category)
+    public async Task<ActionResult<IReadOnlyList<LookupItemResponse>>> GetGeneralTypes([FromQuery] string category)
     {
         if (!Enum.TryParse<GeneralTypeCategory>(category, true, out var cat))
             return BadRequest("Invalid category");
@@ -78,7 +78,7 @@ public class LookupsController(LookupService service) : ApiControllerBase
         PermissionCodes.IncomeView,
         PermissionCodes.IncomeCreate,
         PermissionCodes.IncomeUpdate)]
-    public async Task<ActionResult<PagedResult<PersonLookupItemDto>>> SearchPersons(
+    public async Task<ActionResult<PagedResult<PersonLookupItemResponse>>> SearchPersons(
         [FromQuery] string? search,
         [FromQuery] Gender? gender,
         [FromQuery, Range(1, 100)] int page = 1,

@@ -12,7 +12,7 @@ namespace JameJafari.Api.Controllers;
 
 [Authorize]
 [Route("api/persons")]
-public class PersonsController(PersonService service, ResponseVisibilityService visibility) : ApiControllerBase
+public class PersonsController(PersonService service) : ApiControllerBase
 {
     [HttpGet]
     [RequirePermission(
@@ -20,12 +20,12 @@ public class PersonsController(PersonService service, ResponseVisibilityService 
         PermissionCodes.IncomeView,
         PermissionCodes.IncomeCreate,
         PermissionCodes.IncomeUpdate)]
-    public async Task<ActionResult<PagedResult<PersonDto>>> GetAll(
+    public async Task<ActionResult<PagedResult<PersonResponse>>> GetAll(
         [FromQuery] string? search,
         [FromQuery] Gender? gender,
         [FromQuery, Range(1, 100)] int page = 1,
         [FromQuery, Range(1, 200)] int pageSize = 20)
-        => Ok(visibility.ForResponse(await service.GetPagedAsync(search, gender, page, pageSize), User));
+        => Ok(ResponseVisibility.Apply(await service.GetPagedAsync(search, gender, page, pageSize), User));
 
     [HttpGet("{id:int}")]
     [RequirePermission(
@@ -33,19 +33,19 @@ public class PersonsController(PersonService service, ResponseVisibilityService 
         PermissionCodes.IncomeView,
         PermissionCodes.IncomeCreate,
         PermissionCodes.IncomeUpdate)]
-    public async Task<ActionResult<PersonDto>> GetById(int id)
+    public async Task<ActionResult<PersonResponse>> GetById(int id)
     {
         var item = await service.GetByIdAsync(id);
-        return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
+        return item is null ? NotFound() : Ok(ResponseVisibility.Apply(item, User));
     }
 
     [HttpPost]
     [RequirePermission(PermissionCodes.PersonsCreate)]
-    public async Task<ActionResult<PersonDto>> Create([FromBody] CreatePersonRequest request)
+    public async Task<ActionResult<PersonResponse>> Create([FromBody] CreatePersonRequest request)
     {
         try
         {
-            return Ok(visibility.ForResponse(await service.CreateAsync(request, CurrentUserId), User));
+            return Ok(ResponseVisibility.Apply(await service.CreateAsync(request, CurrentUserId), User));
         }
         catch (InvalidOperationException ex)
         {
@@ -55,12 +55,12 @@ public class PersonsController(PersonService service, ResponseVisibilityService 
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.PersonsUpdate)]
-    public async Task<ActionResult<PersonDto>> Update(int id, [FromBody] UpdatePersonRequest request)
+    public async Task<ActionResult<PersonResponse>> Update(int id, [FromBody] UpdatePersonRequest request)
     {
         try
         {
             var item = await service.UpdateAsync(id, request, CurrentUserId);
-            return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
+            return item is null ? NotFound() : Ok(ResponseVisibility.Apply(item, User));
         }
         catch (InvalidOperationException ex)
         {
@@ -75,7 +75,7 @@ public class PersonsController(PersonService service, ResponseVisibilityService 
 
     [HttpPost("{id:int}/picture")]
     [RequirePermission(PermissionCodes.PersonsUpdate, PermissionCodes.PersonsCreate)]
-    public async Task<ActionResult<PersonDto>> UploadPicture(int id, IFormFile file, [FromServices] FileStorageService storage)
+    public async Task<ActionResult<PersonResponse>> UploadPicture(int id, IFormFile file, [FromServices] FileStorageService storage)
     {
         if (file is null || file.Length == 0)
             return BadRequest(new { message = "فایل الزامی است" });
@@ -100,7 +100,7 @@ public class PersonsController(PersonService service, ResponseVisibilityService 
                 !string.Equals(oldPath, path, StringComparison.OrdinalIgnoreCase))
                 storage.TryDelete(oldPath);
 
-            return Ok(visibility.ForResponse(person, User));
+            return Ok(ResponseVisibility.Apply(person, User));
         }
         catch (InvalidOperationException ex)
         {
@@ -110,7 +110,7 @@ public class PersonsController(PersonService service, ResponseVisibilityService 
 
     [HttpDelete("{id:int}/picture")]
     [RequirePermission(PermissionCodes.PersonsUpdate)]
-    public async Task<ActionResult<PersonDto>> RemovePicture(int id, [FromServices] FileStorageService storage)
+    public async Task<ActionResult<PersonResponse>> RemovePicture(int id, [FromServices] FileStorageService storage)
     {
         var existing = await service.GetByIdAsync(id);
         if (existing is null) return NotFound();
@@ -122,6 +122,6 @@ public class PersonsController(PersonService service, ResponseVisibilityService 
         if (!string.IsNullOrWhiteSpace(oldPath))
             storage.TryDelete(oldPath);
 
-        return Ok(visibility.ForResponse(person, User));
+        return Ok(ResponseVisibility.Apply(person, User));
     }
 }

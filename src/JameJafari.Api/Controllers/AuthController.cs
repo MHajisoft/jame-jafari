@@ -18,7 +18,7 @@ public class AuthController(AuthService authService) : ApiControllerBase
 
     [HttpGet("me")]
     [Authorize]
-    public async Task<ActionResult<ProfileDto>> Me()
+    public async Task<ActionResult<ProfileResponse>> Me()
     {
         var profile = await authService.GetProfileAsync(CurrentUserId);
         return profile is null ? Unauthorized() : Ok(profile);

@@ -9,7 +9,7 @@ namespace JameJafari.Infrastructure.Services;
 
 public class AccountService(AppDbContext db, IFusionCache cache)
 {
-    public async Task<IReadOnlyList<AccountDto>> GetAllAsync(bool activeOnly = false)
+    public async Task<IReadOnlyList<AccountResponse>> GetAllAsync(bool activeOnly = false)
     {
         return await cache.GetOrSetAsync(
             CacheKeys.Accounts(activeOnly),
@@ -17,18 +17,20 @@ public class AccountService(AppDbContext db, IFusionCache cache)
             {
                 var query = db.Accounts.AsNoTracking().AsQueryable();
                 if (activeOnly) query = query.Where(a => a.IsActive);
-                return await Project(query.OrderBy(a => a.Name)).ToListAsync();
+                var rows = await ProjectRows(query.OrderBy(a => a.Name)).ToListAsync();
+                return (IReadOnlyList<AccountResponse>)rows.Select(ToDto).ToList();
             },
             options => options.SetDuration(LookupCache.AccountsDuration));
     }
 
-    public async Task<AccountDto?> GetByIdAsync(int id)
+    public async Task<AccountResponse?> GetByIdAsync(int id)
     {
-        return await Project(db.Accounts.AsNoTracking().Where(a => a.Id == id))
+        var row = await ProjectRows(db.Accounts.AsNoTracking().Where(a => a.Id == id))
             .FirstOrDefaultAsync();
+        return row is null ? null : ToDto(row);
     }
 
-    public async Task<AccountDto> CreateAsync(CreateAccountRequest request, int userId)
+    public async Task<AccountResponse> CreateAsync(CreateAccountRequest request, int userId)
     {
         var entity = new Account
         {
@@ -43,7 +45,7 @@ public class AccountService(AppDbContext db, IFusionCache cache)
         return (await GetByIdAsync(entity.Id))!;
     }
 
-    public async Task<AccountDto?> UpdateAsync(int id, UpdateAccountRequest request, int userId)
+    public async Task<AccountResponse?> UpdateAsync(int id, UpdateAccountRequest request, int userId)
     {
         var entity = await db.Accounts.FirstOrDefaultAsync(a => a.Id == id);
         if (entity is null) return null;
@@ -68,17 +70,47 @@ public class AccountService(AppDbContext db, IFusionCache cache)
         return true;
     }
 
-    private static IQueryable<AccountDto> Project(IQueryable<Account> query) =>
-        query.Select(a => new AccountDto(
-            a.Id,
-            a.Name,
-            a.Description,
-            a.IsActive,
-            new AuditInfoDto(
-                a.CreatedAt,
-                a.CreatedBy != null ? a.CreatedBy.Username : null,
-                a.CreatedBy != null ? a.CreatedBy.AvatarPath : null,
-                a.UpdatedAt,
-                a.UpdatedBy != null ? a.UpdatedBy.Username : null,
-                a.UpdatedBy != null ? a.UpdatedBy.AvatarPath : null)));
+    private static IQueryable<AccountRow> ProjectRows(IQueryable<Account> query) =>
+        query.Select(a => new AccountRow
+        {
+            Id = a.Id,
+            Name = a.Name,
+            Description = a.Description,
+            IsActive = a.IsActive,
+            CreatedAt = a.CreatedAt,
+            CreatedByUsername = a.CreatedBy != null ? a.CreatedBy.Username : null,
+            CreatedByAvatarPath = a.CreatedBy != null ? a.CreatedBy.AvatarPath : null,
+            UpdatedAt = a.UpdatedAt,
+            UpdatedByUsername = a.UpdatedBy != null ? a.UpdatedBy.Username : null,
+            UpdatedByAvatarPath = a.UpdatedBy != null ? a.UpdatedBy.AvatarPath : null
+        });
+
+    private static AccountResponse ToDto(AccountRow row) => new()
+    {
+        Id = row.Id,
+        Name = row.Name,
+        Description = row.Description,
+        IsActive = row.IsActive,
+        Audit = AuditHelper.FromProjection(
+            row.CreatedAt,
+            row.CreatedByUsername,
+            row.CreatedByAvatarPath,
+            row.UpdatedAt,
+            row.UpdatedByUsername,
+            row.UpdatedByAvatarPath)
+    };
+
+    private sealed class AccountRow
+    {
+        public int Id { get; init; }
+        public string Name { get; init; } = "";
+        public string? Description { get; init; }
+        public bool IsActive { get; init; }
+        public DateTime CreatedAt { get; init; }
+        public string? CreatedByUsername { get; init; }
+        public string? CreatedByAvatarPath { get; init; }
+        public DateTime? UpdatedAt { get; init; }
+        public string? UpdatedByUsername { get; init; }
+        public string? UpdatedByAvatarPath { get; init; }
+    }
 }

@@ -9,24 +9,25 @@ namespace JameJafari.Infrastructure.Services;
 
 public class UserService(AppDbContext db, IAppPasswordHasher passwordHasher)
 {
-    public async Task<PagedResult<UserDto>> GetPagedAsync(int page, int pageSize)
+    public async Task<PagedResult<UserResponse>> GetPagedAsync(int page, int pageSize)
     {
         var filter = db.Users.AsNoTracking();
         var total = await filter.CountAsync();
-        var items = await Project(
+        var rows = await ProjectRows(
                 filter.OrderBy(u => u.Username)
                     .Skip((page - 1) * pageSize).Take(pageSize))
             .ToListAsync();
-        return new PagedResult<UserDto>(items, total, page, pageSize);
+        return new PagedResult<UserResponse>(rows.Select(ToDto).ToList(), total, page, pageSize);
     }
 
-    public async Task<UserDto?> GetByIdAsync(int id)
+    public async Task<UserResponse?> GetByIdAsync(int id)
     {
-        return await Project(db.Users.AsNoTracking().Where(u => u.Id == id))
+        var row = await ProjectRows(db.Users.AsNoTracking().Where(u => u.Id == id))
             .FirstOrDefaultAsync();
+        return row is null ? null : ToDto(row);
     }
 
-    public async Task<UserDto> CreateAsync(CreateUserRequest request, int userId)
+    public async Task<UserResponse> CreateAsync(CreateUserRequest request, int userId)
     {
         if (SystemUsers.IsSystemAdmin(request.Username))
             throw new InvalidOperationException("این نام کاربری رزرو شده است");
@@ -54,7 +55,7 @@ public class UserService(AppDbContext db, IAppPasswordHasher passwordHasher)
         return (await GetByIdAsync(entity.Id))!;
     }
 
-    public async Task<UserDto?> UpdateAsync(int id, UpdateUserRequest request, int userId)
+    public async Task<UserResponse?> UpdateAsync(int id, UpdateUserRequest request, int userId)
     {
         var entity = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (entity is null) return null;
@@ -75,7 +76,7 @@ public class UserService(AppDbContext db, IAppPasswordHasher passwordHasher)
         return await GetByIdAsync(id);
     }
 
-    public async Task<UserDto?> ChangePasswordAsync(int id, ChangeUserPasswordRequest request, int userId)
+    public async Task<UserResponse?> ChangePasswordAsync(int id, ChangeUserPasswordRequest request, int userId)
     {
         var entity = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (entity is null) return null;
@@ -102,7 +103,7 @@ public class UserService(AppDbContext db, IAppPasswordHasher passwordHasher)
         return true;
     }
 
-    public async Task<UserDto?> UpdateAvatarAsync(int id, string? path, int userId)
+    public async Task<UserResponse?> UpdateAvatarAsync(int id, string? path, int userId)
     {
         var entity = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (entity is null) return null;
@@ -123,21 +124,57 @@ public class UserService(AppDbContext db, IAppPasswordHasher passwordHasher)
             db.UserPermissions.Add(new UserPermission { UserId = userId, PermissionId = permissionId });
     }
 
-    private static IQueryable<UserDto> Project(IQueryable<User> query) =>
-        query.Select(u => new UserDto(
-            u.Id,
-            u.Username,
-            u.Email,
-            u.Mobile,
-            u.AvatarPath,
-            u.IsActive,
-            u.Username == SystemUsers.AdminUsername,
-            u.UserPermissions.Select(up => up.Permission.Code).ToList(),
-            new AuditInfoDto(
-                u.CreatedAt,
-                u.CreatedBy != null ? u.CreatedBy.Username : null,
-                u.CreatedBy != null ? u.CreatedBy.AvatarPath : null,
-                u.UpdatedAt,
-                u.UpdatedBy != null ? u.UpdatedBy.Username : null,
-                u.UpdatedBy != null ? u.UpdatedBy.AvatarPath : null)));
+    private static IQueryable<UserRow> ProjectRows(IQueryable<User> query) =>
+        query.Select(u => new UserRow
+        {
+            Id = u.Id,
+            Username = u.Username,
+            Email = u.Email,
+            Mobile = u.Mobile,
+            AvatarPath = u.AvatarPath,
+            IsActive = u.IsActive,
+            Permissions = u.UserPermissions.Select(up => up.Permission.Code).ToList(),
+            CreatedAt = u.CreatedAt,
+            CreatedByUsername = u.CreatedBy != null ? u.CreatedBy.Username : null,
+            CreatedByAvatarPath = u.CreatedBy != null ? u.CreatedBy.AvatarPath : null,
+            UpdatedAt = u.UpdatedAt,
+            UpdatedByUsername = u.UpdatedBy != null ? u.UpdatedBy.Username : null,
+            UpdatedByAvatarPath = u.UpdatedBy != null ? u.UpdatedBy.AvatarPath : null
+        });
+
+    private static UserResponse ToDto(UserRow row) => new()
+    {
+        Id = row.Id,
+        Username = row.Username,
+        Email = row.Email,
+        Mobile = row.Mobile,
+        AvatarPath = row.AvatarPath,
+        IsActive = row.IsActive,
+        IsSystemAdmin = row.Username == SystemUsers.AdminUsername,
+        Permissions = row.Permissions,
+        Audit = AuditHelper.FromProjection(
+            row.CreatedAt,
+            row.CreatedByUsername,
+            row.CreatedByAvatarPath,
+            row.UpdatedAt,
+            row.UpdatedByUsername,
+            row.UpdatedByAvatarPath)
+    };
+
+    private sealed class UserRow
+    {
+        public int Id { get; init; }
+        public string Username { get; init; } = "";
+        public string? Email { get; init; }
+        public string? Mobile { get; init; }
+        public string? AvatarPath { get; init; }
+        public bool IsActive { get; init; }
+        public List<string> Permissions { get; init; } = [];
+        public DateTime CreatedAt { get; init; }
+        public string? CreatedByUsername { get; init; }
+        public string? CreatedByAvatarPath { get; init; }
+        public DateTime? UpdatedAt { get; init; }
+        public string? UpdatedByUsername { get; init; }
+        public string? UpdatedByAvatarPath { get; init; }
+    }
 }

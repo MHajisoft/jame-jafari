@@ -1,6 +1,7 @@
 using System.Globalization;
 using JameJafari.Core.DTOs;
 using JameJafari.Core.Enums;
+using JameJafari.Core.Helpers;
 using JameJafari.Infrastructure.Caching;
 using JameJafari.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,7 @@ namespace JameJafari.Infrastructure.Services;
 
 public class LookupService(AppDbContext db, IFusionCache cache)
 {
-    public async Task<IReadOnlyList<LookupItemDto>> GetAccountsAsync(bool activeOnly = true) =>
+    public async Task<IReadOnlyList<LookupItemResponse>> GetAccountsAsync(bool activeOnly = true) =>
         await cache.GetOrSetAsync(
             CacheKeys.LookupAccounts(activeOnly),
             async _ =>
@@ -19,12 +20,12 @@ public class LookupService(AppDbContext db, IFusionCache cache)
                 if (activeOnly) query = query.Where(a => a.IsActive);
                 return await query
                     .OrderBy(a => a.Name)
-                    .Select(a => new LookupItemDto(a.Id, a.Name))
+                    .Select(a => new LookupItemResponse(a.Id, a.Name))
                     .ToListAsync();
             },
             options => options.SetDuration(LookupCache.AccountsDuration));
 
-    public async Task<IReadOnlyList<CostTypeLookupItemDto>> GetCostTypesAsync(
+    public async Task<IReadOnlyList<CostTypeLookupItemResponse>> GetCostTypesAsync(
         bool? isIngredient = null,
         bool activeOnly = true) =>
         await cache.GetOrSetAsync(
@@ -36,7 +37,7 @@ public class LookupService(AppDbContext db, IFusionCache cache)
                 if (isIngredient.HasValue) query = query.Where(c => c.IsIngredient == isIngredient.Value);
                 return await query
                     .OrderBy(c => c.Name)
-                    .Select(c => new CostTypeLookupItemDto(
+                    .Select(c => new CostTypeLookupItemResponse(
                         c.Id,
                         c.Name,
                         c.Unit != null ? c.Unit.Name : null))
@@ -44,28 +45,28 @@ public class LookupService(AppDbContext db, IFusionCache cache)
             },
             options => options.SetDuration(LookupCache.CostTypesDuration));
 
-    public async Task<IReadOnlyList<LookupItemDto>> GetGeneralTypesAsync(GeneralTypeCategory category) =>
+    public async Task<IReadOnlyList<LookupItemResponse>> GetGeneralTypesAsync(GeneralTypeCategory category) =>
         await cache.GetOrSetAsync(
             CacheKeys.LookupGeneralTypes(category),
             async _ => await db.GeneralTypes.AsNoTracking()
                 .Where(g => g.Category == category && g.IsActive)
                 .OrderBy(g => g.SortOrder).ThenBy(g => g.Name)
-                .Select(g => new LookupItemDto(g.Id, g.Name))
+                .Select(g => new LookupItemResponse(g.Id, g.Name))
                 .ToListAsync(),
             options => options.SetDuration(LookupCache.GeneralTypesDuration));
 
-    public async Task<PagedResult<PersonLookupItemDto>> SearchPersonsAsync(
+    public async Task<PagedResult<PersonLookupItemResponse>> SearchPersonsAsync(
         string? search,
         Gender? gender,
         int page,
         int pageSize)
     {
         if (string.IsNullOrWhiteSpace(search))
-            return new PagedResult<PersonLookupItemDto>([], 0, page, pageSize);
+            return new PagedResult<PersonLookupItemResponse>([], 0, page, pageSize);
 
         var tokens = Tokenize(search);
         if (tokens.Length == 0)
-            return new PagedResult<PersonLookupItemDto>([], 0, page, pageSize);
+            return new PagedResult<PersonLookupItemResponse>([], 0, page, pageSize);
 
         var all = await GetPersonLookupCacheAsync();
         IEnumerable<PersonLookupCacheItem> filtered = all;
@@ -83,21 +84,23 @@ public class LookupService(AppDbContext db, IFusionCache cache)
         var items = matched
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(p => new PersonLookupItemDto(
-                p.Id,
-                p.FirstName,
-                p.LastName,
-                p.NickName,
-                p.Gender,
-                p.PicturePath,
-                p.FatherName,
-                p.MotherName,
-                p.FatherFirstName,
-                p.MotherFirstName,
-                p.IsDead))
+            .Select(p => new PersonLookupItemResponse
+            {
+                Id = p.Id,
+                FirstName = p.FirstName,
+                LastName = p.LastName,
+                NickName = p.NickName,
+                Gender = p.Gender,
+                PicturePath = p.PicturePath,
+                FatherName = p.FatherName,
+                MotherName = p.MotherName,
+                FatherFirstName = p.FatherFirstName,
+                MotherFirstName = p.MotherFirstName,
+                IsDead = p.IsDead
+            })
             .ToList();
 
-        return new PagedResult<PersonLookupItemDto>(items, total, page, pageSize);
+        return new PagedResult<PersonLookupItemResponse>(items, total, page, pageSize);
     }
 
     private async Task<IReadOnlyList<PersonLookupCacheItem>> GetPersonLookupCacheAsync() =>
@@ -128,8 +131,8 @@ public class LookupService(AppDbContext db, IFusionCache cache)
 
                 return rows.Select(r =>
                 {
-                    var fatherName = FormatParentName(r.FatherPrefix, r.FatherFirst, r.FatherLast);
-                    var motherName = FormatParentName(r.MotherPrefix, r.MotherFirst, r.MotherLast);
+                    var fatherName = PersonDisplayNameHelper.FormatOrNull(r.FatherFirst, r.FatherLast, r.FatherPrefix);
+                    var motherName = PersonDisplayNameHelper.FormatOrNull(r.MotherFirst, r.MotherLast, r.MotherPrefix);
                     var blob = BuildSearchBlob(
                         r.FirstName, r.LastName, r.NickName,
                         r.FatherFirst, r.FatherLast, r.FatherNick,
@@ -162,14 +165,6 @@ public class LookupService(AppDbContext db, IFusionCache cache)
             motherFirst, motherLast, motherNick
         };
         return Normalize(string.Join(" ", parts.Where(x => !string.IsNullOrWhiteSpace(x))));
-    }
-
-    private static string? FormatParentName(string? prefix, string? first, string? last)
-    {
-        if (string.IsNullOrWhiteSpace(first) && string.IsNullOrWhiteSpace(last))
-            return null;
-        var name = string.Join(" ", new[] { first, last }.Where(x => !string.IsNullOrWhiteSpace(x)));
-        return string.IsNullOrWhiteSpace(prefix) ? name : prefix + " " + name;
     }
 
     private static string Normalize(string value)

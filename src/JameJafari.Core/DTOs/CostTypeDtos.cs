@@ -2,15 +2,16 @@ using System.ComponentModel.DataAnnotations;
 
 namespace JameJafari.Core.DTOs;
 
-public record CostTypeDto(
-    int Id,
-    string Name,
-    string? Description,
-    bool IsIngredient,
-    int? UnitId,
-    string? UnitName,
-    bool IsActive,
-    AuditInfoDto Audit);
+public class CostTypeResponse : ResponseBase
+{
+    public int Id { get; init; }
+    public string Name { get; init; } = "";
+    public string? Description { get; init; }
+    public bool IsIngredient { get; init; }
+    public int? UnitId { get; init; }
+    public string? UnitName { get; init; }
+    public bool IsActive { get; init; }
+}
 
 public record CreateCostTypeRequest(
     [Required(ErrorMessage = "نام الزامی است")]

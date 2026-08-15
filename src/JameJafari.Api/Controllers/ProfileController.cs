@@ -11,14 +11,14 @@ namespace JameJafari.Api.Controllers;
 public class ProfileController(AuthService authService) : ApiControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<ProfileDto>> Get()
+    public async Task<ActionResult<ProfileResponse>> Get()
     {
         var profile = await authService.GetProfileAsync(CurrentUserId);
         return profile is null ? NotFound() : Ok(profile);
     }
 
     [HttpPut]
-    public async Task<ActionResult<ProfileDto>> Update([FromBody] UpdateProfileRequest request)
+    public async Task<ActionResult<ProfileResponse>> Update([FromBody] UpdateProfileRequest request)
     {
         var profile = await authService.UpdateProfileAsync(CurrentUserId, request);
         return profile is null ? NotFound() : Ok(profile);
@@ -33,7 +33,7 @@ public class ProfileController(AuthService authService) : ApiControllerBase
     }
 
     [HttpPost("avatar")]
-    public async Task<ActionResult<ProfileDto>> UploadAvatar(IFormFile file, [FromServices] FileStorageService storage)
+    public async Task<ActionResult<ProfileResponse>> UploadAvatar(IFormFile file, [FromServices] FileStorageService storage)
     {
         if (file is null || file.Length == 0)
             return BadRequest(new { message = "فایل الزامی است" });
@@ -66,7 +66,7 @@ public class ProfileController(AuthService authService) : ApiControllerBase
     }
 
     [HttpDelete("avatar")]
-    public async Task<ActionResult<ProfileDto>> RemoveAvatar([FromServices] FileStorageService storage)
+    public async Task<ActionResult<ProfileResponse>> RemoveAvatar([FromServices] FileStorageService storage)
     {
         var current = await authService.GetProfileAsync(CurrentUserId);
         var oldPath = current?.AvatarPath;

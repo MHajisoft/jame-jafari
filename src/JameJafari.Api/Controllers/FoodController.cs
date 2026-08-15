@@ -10,14 +10,14 @@ namespace JameJafari.Api.Controllers;
 
 [Authorize]
 [Route("api/food")]
-public class FoodController(FoodService service, ResponseVisibilityService visibility) : ApiControllerBase
+public class FoodController(FoodService service) : ApiControllerBase
 {
     [HttpGet("recommendations")]
     [RequirePermission(
         PermissionCodes.FoodView,
         PermissionCodes.FoodCreate,
         PermissionCodes.FoodUpdate)]
-    public async Task<ActionResult<IReadOnlyList<IngredientPriceRecommendationDto>>> GetRecommendations()
+    public async Task<ActionResult<IReadOnlyList<IngredientPriceRecommendationResponse>>> GetRecommendations()
         => Ok(await service.GetRecommendationsAsync());
 
     [HttpGet]
@@ -25,30 +25,30 @@ public class FoodController(FoodService service, ResponseVisibilityService visib
         PermissionCodes.FoodView,
         PermissionCodes.FoodCreate,
         PermissionCodes.FoodUpdate)]
-    public async Task<ActionResult<IReadOnlyList<FoodGenerationDto>>> GetByDate([FromQuery] DateTime date)
-        => Ok(visibility.ForResponse(await service.GetByDateAsync(date, OwnRecordsFilter(PermissionCodes.FoodView)), User));
+    public async Task<ActionResult<IReadOnlyList<FoodGenerationResponse>>> GetByDate([FromQuery] DateTime date)
+        => Ok(ResponseVisibility.Apply(await service.GetByDateAsync(date, OwnRecordsFilter(PermissionCodes.FoodView)), User));
 
     [HttpGet("{id:int}")]
     [RequirePermission(
         PermissionCodes.FoodView,
         PermissionCodes.FoodCreate,
         PermissionCodes.FoodUpdate)]
-    public async Task<ActionResult<FoodGenerationDto>> GetById(int id)
+    public async Task<ActionResult<FoodGenerationResponse>> GetById(int id)
     {
         var item = await service.GetByIdAsync(id, OwnRecordsFilter(PermissionCodes.FoodView));
-        return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
+        return item is null ? NotFound() : Ok(ResponseVisibility.Apply(item, User));
     }
 
     [HttpPost]
     [RequirePermission(PermissionCodes.FoodCreate)]
-    public async Task<ActionResult<FoodGenerationDto>> Create([FromBody] CreateFoodGenerationRequest request)
-        => Ok(visibility.ForResponse(await service.CreateAsync(request, CurrentUserId), User));
+    public async Task<ActionResult<FoodGenerationResponse>> Create([FromBody] CreateFoodGenerationRequest request)
+        => Ok(ResponseVisibility.Apply(await service.CreateAsync(request, CurrentUserId), User));
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.FoodUpdate)]
-    public async Task<ActionResult<FoodGenerationDto>> Update(int id, [FromBody] UpdateFoodGenerationRequest request)
+    public async Task<ActionResult<FoodGenerationResponse>> Update(int id, [FromBody] UpdateFoodGenerationRequest request)
     {
         var item = await service.UpdateAsync(id, request, CurrentUserId, OwnRecordsFilter(PermissionCodes.FoodView));
-        return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
+        return item is null ? NotFound() : Ok(ResponseVisibility.Apply(item, User));
     }
 }

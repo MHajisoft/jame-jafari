@@ -5,7 +5,7 @@ import NickBadge from './NickBadge.vue'
 import PersonLifeStatus from './PersonLifeStatus.vue'
 
 const props = defineProps({
-  /** PersonSummaryDto, PersonDto, or lookup row */
+  /** PersonSummaryResponse, PersonResponse, or lookup row */
   person: { type: Object, default: null },
   displayName: { type: String, default: '' },
   nickName: { type: String, default: '' },

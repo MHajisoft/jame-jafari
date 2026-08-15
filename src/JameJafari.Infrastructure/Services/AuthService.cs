@@ -34,10 +34,19 @@ public class AuthService(AppDbContext db, IConfiguration config, IAppPasswordHas
             .ToList();
 
         var token = GenerateToken(user, permissions);
-        return new LoginResponse(token, user.Id, user.Username, user.Email, user.Mobile, user.AvatarPath, permissions);
+        return new LoginResponse
+        {
+            Token = token,
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            Mobile = user.Mobile,
+            AvatarPath = user.AvatarPath,
+            Permissions = permissions
+        };
     }
 
-    public async Task<ProfileDto?> GetProfileAsync(int userId)
+    public async Task<ProfileResponse?> GetProfileAsync(int userId)
     {
         var user = await db.Users
             .AsNoTracking()
@@ -46,7 +55,7 @@ public class AuthService(AppDbContext db, IConfiguration config, IAppPasswordHas
         return user is null ? null : MapProfile(user);
     }
 
-    public async Task<ProfileDto?> UpdateProfileAsync(int userId, UpdateProfileRequest request)
+    public async Task<ProfileResponse?> UpdateProfileAsync(int userId, UpdateProfileRequest request)
     {
         var user = await db.Users
             .Include(u => u.UserPermissions).ThenInclude(up => up.Permission)
@@ -73,7 +82,7 @@ public class AuthService(AppDbContext db, IConfiguration config, IAppPasswordHas
         return (true, null);
     }
 
-    public async Task<ProfileDto?> UpdateAvatarAsync(int userId, string? path)
+    public async Task<ProfileResponse?> UpdateAvatarAsync(int userId, string? path)
     {
         var user = await db.Users
             .Include(u => u.UserPermissions).ThenInclude(up => up.Permission)
@@ -86,13 +95,15 @@ public class AuthService(AppDbContext db, IConfiguration config, IAppPasswordHas
         return MapProfile(user);
     }
 
-    private static ProfileDto MapProfile(User user) => new(
-        user.Id,
-        user.Username,
-        user.Email,
-        user.Mobile,
-        user.AvatarPath,
-        user.UserPermissions.Select(up => up.Permission.Code).Distinct().ToList());
+    private static ProfileResponse MapProfile(User user) => new()
+    {
+        Id = user.Id,
+        Username = user.Username,
+        Email = user.Email,
+        Mobile = user.Mobile,
+        AvatarPath = user.AvatarPath,
+        Permissions = user.UserPermissions.Select(up => up.Permission.Code).Distinct().ToList()
+    };
 
     private string GenerateToken(User user, IReadOnlyList<string> permissions)
     {

@@ -10,26 +10,26 @@ namespace JameJafari.Api.Controllers;
 
 [Authorize]
 [Route("api/cost-types")]
-public class CostTypesController(CostTypeService service, ResponseVisibilityService visibility) : ApiControllerBase
+public class CostTypesController(CostTypeService service) : ApiControllerBase
 {
     [HttpGet]
     [RequirePermission(PermissionCodes.CostTypesView)]
-    public async Task<ActionResult<IReadOnlyList<CostTypeDto>>> GetAll(
+    public async Task<ActionResult<IReadOnlyList<CostTypeResponse>>> GetAll(
         [FromQuery] bool? isIngredient,
         [FromQuery] bool activeOnly = true)
-        => Ok(visibility.ForResponse(await service.GetAllAsync(isIngredient, activeOnly), User));
+        => Ok(ResponseVisibility.Apply(await service.GetAllAsync(isIngredient, activeOnly), User));
 
     [HttpPost]
     [RequirePermission(PermissionCodes.CostTypesCreate)]
-    public async Task<ActionResult<CostTypeDto>> Create([FromBody] CreateCostTypeRequest request)
-        => Ok(visibility.ForResponse(await service.CreateAsync(request, CurrentUserId), User));
+    public async Task<ActionResult<CostTypeResponse>> Create([FromBody] CreateCostTypeRequest request)
+        => Ok(ResponseVisibility.Apply(await service.CreateAsync(request, CurrentUserId), User));
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.CostTypesUpdate)]
-    public async Task<ActionResult<CostTypeDto>> Update(int id, [FromBody] UpdateCostTypeRequest request)
+    public async Task<ActionResult<CostTypeResponse>> Update(int id, [FromBody] UpdateCostTypeRequest request)
     {
         var item = await service.UpdateAsync(id, request, CurrentUserId);
-        return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
+        return item is null ? NotFound() : Ok(ResponseVisibility.Apply(item, User));
     }
 
     [HttpDelete("{id:int}")]

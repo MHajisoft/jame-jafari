@@ -98,7 +98,10 @@ docker build -t jamejafari-web ./frontend
 **الگوهای کلیدی:**
 - سرویس per-aggregate؛ بدون Repository/UoW جدا
 - Soft delete روی `AuditableEntity` + فیلتر سراسری EF
-- DTO به‌صورت `record` با DataAnnotations (پیام خطای فارسی)
+- قرارداد API: `*Request` برای ورودی، `*Response` برای خروجی (نه `*Dto`)
+- پاسخ‌های auditable: `ResponseBase` (Audit مشترک)؛ با پیوست: `AttachmentResponseBase`
+- `ResponseVisibility` (static): `Apply<T>` / `ApplyAttachments<T>` — fluent deep-clone (`WithoutAudit` / `ApplyVisibility`)
+- Projection: ردیف slim در SQL → نگاشت در حافظه (`PersonDisplayNameHelper`، `AuditHelper.FromProjection`)
 - `[RequirePermission]` روی action/controller — منطق **OR** بین چند permission
 - JWT: claim نوع `"permission"` برای هر کد دسترسی
 - کش lookup (FusionCache) با invalidation پس از write

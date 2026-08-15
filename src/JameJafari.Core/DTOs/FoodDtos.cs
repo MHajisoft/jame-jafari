@@ -2,14 +2,16 @@ using System.ComponentModel.DataAnnotations;
 
 namespace JameJafari.Core.DTOs;
 
-public record FoodIngredientDto(
-    int Id,
-    int CostTypeId,
-    string CostTypeName,
-    string? UnitName,
-    decimal Units,
-    decimal Price,
-    decimal? RecommendedPrice);
+public class FoodIngredientResponse
+{
+    public int Id { get; init; }
+    public int CostTypeId { get; init; }
+    public string CostTypeName { get; init; } = "";
+    public string? UnitName { get; init; }
+    public decimal Units { get; init; }
+    public decimal Price { get; init; }
+    public decimal? RecommendedPrice { get; init; }
+}
 
 public record FoodIngredientInput(
     [Range(1, int.MaxValue, ErrorMessage = "ماده اولیه الزامی است")]
@@ -21,16 +23,17 @@ public record FoodIngredientInput(
     [Range(0.01, 999999999, ErrorMessage = "قیمت باید بیشتر از صفر باشد")]
     decimal Price);
 
-public record FoodGenerationDto(
-    int Id,
-    string Name,
-    DateTime CookDate,
-    int TotalCount,
-    decimal TotalCost,
-    decimal CostPerUnit,
-    string? Description,
-    IReadOnlyList<FoodIngredientDto> Ingredients,
-    AuditInfoDto Audit);
+public class FoodGenerationResponse : ResponseBase
+{
+    public int Id { get; init; }
+    public string Name { get; init; } = "";
+    public DateTime CookDate { get; init; }
+    public int TotalCount { get; init; }
+    public decimal TotalCost { get; init; }
+    public decimal CostPerUnit { get; init; }
+    public string? Description { get; init; }
+    public IReadOnlyList<FoodIngredientResponse> Ingredients { get; init; } = [];
+}
 
 public record CreateFoodGenerationRequest(
     [Required(ErrorMessage = "نام غذا الزامی است")]
@@ -64,7 +67,7 @@ public record UpdateFoodGenerationRequest(
     [MinLength(1, ErrorMessage = "حداقل یک ماده اولیه الزامی است")]
     IReadOnlyList<FoodIngredientInput> Ingredients);
 
-public record IngredientPriceRecommendationDto(
+public record IngredientPriceRecommendationResponse(
     int CostTypeId,
     string CostTypeName,
     string? UnitName,

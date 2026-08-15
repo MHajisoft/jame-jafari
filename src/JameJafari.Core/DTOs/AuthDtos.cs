@@ -12,14 +12,16 @@ public record LoginRequest(
     [StringLength(100, ErrorMessage = "رمز عبور حداکثر ۱۰۰ کاراکتر")]
     string Password);
 
-public record LoginResponse(
-    string Token,
-    int Id,
-    string Username,
-    string? Email,
-    string? Mobile,
-    string? AvatarPath,
-    IReadOnlyList<string> Permissions);
+public class LoginResponse
+{
+    public string Token { get; init; } = "";
+    public int Id { get; init; }
+    public string Username { get; init; } = "";
+    public string? Email { get; init; }
+    public string? Mobile { get; init; }
+    public string? AvatarPath { get; init; }
+    public IReadOnlyList<string> Permissions { get; init; } = [];
+}
 
 public record ChangePasswordRequest(
     [Required(ErrorMessage = "رمز عبور فعلی الزامی است")]
@@ -29,13 +31,15 @@ public record ChangePasswordRequest(
     [PasswordStrength]
     string NewPassword);
 
-public record ProfileDto(
-    int Id,
-    string Username,
-    string? Email,
-    string? Mobile,
-    string? AvatarPath,
-    IReadOnlyList<string> Permissions);
+public class ProfileResponse
+{
+    public int Id { get; init; }
+    public string Username { get; init; } = "";
+    public string? Email { get; init; }
+    public string? Mobile { get; init; }
+    public string? AvatarPath { get; init; }
+    public IReadOnlyList<string> Permissions { get; init; } = [];
+}
 
 public record UpdateProfileRequest(
     [EmailAddress(ErrorMessage = "فرمت ایمیل نامعتبر است")]

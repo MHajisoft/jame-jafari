@@ -11,28 +11,28 @@ namespace JameJafari.Api.Controllers;
 
 [Authorize]
 [Route("api/users")]
-public class UsersController(UserService service, ResponseVisibilityService visibility) : ApiControllerBase
+public class UsersController(UserService service) : ApiControllerBase
 {
     [HttpGet]
     [RequirePermission(PermissionCodes.UsersView)]
-    public async Task<ActionResult<PagedResult<UserDto>>> GetAll([FromQuery, Range(1, 100)] int page = 1, [FromQuery, Range(1, 200)] int pageSize = 20)
-        => Ok(visibility.ForResponse(await service.GetPagedAsync(page, pageSize), User));
+    public async Task<ActionResult<PagedResult<UserResponse>>> GetAll([FromQuery, Range(1, 100)] int page = 1, [FromQuery, Range(1, 200)] int pageSize = 20)
+        => Ok(ResponseVisibility.Apply(await service.GetPagedAsync(page, pageSize), User));
 
     [HttpGet("{id:int}")]
     [RequirePermission(PermissionCodes.UsersView)]
-    public async Task<ActionResult<UserDto>> GetById(int id)
+    public async Task<ActionResult<UserResponse>> GetById(int id)
     {
         var item = await service.GetByIdAsync(id);
-        return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
+        return item is null ? NotFound() : Ok(ResponseVisibility.Apply(item, User));
     }
 
     [HttpPost]
     [RequirePermission(PermissionCodes.UsersCreate)]
-    public async Task<ActionResult<UserDto>> Create([FromBody] CreateUserRequest request)
+    public async Task<ActionResult<UserResponse>> Create([FromBody] CreateUserRequest request)
     {
         try
         {
-            return Ok(visibility.ForResponse(await service.CreateAsync(request, CurrentUserId), User));
+            return Ok(ResponseVisibility.Apply(await service.CreateAsync(request, CurrentUserId), User));
         }
         catch (InvalidOperationException ex)
         {
@@ -42,12 +42,12 @@ public class UsersController(UserService service, ResponseVisibilityService visi
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.UsersUpdate)]
-    public async Task<ActionResult<UserDto>> Update(int id, [FromBody] UpdateUserRequest request)
+    public async Task<ActionResult<UserResponse>> Update(int id, [FromBody] UpdateUserRequest request)
     {
         try
         {
             var item = await service.UpdateAsync(id, request, CurrentUserId);
-            return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
+            return item is null ? NotFound() : Ok(ResponseVisibility.Apply(item, User));
         }
         catch (InvalidOperationException ex)
         {
@@ -57,12 +57,12 @@ public class UsersController(UserService service, ResponseVisibilityService visi
 
     [HttpPut("{id:int}/password")]
     [RequirePermission(PermissionCodes.UsersChangePassword)]
-    public async Task<ActionResult<UserDto>> ChangePassword(int id, [FromBody] ChangeUserPasswordRequest request)
+    public async Task<ActionResult<UserResponse>> ChangePassword(int id, [FromBody] ChangeUserPasswordRequest request)
     {
         try
         {
             var item = await service.ChangePasswordAsync(id, request, CurrentUserId);
-            return item is null ? NotFound() : Ok(visibility.ForResponse(item, User));
+            return item is null ? NotFound() : Ok(ResponseVisibility.Apply(item, User));
         }
         catch (InvalidOperationException ex)
         {
@@ -86,7 +86,7 @@ public class UsersController(UserService service, ResponseVisibilityService visi
 
     [HttpPost("{id:int}/avatar")]
     [RequirePermission(PermissionCodes.UsersUpdate, PermissionCodes.UsersCreate)]
-    public async Task<ActionResult<UserDto>> UploadAvatar(int id, IFormFile file, [FromServices] FileStorageService storage)
+    public async Task<ActionResult<UserResponse>> UploadAvatar(int id, IFormFile file, [FromServices] FileStorageService storage)
     {
         if (file is null || file.Length == 0)
             return BadRequest(new { message = "فایل الزامی است" });
@@ -111,7 +111,7 @@ public class UsersController(UserService service, ResponseVisibilityService visi
                 !string.Equals(oldPath, path, StringComparison.OrdinalIgnoreCase))
                 storage.TryDelete(oldPath);
 
-            return Ok(visibility.ForResponse(user, User));
+            return Ok(ResponseVisibility.Apply(user, User));
         }
         catch (InvalidOperationException ex)
         {
@@ -121,7 +121,7 @@ public class UsersController(UserService service, ResponseVisibilityService visi
 
     [HttpDelete("{id:int}/avatar")]
     [RequirePermission(PermissionCodes.UsersUpdate)]
-    public async Task<ActionResult<UserDto>> RemoveAvatar(int id, [FromServices] FileStorageService storage)
+    public async Task<ActionResult<UserResponse>> RemoveAvatar(int id, [FromServices] FileStorageService storage)
     {
         try
         {
@@ -135,7 +135,7 @@ public class UsersController(UserService service, ResponseVisibilityService visi
             if (!string.IsNullOrWhiteSpace(oldPath))
                 storage.TryDelete(oldPath);
 
-            return Ok(visibility.ForResponse(user, User));
+            return Ok(ResponseVisibility.Apply(user, User));
         }
         catch (InvalidOperationException ex)
         {

@@ -10,6 +10,6 @@ namespace JameJafari.Api.Controllers;
 public class PermissionsController(PermissionService permissions) : ApiControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<PermissionDto>>> GetAll()
+    public async Task<ActionResult<IReadOnlyList<PermissionResponse>>> GetAll()
         => Ok(await permissions.GetAllAsync());
 }

@@ -9,7 +9,7 @@ namespace JameJafari.Infrastructure.Services;
 
 public class FoodService(AppDbContext db, IFusionCache cache)
 {
-    public async Task<IReadOnlyList<IngredientPriceRecommendationDto>> GetRecommendationsAsync()
+    public async Task<IReadOnlyList<IngredientPriceRecommendationResponse>> GetRecommendationsAsync()
     {
         return await cache.GetOrSetAsync(
             CacheKeys.IngredientPriceRecs,
@@ -17,7 +17,7 @@ public class FoodService(AppDbContext db, IFusionCache cache)
             options => options.SetDuration(LookupCache.IngredientRecsDuration));
     }
 
-    public async Task<IReadOnlyList<FoodGenerationDto>> GetByDateAsync(DateTime date, int? createdByUserId = null)
+    public async Task<IReadOnlyList<FoodGenerationResponse>> GetByDateAsync(DateTime date, int? createdByUserId = null)
     {
         var start = date.Date;
         var end = start.AddDays(1);
@@ -32,7 +32,7 @@ public class FoodService(AppDbContext db, IFusionCache cache)
         return items.Select(Map).ToList();
     }
 
-    public async Task<FoodGenerationDto?> GetByIdAsync(int id, int? createdByUserId = null)
+    public async Task<FoodGenerationResponse?> GetByIdAsync(int id, int? createdByUserId = null)
     {
         var query = db.FoodGenerations
             .AsNoTracking()
@@ -45,7 +45,7 @@ public class FoodService(AppDbContext db, IFusionCache cache)
         return item is null ? null : Map(item);
     }
 
-    public async Task<FoodGenerationDto> CreateAsync(CreateFoodGenerationRequest request, int userId)
+    public async Task<FoodGenerationResponse> CreateAsync(CreateFoodGenerationRequest request, int userId)
     {
         var totalCost = request.Ingredients.Sum(i => i.Units * i.Price);
         var costPerUnit = request.TotalCount > 0 ? totalCost / request.TotalCount : 0;
@@ -80,7 +80,7 @@ public class FoodService(AppDbContext db, IFusionCache cache)
         return (await GetByIdAsync(entity.Id))!;
     }
 
-    public async Task<FoodGenerationDto?> UpdateAsync(
+    public async Task<FoodGenerationResponse?> UpdateAsync(
         int id, UpdateFoodGenerationRequest request, int userId, int? requireCreatedByUserId = null)
     {
         var entity = await db.FoodGenerations
@@ -121,7 +121,7 @@ public class FoodService(AppDbContext db, IFusionCache cache)
         return await GetByIdAsync(id);
     }
 
-    private async Task<IReadOnlyList<IngredientPriceRecommendationDto>> ComputeRecommendationsAsync()
+    private async Task<IReadOnlyList<IngredientPriceRecommendationResponse>> ComputeRecommendationsAsync()
     {
         var ingredients = await db.CostTypes
             .AsNoTracking()
@@ -130,7 +130,7 @@ public class FoodService(AppDbContext db, IFusionCache cache)
             .ToListAsync();
 
         if (ingredients.Count == 0)
-            return Array.Empty<IngredientPriceRecommendationDto>();
+            return Array.Empty<IngredientPriceRecommendationResponse>();
 
         var ingredientIds = ingredients.Select(i => i.Id).ToList();
 
@@ -177,15 +177,30 @@ public class FoodService(AppDbContext db, IFusionCache cache)
                 avg = weighted / totalCount;
             }
 
-            return new IngredientPriceRecommendationDto(
+            return new IngredientPriceRecommendationResponse(
                 ing.Id, ing.Name, ing.UnitName, Math.Round(avg, 2));
         }).ToList();
     }
 
-    private static FoodGenerationDto Map(FoodGeneration f) => new(
-        f.Id, f.Name, f.CookDate, f.TotalCount, f.TotalCost, f.CostPerUnit, f.Description,
-        f.Ingredients.Select(i => new FoodIngredientDto(
-            i.Id, i.CostTypeId, i.CostType.Name, i.CostType.Unit?.Name,
-            i.Units, i.Price, i.RecommendedPrice)).ToList(),
-        AuditHelper.ToDto(f));
+    private static FoodGenerationResponse Map(FoodGeneration f) => new()
+    {
+        Id = f.Id,
+        Name = f.Name,
+        CookDate = f.CookDate,
+        TotalCount = f.TotalCount,
+        TotalCost = f.TotalCost,
+        CostPerUnit = f.CostPerUnit,
+        Description = f.Description,
+        Ingredients = f.Ingredients.Select(i => new FoodIngredientResponse
+        {
+            Id = i.Id,
+            CostTypeId = i.CostTypeId,
+            CostTypeName = i.CostType.Name,
+            UnitName = i.CostType.Unit?.Name,
+            Units = i.Units,
+            Price = i.Price,
+            RecommendedPrice = i.RecommendedPrice
+        }).ToList(),
+        Audit = AuditHelper.ToDto(f)
+    };
 }

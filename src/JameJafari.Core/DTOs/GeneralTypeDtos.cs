@@ -2,14 +2,15 @@ using System.ComponentModel.DataAnnotations;
 
 namespace JameJafari.Core.DTOs;
 
-public record GeneralTypeDto(
-    int Id,
-    string Name,
-    string? Code,
-    string Category,
-    int SortOrder,
-    bool IsActive,
-    AuditInfoDto Audit);
+public class GeneralTypeResponse : ResponseBase
+{
+    public int Id { get; init; }
+    public string Name { get; init; } = "";
+    public string? Code { get; init; }
+    public string Category { get; init; } = "";
+    public int SortOrder { get; init; }
+    public bool IsActive { get; init; }
+}
 
 public record CreateGeneralTypeRequest(
     [Required(ErrorMessage = "نام الزامی است")]

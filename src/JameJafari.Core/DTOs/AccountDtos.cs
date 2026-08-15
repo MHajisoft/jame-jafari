@@ -2,7 +2,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace JameJafari.Core.DTOs;
 
-public record AccountDto(int Id, string Name, string? Description, bool IsActive, AuditInfoDto Audit);
+public class AccountResponse : ResponseBase
+{
+    public int Id { get; init; }
+    public string Name { get; init; } = "";
+    public string? Description { get; init; }
+    public bool IsActive { get; init; }
+}
 
 public record CreateAccountRequest(
     [Required(ErrorMessage = "نام حساب الزامی است")]

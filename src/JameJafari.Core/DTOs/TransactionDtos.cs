@@ -3,22 +3,22 @@ using JameJafari.Core.Enums;
 
 namespace JameJafari.Core.DTOs;
 
-public record IncomeTransactionDto(
-    int Id,
-    int PersonId,
-    string PersonName,
-    string? PersonNickName,
-    int AccountId,
-    string AccountName,
-    decimal Amount,
-    PaymentType PaymentType,
-    int CostTypeId,
-    string CostTypeName,
-    IReadOnlyList<TransactionAttachmentDto> Attachments,
-    string? TrackingCode,
-    string? Description,
-    DateTime TransactionDate,
-    AuditInfoDto Audit);
+public class IncomeTransactionResponse : AttachmentResponseBase
+{
+    public int Id { get; init; }
+    public int PersonId { get; init; }
+    public string PersonName { get; init; } = "";
+    public string? PersonNickName { get; init; }
+    public int AccountId { get; init; }
+    public string AccountName { get; init; } = "";
+    public decimal Amount { get; init; }
+    public PaymentType PaymentType { get; init; }
+    public int CostTypeId { get; init; }
+    public string CostTypeName { get; init; } = "";
+    public string? TrackingCode { get; init; }
+    public string? Description { get; init; }
+    public DateTime TransactionDate { get; init; }
+}
 
 public record CreateIncomeTransactionRequest(
     [Range(1, int.MaxValue, ErrorMessage = "شخص الزامی است")]
@@ -66,18 +66,18 @@ public record UpdateIncomeTransactionRequest(
 
     DateTime TransactionDate);
 
-public record CostTransactionDto(
-    int Id,
-    int AccountId,
-    string AccountName,
-    decimal Amount,
-    int CostTypeId,
-    string CostTypeName,
-    IReadOnlyList<TransactionAttachmentDto> Attachments,
-    string? TrackingCode,
-    string? Description,
-    DateTime TransactionDate,
-    AuditInfoDto Audit);
+public class CostTransactionResponse : AttachmentResponseBase
+{
+    public int Id { get; init; }
+    public int AccountId { get; init; }
+    public string AccountName { get; init; } = "";
+    public decimal Amount { get; init; }
+    public int CostTypeId { get; init; }
+    public string CostTypeName { get; init; } = "";
+    public string? TrackingCode { get; init; }
+    public string? Description { get; init; }
+    public DateTime TransactionDate { get; init; }
+}
 
 public record CreateCostTransactionRequest(
     [Range(1, int.MaxValue, ErrorMessage = "حساب الزامی است")]
