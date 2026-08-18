@@ -33,6 +33,16 @@ export const THEME_OPTIONS = [
     id: 'plastic-dark',
     label: 'آبی تیره',
     swatches: ['#040b16', '#38bdf8', '#12243a', '#e8f2ff']
+  },
+  {
+    id: 'neon-blue',
+    label: 'نئون آبی',
+    swatches: ['#0066aa', '#00e5ff', '#b8f0ff', '#e4fbff']
+  },
+  {
+    id: 'neon-red',
+    label: 'نئون قرمز',
+    swatches: ['#0a0406', '#ff2060', '#2a1010', '#140808']
   }
 ]
 
@@ -59,7 +69,9 @@ const THEME_COLORS = {
   saffron: '#3d2818',
   slate: '#2e1065',
   plastic: '#1a8cff',
-  'plastic-dark': '#07111f'
+  'plastic-dark': '#07111f',
+  'neon-blue': '#00e5ff',
+  'neon-red': '#ff2060'
 }
 
 function resolveTheme(raw) {

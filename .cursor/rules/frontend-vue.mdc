@@ -77,7 +77,7 @@ Router: `meta: { permission: 'food.view' }`
 - Call `invalidate*` after mutating lookup data
 
 ## PWA
-- Themes via `data-theme` on `<html>` (emerald, midnight, saffron, slate, plastic, plastic-dark)
+- Themes via `data-theme` on `<html>` (emerald, midnight, saffron, slate, plastic, plastic-dark, neon-blue, neon-red)
 - **Android standalone:** requires **HTTPS** (secure context) + registered service worker + manifest; HTTP home-screen shortcuts open inside Chrome with address bar — Settings shows `needsHttps` hint
 - Production: serve `frontend/dist` over HTTPS; Docker default is HTTP `:8080` only (shortcut mode on phones)
 - Mobile breakpoint: 768px (`useIsMobile`)

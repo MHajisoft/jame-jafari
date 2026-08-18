@@ -267,7 +267,7 @@ onMounted(() => resetPage({ category: category.value }))
               <td data-label="کد" class="hide-mobile">{{ item.code || '—' }}</td>
               <td data-label="ترتیب" class="hide-mobile">{{ item.sortOrder }}</td>
               <td data-label="وضعیت" class="hide-mobile">
-                <span :class="item.isActive ? 'badge badge-success' : 'badge badge-danger'">
+                <span :class="item.isActive ? 'badge badge-on' : 'badge badge-off'">
                   {{ item.isActive ? 'فعال' : 'غیرفعال' }}
                 </span>
               </td>
@@ -357,12 +357,12 @@ onMounted(() => resetPage({ category: category.value }))
   /* Status as a color strip on the card's right edge */
   .mobile-table tbody tr.type-row-active {
     box-shadow:
-      inset -4px 0 0 var(--success),
+      inset -4px 0 0 var(--primary),
       0 1px 2px rgba(0, 0, 0, 0.04);
   }
   .mobile-table tbody tr.type-row-inactive {
     box-shadow:
-      inset -4px 0 0 var(--danger),
+      inset -4px 0 0 var(--text-muted),
       0 1px 2px rgba(0, 0, 0, 0.04);
   }
 }

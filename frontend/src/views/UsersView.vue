@@ -368,7 +368,7 @@ onMounted(load)
               </div>
             </td>
             <td data-label="وضعیت">
-              <span :class="item.isActive ? 'badge badge-success' : 'badge badge-danger'">
+              <span :class="item.isActive ? 'badge badge-on' : 'badge badge-off'">
                 {{ item.isActive ? 'فعال' : 'غیرفعال' }}
               </span>
             </td>
