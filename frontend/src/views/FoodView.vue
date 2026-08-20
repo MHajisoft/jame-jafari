@@ -2,9 +2,11 @@
 import { computed, ref, onMounted } from 'vue'
 import api from '../api/client'
 import { ApiPaths } from '../api/paths'
-import { formatMoney, toInputDate } from '../utils/format'
+import { toInputDate } from '../utils/format'
+import { useMoneyFormat } from '../composables/useMoneyFormat'
 import { todayGregorian } from '../utils/jalali'
 import { useAuthStore } from '../stores/auth'
+import { useUiPrefsStore } from '../stores/uiPrefs'
 import { useLookupsStore } from '../stores/lookups'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useEntityForm } from '../composables/useEntityForm'
@@ -18,6 +20,8 @@ import FormHost from '../components/FormHost.vue'
 import RowActions from '../components/RowActions.vue'
 
 const auth = useAuthStore()
+const uiPrefs = useUiPrefsStore()
+const { currencyUnit, unitLabel, formatMoney: fmt, formatAmount: fmtAmt } = useMoneyFormat()
 const lookups = useLookupsStore()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -50,6 +54,12 @@ const pageTitle = computed(() => {
 })
 
 const formTitle = computed(() => (editing.value ? 'ویرایش تهیه غذا' : 'ثبت تهیه غذا'))
+const unitPriceLabel = computed(() => `قیمت هر واحد (${uiPrefs.currencyUnitLabel})`)
+const unitPriceColumnLabel = computed(() => `قیمت واحد (${uiPrefs.currencyUnitLabel})`)
+const recommendedPriceColumnLabel = computed(() => `قیمت پیشنهادی (${unitLabel.value})`)
+const rowTotalColumnLabel = computed(() => `جمع ردیف (${unitLabel.value})`)
+const costPerUnitLabel = computed(() => `هزینه هر واحد (${unitLabel.value})`)
+const totalCostLabel = computed(() => `هزینه کل (${unitLabel.value})`)
 
 function getRules() {
   return {
@@ -249,7 +259,7 @@ onMounted(load)
           <div v-if="errors.totalCount" class="field-error">{{ errors.totalCount }}</div>
         </div>
 
-        <div class="form-span-full ingredients-editor">
+        <div class="form-span-full ingredients-editor" :key="currencyUnit">
           <div class="ingredients-head">
             <h4 class="ingredients-title">مواد اولیه</h4>
             <button type="button" class="btn btn-outline btn-sm" @click="addRow">+ ماده اولیه</button>
@@ -259,7 +269,7 @@ onMounted(load)
           <div class="ingredient-row ingredient-row-head hide-mobile" aria-hidden="true">
             <span>ماده اولیه</span>
             <span>مقدار</span>
-            <span>قیمت هر واحد</span>
+            <span>{{ unitPriceLabel }}</span>
             <span />
           </div>
 
@@ -300,13 +310,13 @@ onMounted(load)
             </div>
 
             <div class="ingredient-cell">
-              <label v-if="isMobile" class="ingredient-mobile-label">قیمت هر واحد</label>
-              <CurrencyInput v-model="row.price" placeholder="قیمت" />
+              <label v-if="isMobile" class="ingredient-mobile-label">{{ unitPriceLabel }}</label>
+              <CurrencyInput v-model="row.price" />
               <p v-if="recommendedUnitPrice(row.costTypeId)" class="field-hint">
-                پیشنهادی: {{ formatMoney(recommendedUnitPrice(row.costTypeId)) }}
+                پیشنهادی: {{ fmt(recommendedUnitPrice(row.costTypeId)) }}
                 <template v-if="ingredientUnit(row.costTypeId)"> / {{ ingredientUnit(row.costTypeId) }}</template>
                 <template v-if="recommendedTotal(row)">
-                  · جمع ≈ {{ formatMoney(recommendedTotal(row)) }}
+                  · جمع ≈ {{ fmt(recommendedTotal(row)) }}
                 </template>
               </p>
             </div>
@@ -336,7 +346,7 @@ onMounted(load)
       </form>
     </FormHost>
 
-    <div v-show="!showForm || isMobile" class="food-list">
+    <div v-show="!showForm || isMobile" class="food-list" :key="currencyUnit">
       <article v-for="food in items" :key="food.id" class="card food-card">
         <header class="food-card-header">
           <div class="food-card-title">
@@ -349,12 +359,12 @@ onMounted(load)
               <dd>{{ food.totalCount }}</dd>
             </div>
             <div>
-              <dt>هزینه هر واحد</dt>
-              <dd>{{ formatMoney(food.costPerUnit) }}</dd>
+              <dt>{{ costPerUnitLabel }}</dt>
+              <dd>{{ fmtAmt(food.costPerUnit) }}</dd>
             </div>
             <div>
-              <dt>هزینه کل</dt>
-              <dd class="text-danger">{{ formatMoney(food.totalCost) }}</dd>
+              <dt>{{ totalCostLabel }}</dt>
+              <dd class="text-danger">{{ fmtAmt(food.totalCost) }}</dd>
             </div>
           </dl>
           <RowActions
@@ -372,9 +382,9 @@ onMounted(load)
               <tr>
                 <th>ماده اولیه</th>
                 <th>مقدار</th>
-                <th>قیمت واحد</th>
-                <th>قیمت پیشنهادی</th>
-                <th>جمع ردیف</th>
+                <th>{{ unitPriceColumnLabel }}</th>
+                <th>{{ recommendedPriceColumnLabel }}</th>
+                <th>{{ rowTotalColumnLabel }}</th>
               </tr>
             </thead>
             <tbody>
@@ -384,11 +394,11 @@ onMounted(load)
                   <span v-if="ing.unitName" class="unit-tag">{{ ing.unitName }}</span>
                 </td>
                 <td data-label="مقدار">{{ ing.units }}</td>
-                <td data-label="قیمت واحد">{{ formatMoney(ing.price) }}</td>
-                <td data-label="قیمت پیشنهادی" class="text-muted">
-                  {{ ing.recommendedPrice ? formatMoney(ing.recommendedPrice) : '—' }}
+                <td :data-label="unitPriceColumnLabel">{{ fmtAmt(ing.price) }}</td>
+                <td :data-label="recommendedPriceColumnLabel" class="text-muted">
+                  {{ ing.recommendedPrice ? fmtAmt(ing.recommendedPrice) : '—' }}
                 </td>
-                <td data-label="جمع ردیف">{{ formatMoney(ing.units * ing.price) }}</td>
+                <td :data-label="rowTotalColumnLabel">{{ fmtAmt(ing.units * ing.price) }}</td>
               </tr>
             </tbody>
           </table>

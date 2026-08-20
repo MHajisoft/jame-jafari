@@ -64,7 +64,11 @@ Router: `meta: { permission: 'food.view' }`
 
 ## RTL & i18n
 - `dir="rtl"` `lang="fa"`; use logical CSS (`inline-start`, `margin-inline`)
-- Money: `formatMoney()`; digits in inputs: Persian allowed, store ASCII numbers
+- **Money:** DB/API always **Rial**; display unit from `stores/uiPrefs` (`currencyDisplayUnit`: `rial` | `toman`)
+- **`useMoneyFormat()`** composable — `formatAmount` (numbers only, for tables/KPI/card values), `formatMoney` (with suffix, for inline hints), `unitLabel`, `currencyUnit`
+- `CurrencyInput` — `v-model` always Rial; unit badge **inside** field at `inline-end` (RTL visual left); `showUnit` default true
+- Tables/cards: unit in column header / KPI label / card `<dt>`; cells use `formatAmount` (no per-row suffix)
+- Digits in inputs: Persian allowed; storage/API numbers in Rial
 - Never pre-fill login credentials
 
 ## Lookups
@@ -82,6 +86,7 @@ Router: `meta: { permission: 'food.view' }`
 - Production: serve `frontend/dist` over HTTPS; Docker default is HTTP `:8080` only (shortcut mode on phones)
 - Mobile breakpoint: 768px (`useIsMobile`)
 - Mobile datepicker mode (`stores/uiPrefs`): `sheet` (bottom wheels) | `modal` (calendar); Settings card only when `useIsMobile`; desktop always calendar modal
+- Currency display (`stores/uiPrefs`): `rial` | `toman`; Settings card «واحد پول»; preference in localStorage
 - `PersianDatePicker` mobile overlay (sheet or modal): `useOverlayBack` with `stateKey: 'appDatePicker'`
 - **App updates:** `vite-plugin-pwa` `registerType: 'autoUpdate'` + `initPwaUpdate()` — new SW activates and reloads automatically; poll every 30m + on visibility restore
 - **Exit on back (mobile):** `initPwaExitBack()` — on primary tabs, system back shows a bottom hint then leaves on second press within 2s; overlays/forms/nested routes still consume back first

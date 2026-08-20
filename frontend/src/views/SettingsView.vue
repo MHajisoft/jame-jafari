@@ -1,6 +1,6 @@
 <script setup>
 import { useThemeStore, THEME_OPTIONS } from '../stores/theme'
-import { useUiPrefsStore, DATE_PICKER_MOBILE_MODES } from '../stores/uiPrefs'
+import { useUiPrefsStore, CURRENCY_DISPLAY_OPTIONS, DATE_PICKER_MOBILE_MODES } from '../stores/uiPrefs'
 import { useIsMobile } from '../composables/useMediaQuery'
 import { usePwaInstall } from '../composables/usePwaInstall'
 
@@ -63,6 +63,32 @@ async function installApp() {
             </span>
           </div>
           <strong class="theme-label">{{ opt.label }}</strong>
+        </button>
+      </div>
+    </div>
+
+    <div class="card currency-card">
+      <div class="theme-card-head">
+        <h3>واحد پول</h3>
+        <p class="text-muted">مبالغ در سیستم همیشه به ریال ذخیره می‌شوند.</p>
+      </div>
+      <div
+        class="datepicker-mode-grid"
+        role="listbox"
+        aria-label="واحد نمایش پول"
+      >
+        <button
+          v-for="opt in CURRENCY_DISPLAY_OPTIONS"
+          :key="opt.id"
+          type="button"
+          class="datepicker-mode-option"
+          role="option"
+          :aria-selected="uiPrefs.currencyDisplayUnit === opt.id"
+          :class="{ active: uiPrefs.currencyDisplayUnit === opt.id }"
+          @click="uiPrefs.setCurrencyDisplayUnit(opt.id)"
+        >
+          <strong>{{ opt.label }}</strong>
+          <span class="text-muted">{{ opt.hint }}</span>
         </button>
       </div>
     </div>
@@ -268,6 +294,9 @@ async function installApp() {
 }
 
 .datepicker-card {
+  margin-top: 1rem;
+}
+.currency-card {
   margin-top: 1rem;
 }
 .datepicker-mode-grid {

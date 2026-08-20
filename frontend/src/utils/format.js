@@ -1,5 +1,6 @@
 import dayjs from 'dayjs'
 import jalaliday from 'jalaliday'
+import { currencyUnitLabel, formatDisplayAmount, resolveCurrencyUnit } from './currency'
 import { formatJalali } from './jalali'
 
 export {
@@ -33,8 +34,17 @@ export function toInputDate(date) {
   return dayjs(date).format('YYYY-MM-DD')
 }
 
-export function formatMoney(amount) {
-  return new Intl.NumberFormat('fa-IR').format(amount || 0)
+/**
+ * Format a Rial amount for display.
+ * @param {number|string|null|undefined} amount — always in Rial (API/DB)
+ * @param {{ unit?: import('./currency').CurrencyDisplayUnit, showUnit?: boolean }} [options]
+ */
+export function formatMoney(amount, options = {}) {
+  const unit = resolveCurrencyUnit(options.unit ?? 'rial')
+  const showUnit = options.showUnit !== false
+  const formatted = formatDisplayAmount(amount, unit)
+  if (!showUnit) return formatted
+  return `${formatted} ${currencyUnitLabel(unit)}`
 }
 
 /** Convert Persian/Arabic digits to Western digits. */

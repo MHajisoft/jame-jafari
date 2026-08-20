@@ -2,9 +2,11 @@
 import { computed, ref, onMounted } from 'vue'
 import api from '../api/client'
 import { ApiPaths } from '../api/paths'
-import { formatMoney, toInputDate } from '../utils/format'
+import { toInputDate } from '../utils/format'
+import { useMoneyFormat } from '../composables/useMoneyFormat'
 import DocumentAttachmentList from '../components/DocumentAttachmentList.vue'
 import { useAuthStore } from '../stores/auth'
+import { useUiPrefsStore } from '../stores/uiPrefs'
 import { useDialogStore } from '../stores/dialog'
 import { useLookupsStore } from '../stores/lookups'
 import { useFormValidation } from '../composables/useFormValidation'
@@ -23,6 +25,8 @@ import { usePagedList } from '../composables/usePagedList'
 import PagedListPanel from '../components/PagedListPanel.vue'
 
 const auth = useAuthStore()
+const uiPrefs = useUiPrefsStore()
+const { currencyUnit, formatMoney: fmt, formatAmount: fmtAmt } = useMoneyFormat()
 const dialog = useDialogStore()
 const lookups = useLookupsStore()
 const isMobile = useIsMobile()
@@ -82,6 +86,8 @@ const pageTitle = computed(() => {
 })
 
 const formTitle = computed(() => (editing.value ? 'ویرایش هزینه' : 'ثبت هزینه جدید'))
+const amountFieldLabel = computed(() => `مبلغ (${uiPrefs.currencyUnitLabel}) *`)
+const amountColumnLabel = computed(() => `مبلغ (${uiPrefs.currencyUnitLabel})`)
 
 async function load() {
   formLookupsReady.value = false
@@ -222,11 +228,10 @@ onMounted(() => load().catch(() => {}))
           <div v-if="errors.costTypeId" class="field-error">{{ errors.costTypeId }}</div>
         </div>
         <div class="form-group">
-          <label>مبلغ *</label>
+          <label>{{ amountFieldLabel }}</label>
           <CurrencyInput
             v-model="form.amount"
             :invalid="!!errors.amount"
-            placeholder="مثلاً 1,500,000"
             @input="clearFieldError('amount')"
           />
           <div v-if="errors.amount" class="field-error">{{ errors.amount }}</div>
@@ -288,10 +293,10 @@ onMounted(() => load().catch(() => {}))
       @prev="goPrev"
       @next="goNext"
     >
-      <table class="mobile-table">
+      <table class="mobile-table" :key="currencyUnit">
           <thead>
             <tr>
-              <th>تاریخ</th><th>حساب</th><th>مبلغ</th><th>نوع هزینه</th><th>کد رهگیری</th><th>توضیحات</th>
+              <th>تاریخ</th><th>حساب</th><th>{{ amountColumnLabel }}</th><th>نوع هزینه</th><th>کد رهگیری</th><th>توضیحات</th>
               <th v-if="auth.hasPermission('attachments.view')">پیوست</th>
               <th v-if="auth.hasAnyPermission('cost.update', 'cost.delete', 'audit.view')"></th>
             </tr>
@@ -300,7 +305,7 @@ onMounted(() => load().catch(() => {}))
             <tr v-for="item in items" :key="item.id">
               <td data-label="تاریخ"><DateDisplay :value="item.transactionDate" /></td>
               <td data-label="حساب">{{ item.accountName || '—' }}</td>
-              <td class="text-danger" data-label="مبلغ">{{ formatMoney(item.amount) }}</td>
+              <td class="text-danger" :data-label="amountColumnLabel">{{ fmtAmt(item.amount) }}</td>
               <td data-label="نوع هزینه">{{ item.costTypeName || '—' }}</td>
               <td data-label="کد رهگیری">{{ item.trackingCode || '—' }}</td>
               <td data-label="توضیحات">{{ item.description || '—' }}</td>

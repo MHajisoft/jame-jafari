@@ -3,13 +3,26 @@ import { computed, onMounted, ref, watch } from 'vue'
 import api from '../api/client'
 import { ApiPaths } from '../api/paths'
 import { useAuthStore } from '../stores/auth'
-import { formatMoney } from '../utils/format'
+import { useMoneyFormat } from '../composables/useMoneyFormat'
 import { todayGregorian, startOfJalaliMonthGregorian } from '../utils/jalali'
 import DateDisplay from '../components/DateDisplay.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
 import NickBadge from '../components/NickBadge.vue'
 
 const auth = useAuthStore()
+const {
+  currencyUnit,
+  unitLabel,
+  formatAmount: fmtAmt
+} = useMoneyFormat()
+
+const incomeColumnLabel = computed(() => `درآمد (${unitLabel.value})`)
+const costColumnLabel = computed(() => `هزینه (${unitLabel.value})`)
+const balanceColumnLabel = computed(() => `مانده (${unitLabel.value})`)
+const netColumnLabel = computed(() => `خالص (${unitLabel.value})`)
+const totalColumnLabel = computed(() => `مجموع (${unitLabel.value})`)
+const unitCostColumnLabel = computed(() => `هزینه واحد (${unitLabel.value})`)
+const totalCostColumnLabel = computed(() => `کل (${unitLabel.value})`)
 
 const SECTIONS = [
   { id: 'accounts', label: 'حساب‌ها' },
@@ -108,23 +121,23 @@ onMounted(load)
 
     <p v-if="error" class="form-error reports-error">{{ error }}</p>
 
-    <section class="reports-kpi" aria-label="خلاصه">
+    <section class="reports-kpi" aria-label="خلاصه" :key="currencyUnit">
       <article class="kpi-card kpi-income">
-        <span class="kpi-label">کل درآمد</span>
+        <span class="kpi-label">کل درآمد ({{ unitLabel }})</span>
         <span class="kpi-value text-success">
-          {{ summary ? formatMoney(summary.totalIncome) : '—' }}
+          {{ summary ? fmtAmt(summary.totalIncome) : '—' }}
         </span>
       </article>
       <article class="kpi-card kpi-cost">
-        <span class="kpi-label">کل هزینه</span>
+        <span class="kpi-label">کل هزینه ({{ unitLabel }})</span>
         <span class="kpi-value text-danger">
-          {{ summary ? formatMoney(summary.totalCost) : '—' }}
+          {{ summary ? fmtAmt(summary.totalCost) : '—' }}
         </span>
       </article>
       <article class="kpi-card kpi-balance">
-        <span class="kpi-label">مانده</span>
+        <span class="kpi-label">مانده ({{ unitLabel }})</span>
         <span class="kpi-value">
-          {{ summary ? formatMoney(summary.balance) : '—' }}
+          {{ summary ? fmtAmt(summary.balance) : '—' }}
         </span>
       </article>
     </section>
@@ -145,7 +158,7 @@ onMounted(load)
       </button>
     </div>
 
-    <section class="card report-panel" :aria-busy="loading">
+    <section class="card report-panel" :aria-busy="loading" :key="currencyUnit">
       <div v-if="loading && !summary" class="report-loading">در حال آماده‌سازی گزارش…</div>
 
       <template v-else-if="activeSection === 'accounts'">
@@ -158,17 +171,17 @@ onMounted(load)
             <thead>
               <tr>
                 <th>حساب</th>
-                <th class="num">درآمد</th>
-                <th class="num">هزینه</th>
-                <th class="num">مانده</th>
+                <th class="num">{{ incomeColumnLabel }}</th>
+                <th class="num">{{ costColumnLabel }}</th>
+                <th class="num">{{ balanceColumnLabel }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="b in balances" :key="b.accountId">
                 <td data-label="حساب">{{ b.accountName }}</td>
-                <td class="num text-success" data-label="درآمد">{{ formatMoney(b.totalIncome) }}</td>
-                <td class="num text-danger" data-label="هزینه">{{ formatMoney(b.totalCost) }}</td>
-                <td class="num" data-label="مانده"><strong>{{ formatMoney(b.balance) }}</strong></td>
+                <td class="num text-success" :data-label="incomeColumnLabel">{{ fmtAmt(b.totalIncome) }}</td>
+                <td class="num text-danger" :data-label="costColumnLabel">{{ fmtAmt(b.totalCost) }}</td>
+                <td class="num" :data-label="balanceColumnLabel"><strong>{{ fmtAmt(b.balance) }}</strong></td>
               </tr>
               <tr v-if="!balances.length">
                 <td colspan="4" class="report-empty">داده‌ای در این بازه نیست</td>
@@ -187,17 +200,17 @@ onMounted(load)
             <thead>
               <tr>
                 <th>نوع</th>
-                <th class="num">درآمد</th>
-                <th class="num">هزینه</th>
-                <th class="num">خالص</th>
+                <th class="num">{{ incomeColumnLabel }}</th>
+                <th class="num">{{ costColumnLabel }}</th>
+                <th class="num">{{ netColumnLabel }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="c in costTypes" :key="c.costTypeId">
                 <td data-label="نوع">{{ c.costTypeName }}</td>
-                <td class="num text-success" data-label="درآمد">{{ formatMoney(c.totalIncome) }}</td>
-                <td class="num text-danger" data-label="هزینه">{{ formatMoney(c.totalCost) }}</td>
-                <td class="num" data-label="خالص">{{ formatMoney(c.net) }}</td>
+                <td class="num text-success" :data-label="incomeColumnLabel">{{ fmtAmt(c.totalIncome) }}</td>
+                <td class="num text-danger" :data-label="costColumnLabel">{{ fmtAmt(c.totalCost) }}</td>
+                <td class="num" :data-label="netColumnLabel">{{ fmtAmt(c.net) }}</td>
               </tr>
               <tr v-if="!costTypes.length">
                 <td colspan="4" class="report-empty">داده‌ای در این بازه نیست</td>
@@ -217,7 +230,7 @@ onMounted(load)
               <tr>
                 <th>شخص</th>
                 <th class="num">تعداد</th>
-                <th class="num">مجموع</th>
+                <th class="num">{{ totalColumnLabel }}</th>
               </tr>
             </thead>
             <tbody>
@@ -229,7 +242,7 @@ onMounted(load)
                   </span>
                 </td>
                 <td class="num" data-label="تعداد">{{ p.transactionCount }}</td>
-                <td class="num text-success" data-label="مجموع">{{ formatMoney(p.totalAmount) }}</td>
+                <td class="num text-success" :data-label="totalColumnLabel">{{ fmtAmt(p.totalAmount) }}</td>
               </tr>
               <tr v-if="!personIncome.length">
                 <td colspan="3" class="report-empty">داده‌ای در این بازه نیست</td>
@@ -250,8 +263,8 @@ onMounted(load)
                 <th>غذا</th>
                 <th>تاریخ</th>
                 <th class="num">تعداد</th>
-                <th class="num">هزینه واحد</th>
-                <th class="num">کل</th>
+                <th class="num">{{ unitCostColumnLabel }}</th>
+                <th class="num">{{ totalCostColumnLabel }}</th>
               </tr>
             </thead>
             <tbody>
@@ -259,8 +272,8 @@ onMounted(load)
                 <td data-label="غذا">{{ f.foodName }}</td>
                 <td data-label="تاریخ"><DateDisplay :value="f.cookDate" /></td>
                 <td class="num" data-label="تعداد">{{ f.totalCount }}</td>
-                <td class="num" data-label="هزینه واحد">{{ formatMoney(f.costPerUnit) }}</td>
-                <td class="num text-danger" data-label="کل">{{ formatMoney(f.totalCost) }}</td>
+                <td class="num" :data-label="unitCostColumnLabel">{{ fmtAmt(f.costPerUnit) }}</td>
+                <td class="num text-danger" :data-label="totalCostColumnLabel">{{ fmtAmt(f.totalCost) }}</td>
               </tr>
               <tr v-if="!foodCosts.length">
                 <td colspan="5" class="report-empty">داده‌ای در این بازه نیست</td>

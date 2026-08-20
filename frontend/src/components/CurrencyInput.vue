@@ -1,28 +1,44 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
+import { useUiPrefsStore } from '../stores/uiPrefs'
+import { currencyInputPlaceholder, fromDisplayAmount, toDisplayAmount } from '../utils/currency'
 import { formatCurrencyInput, parseCurrencyInput } from '../utils/format'
 
 const props = defineProps({
   modelValue: { type: [Number, String], default: '' },
   placeholder: { type: String, default: '' },
-  invalid: { type: Boolean, default: false }
+  invalid: { type: Boolean, default: false },
+  /** Show unit badge (ریال / تومان) at the end of the input. */
+  showUnit: { type: Boolean, default: true }
 })
 
 const emit = defineEmits(['update:modelValue', 'input'])
 
+const uiPrefs = useUiPrefsStore()
 const display = ref('')
 const inputRef = ref(null)
 const composing = ref(false)
 
 const hasValue = computed(() => display.value !== '')
+const resolvedPlaceholder = computed(() => props.placeholder || currencyInputPlaceholder(uiPrefs.currencyDisplayUnit))
+const unitLabel = computed(() => uiPrefs.currencyUnitLabel)
+
+function rialToDisplayString(rialValue) {
+  if (rialValue === '' || rialValue === null || rialValue === undefined) return ''
+  const displayAmount = toDisplayAmount(rialValue, uiPrefs.currencyDisplayUnit)
+  const rounded = Math.round(displayAmount)
+  return formatCurrencyInput(String(rounded))
+}
+
+function syncFromModelValue(v) {
+  const next = rialToDisplayString(v)
+  display.value = next
+  syncDom(next)
+}
 
 watch(
-  () => props.modelValue,
-  (v) => {
-    const next = formatCurrencyInput(v)
-    display.value = next
-    syncDom(next)
-  },
+  () => [props.modelValue, uiPrefs.currencyDisplayUnit],
+  ([v]) => syncFromModelValue(v),
   { immediate: true }
 )
 
@@ -38,9 +54,14 @@ function commit(raw) {
   const parsed = parseCurrencyInput(raw)
   const next = formatCurrencyInput(parsed)
   display.value = next
-  // Always overwrite DOM so rejected characters cannot remain visible
   if (inputRef.value) inputRef.value.value = next
-  emit('update:modelValue', parsed === '' ? '' : Number(parsed))
+
+  if (parsed === '') {
+    emit('update:modelValue', '')
+  } else {
+    const rial = fromDisplayAmount(Number(parsed), uiPrefs.currencyDisplayUnit)
+    emit('update:modelValue', rial)
+  }
   emit('input')
 }
 
@@ -64,7 +85,6 @@ function onKeydown(e) {
     clear()
     return
   }
-  // Block shortcuts that insert non-digits; allow editing/navigation
   if (e.ctrlKey || e.metaKey || e.altKey) return
   const nav = new Set([
     'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
@@ -73,7 +93,6 @@ function onKeydown(e) {
   ])
   if (nav.has(e.key)) return
   if (e.key.length !== 1) return
-  // Digits only (Western / Persian / Arabic-Indic)
   if (!/[0-9۰-۹٠-٩]/.test(e.key)) {
     e.preventDefault()
   }
@@ -95,7 +114,8 @@ function clear(e) {
 </script>
 
 <template>
-  <div class="currency-input" :class="{ 'has-clear': hasValue }">
+  <div class="currency-input" :class="{ 'has-clear': hasValue, 'has-unit': showUnit }">
+    <span v-if="showUnit" class="unit-badge" aria-hidden="true">{{ unitLabel }}</span>
     <input
       ref="inputRef"
       :value="display"
@@ -104,7 +124,7 @@ function clear(e) {
       autocomplete="off"
       class="form-control"
       :class="{ 'field-invalid': invalid }"
-      :placeholder="placeholder"
+      :placeholder="resolvedPlaceholder"
       @keydown="onKeydown"
       @paste="onPaste"
       @compositionstart="onCompositionStart"
@@ -136,6 +156,29 @@ function clear(e) {
 }
 .currency-input.has-clear .form-control {
   padding-inline-start: 2.85rem;
+}
+.currency-input.has-unit .form-control {
+  padding-inline-end: 3.4rem;
+}
+.unit-badge {
+  position: absolute;
+  inset-inline-end: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface, var(--bg)));
+  border-inline-start: 1px solid var(--border);
+  border-start-end-radius: calc(var(--radius, 8px) - 1px);
+  border-end-end-radius: calc(var(--radius, 8px) - 1px);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1;
+  user-select: none;
 }
 .clear-btn {
   position: absolute;
