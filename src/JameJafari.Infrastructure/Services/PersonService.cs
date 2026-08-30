@@ -9,7 +9,7 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace JameJafari.Infrastructure.Services;
 
-public class PersonService(AppDbContext db, IFusionCache cache)
+public class PersonService(AppDbContext db, IFusionCache cache, BaleContactSyncService baleSync)
 {
     public async Task<PagedResult<PersonResponse>> GetPagedAsync(string? search, Gender? gender, int page, int pageSize)
     {
@@ -66,6 +66,8 @@ public class PersonService(AppDbContext db, IFusionCache cache)
         };
         db.Persons.Add(entity);
         await db.SaveChangesAsync();
+        if (!string.IsNullOrWhiteSpace(request.Mobile))
+            await baleSync.ReconcilePersonMobileAsync(entity, previousMobile: null);
         await LookupCache.InvalidatePersonsAsync(cache);
         return (await GetByIdAsync(entity.Id))!;
     }
@@ -75,6 +77,7 @@ public class PersonService(AppDbContext db, IFusionCache cache)
         var entity = await db.Persons.FirstOrDefaultAsync(x => x.Id == id);
         if (entity is null) return null;
 
+        var previousMobile = entity.Mobile;
         entity.FirstName = request.FirstName;
         entity.LastName = request.LastName;
         entity.NickName = request.NickName;
@@ -89,6 +92,7 @@ public class PersonService(AppDbContext db, IFusionCache cache)
         entity.DeathDate = request.IsDead ? ToDateOnly(request.DeathDate) : null;
         entity.UpdatedById = userId;
         await db.SaveChangesAsync();
+        await baleSync.ReconcilePersonMobileAsync(entity, previousMobile);
         await LookupCache.InvalidatePersonsAsync(cache);
         return await GetByIdAsync(id);
     }
@@ -154,6 +158,7 @@ public class PersonService(AppDbContext db, IFusionCache cache)
             MotherNamePrefixName = p.Mother != null && p.Mother.NamePrefix != null ? p.Mother.NamePrefix.Name : null,
             PicturePath = p.PicturePath,
             Mobile = p.Mobile,
+            BaleChatId = p.BaleChatId,
             Address = p.Address,
             NamePrefixId = p.NamePrefixId,
             NamePrefixName = p.NamePrefix != null ? p.NamePrefix.Name : null,
@@ -182,6 +187,7 @@ public class PersonService(AppDbContext db, IFusionCache cache)
         MotherFirstName = row.MotherFirstName,
         PicturePath = row.PicturePath,
         Mobile = row.Mobile,
+        BaleChatId = row.BaleChatId,
         Address = row.Address,
         NamePrefixId = row.NamePrefixId,
         NamePrefixName = row.NamePrefixName,
@@ -244,6 +250,7 @@ public class PersonService(AppDbContext db, IFusionCache cache)
         public string? MotherNamePrefixName { get; init; }
         public string? PicturePath { get; init; }
         public string? Mobile { get; init; }
+        public long? BaleChatId { get; init; }
         public string? Address { get; init; }
         public int? NamePrefixId { get; init; }
         public string? NamePrefixName { get; init; }

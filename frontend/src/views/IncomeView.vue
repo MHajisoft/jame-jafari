@@ -9,6 +9,7 @@ import { enumValue } from '../utils/enums'
 import { useAuthStore } from '../stores/auth'
 import { useUiPrefsStore } from '../stores/uiPrefs'
 import { useDialogStore } from '../stores/dialog'
+import { useToastStore } from '../stores/toast'
 import { useLookupsStore } from '../stores/lookups'
 import { useFormValidation } from '../composables/useFormValidation'
 import { useEntityForm } from '../composables/useEntityForm'
@@ -31,6 +32,7 @@ const auth = useAuthStore()
 const uiPrefs = useUiPrefsStore()
 const { currencyUnit, formatMoney: fmt, formatAmount: fmtAmt } = useMoneyFormat()
 const dialog = useDialogStore()
+const toast = useToastStore()
 const lookups = useLookupsStore()
 const isMobile = useIsMobile()
 const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = useFormValidation()
@@ -161,12 +163,15 @@ async function submit() {
   const ok = await trySubmit(async () => {
     if (editing.value) {
       await api.put(ApiPaths.incomeTransaction(editing.value), fd, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        loaderMessage: 'در حال ذخیره…'
       })
     } else {
-      await api.post(ApiPaths.incomeTransactions, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      const { data } = await api.post(ApiPaths.incomeTransactions, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        loaderMessage: 'در حال ذخیره…'
       })
+      if (data.baleReceiptWarning) toast.warning(data.baleReceiptWarning)
     }
   }, {
     successMessage: editing.value ? 'درآمد ویرایش شد' : 'درآمد با موفقیت ثبت شد'
@@ -185,6 +190,38 @@ async function remove(id) {
   }, { successMessage: 'تراکنش حذف شد' })
   if (!ok) return
   await reloadTransactions()
+}
+
+async function sendReceipt(item) {
+  if (!item.personMobile) {
+    toast.warning('شماره موبایل شخص ثبت نشده است')
+    return
+  }
+  if (!(await dialog.confirm({ message: 'ارسال رسید از طریق پیام‌رسان؟' }))) return
+  try {
+    const { data } = await api.post(ApiPaths.incomeTransactionSendReceipt(item.id), null, {
+      loaderMessage: 'در حال ارسال…'
+    })
+    if (data.warning) toast.warning(data.warning)
+    else if (data.sent) toast.success('رسید ارسال شد')
+    await reloadTransactions()
+  } catch (e) {
+    error.value = e.response?.data?.message || 'خطا در ارسال رسید'
+  }
+}
+
+function incomeExtras(item) {
+  if (!auth.hasPermission('messages.send')) return []
+  return [{
+    id: 'receipt',
+    label: 'ارسال رسید',
+    disabled: !item.canSendBaleReceipt,
+    title: item.canSendBaleReceipt ? 'ارسال رسید' : 'موبایل شخص ثبت نشده'
+  }]
+}
+
+function onIncomeExtra(item, id) {
+  if (id === 'receipt') sendReceipt(item)
 }
 
 onMounted(() => load().catch(() => {}))
@@ -327,7 +364,7 @@ onMounted(() => load().catch(() => {}))
               <th>تاریخ</th><th>شخص</th><th>حساب</th><th>{{ amountColumnLabel }}</th><th>نوع پرداخت</th>
               <th>نوع هزینه</th><th>کد رهگیری</th><th>توضیحات</th>
               <th v-if="auth.hasPermission('attachments.view')">پیوست</th>
-              <th v-if="auth.hasAnyPermission('income.update', 'income.delete', 'audit.view')"></th>
+              <th v-if="auth.hasAnyPermission('income.update', 'income.delete', 'audit.view', 'messages.send')"></th>
             </tr>
           </thead>
           <tbody>
@@ -349,14 +386,16 @@ onMounted(() => load().catch(() => {}))
               <td v-if="auth.hasPermission('attachments.view')" data-label="پیوست">
                 <DocumentAttachmentList :attachments="item.attachments" />
               </td>
-              <td v-if="auth.hasAnyPermission('income.update', 'income.delete', 'audit.view')">
+              <td v-if="auth.hasAnyPermission('income.update', 'income.delete', 'audit.view', 'messages.send')">
                 <RowActions
                   :show-edit="auth.hasPermission('income.update')"
                   :show-delete="auth.hasPermission('income.delete')"
                   :show-audit="auth.hasPermission('audit.view')"
                   :audit="item.audit"
+                  :extras="incomeExtras(item)"
                   @edit="startEdit(item)"
                   @delete="remove(item.id)"
+                  @extra="onIncomeExtra(item, $event)"
                 />
               </td>
             </tr>

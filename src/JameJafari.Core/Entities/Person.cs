@@ -14,6 +14,8 @@ public class Person : AuditableEntity
     public Person? Mother { get; set; }
     public string? PicturePath { get; set; }
     public string? Mobile { get; set; }
+    /// <summary>Bale private chat id — user must have started the bot once.</summary>
+    public long? BaleChatId { get; set; }
     public string? Address { get; set; }
     public int? NamePrefixId { get; set; }
     public GeneralType? NamePrefix { get; set; }

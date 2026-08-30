@@ -25,6 +25,24 @@ export const generalTypeCategories = [
   { value: 2, key: 'NamePrefix', label: 'پیشوند نام' }
 ]
 
+export const messengerKinds = [
+  { value: 1, key: 'Bale', label: 'بله' }
+]
+
+export const baleMessageTypes = [
+  { value: 1, key: 'Text', label: 'متن' },
+  { value: 2, key: 'Photo', label: 'تصویر / ویدیو' },
+  { value: 3, key: 'File', label: 'فایل' }
+]
+
+export const baleMessageStatuses = [
+  { value: 1, key: 'Pending', label: 'در انتظار' },
+  { value: 2, key: 'Sent', label: 'ارسال‌شده' },
+  { value: 3, key: 'Failed', label: 'ناموفق' },
+  { value: 4, key: 'Deleted', label: 'حذف از گفتگو' },
+  { value: 5, key: 'AwaitingContact', label: 'در انتظار اتصال' }
+]
+
 function matchesOption(opt, value) {
   if (value === null || value === undefined || value === '') return false
   if (opt.value === value || opt.value === Number(value)) return true
@@ -51,3 +69,7 @@ export const genderLabel = (v) => enumLabel(genders, v)
 export const paymentTypeLabel = (v) => enumLabel(paymentTypes, v)
 export const transactionDirectionLabel = (v) => enumLabel(transactionDirections, v)
 export const generalTypeCategoryLabel = (v) => enumLabel(generalTypeCategories, v)
+export const messengerKindLabel = (v) => enumLabel(messengerKinds, v)
+export const baleMessageTypeLabel = (v) => enumLabel(baleMessageTypes, v)
+export const baleMessageStatusLabel = (v) => enumLabel(baleMessageStatuses, v)
+export const isBaleMessageType = (v, typeValue) => enumValue(baleMessageTypes, v, 0) === typeValue

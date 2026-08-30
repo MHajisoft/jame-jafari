@@ -13,7 +13,10 @@ export const MODULE_LABELS = {
   deathanniversaries: 'سالگرد وفات',
   generaltypes: 'انواع عمومی',
   attachments: 'پیوست‌ها',
-  audit: 'ردیابی'
+  audit: 'ردیابی',
+  messages: 'مرکز پیام',
+  messagechannels: 'کانال‌های پیام',
+  persongroups: 'گروه‌های اشخاص'
 }
 
 const ACTION_LABELS = {
@@ -46,7 +49,8 @@ const MODULE_COLUMNS = {
 
 const MODULE_ORDER = [
   'accounts', 'cost', 'costtypes', 'generaltypes',
-  'income', 'persons', 'food', 'attachments', 'audit', 'reports', 'deathanniversaries', 'users'
+  'income', 'persons', 'persongroups', 'food', 'attachments', 'audit',
+  'messages', 'messagechannels', 'reports', 'deathanniversaries', 'users'
 ]
 
 const moduleIcons = Object.fromEntries(

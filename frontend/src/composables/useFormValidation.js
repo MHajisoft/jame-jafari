@@ -1,6 +1,7 @@
 import { nextTick, reactive, toRefs } from 'vue'
 import { useToastStore } from '../stores/toast'
 import { validatePassword } from '../utils/passwordPolicy'
+import { isValidMessengerChatTarget } from '../utils/messengerChat'
 
 function isBlank(v) {
   return v === undefined || v === null || (typeof v === 'string' && v.trim() === '')
@@ -16,6 +17,17 @@ const validators = {
     if (isBlank(v)) return msg || 'مقدار باید بیشتر از صفر باشد'
     const n = Number(v)
     return (isNaN(n) || n <= 0) ? (msg || 'مقدار باید بیشتر از صفر باشد') : null
+  },
+  chatId: (v, _, msg) => {
+    if (isBlank(v)) return msg || 'شناسه گفتگو الزامی است'
+    const s = String(v).trim()
+    if (!/^-?\d+$/.test(s)) return msg || 'شناسه گفتگو باید عدد باشد (مثلاً -1001234567890)'
+    const n = Number(s)
+    return (!Number.isFinite(n) || n === 0) ? (msg || 'شناسه گفتگو نامعتبر است') : null
+  },
+  messengerChatTarget: (v, _, msg) => {
+    if (isBlank(v)) return msg || 'شناسه گفتگو الزامی است'
+    return isValidMessengerChatTarget(v) ? null : (msg || 'شناسه عددی یا نام کاربری @ وارد کنید')
   },
   email: (v, _, msg) => {
     if (isBlank(v)) return null
@@ -113,8 +125,13 @@ export function useFormValidation() {
       const response = e.response
       if (response?.data?.errors && typeof response.data.errors === 'object') {
         for (const [field, messages] of Object.entries(response.data.errors)) {
+          const text = Array.isArray(messages) ? messages[0] : messages
+          if (field === 'request' || field === '$') {
+            state.error = 'اطلاعات فرم نامعتبر است'
+            continue
+          }
           const key = field.charAt(0).toLowerCase() + field.slice(1)
-          state.errors[key] = Array.isArray(messages) ? messages[0] : messages
+          state.errors[key] = text
         }
         focusFirstInvalid()
       }

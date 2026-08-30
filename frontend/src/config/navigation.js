@@ -26,6 +26,9 @@ export const navItems = [
   { to: '/general-types', label: 'انواع عمومی', title: 'انواع عمومی', permission: 'generaltypes.view', icon: '🏷️', group: 'base', section: 'more' },
   // Configuration
   { to: '/users', label: 'کاربران', title: 'کاربران', permission: 'users.view', icon: '👤', group: 'config', section: 'more' },
+  { to: '/message-center', label: 'مرکز پیام', title: 'مرکز پیام', permissionsAny: ['messages.view', 'messages.send'], icon: '💬', group: 'config', section: 'more' },
+  { to: '/message-channels', label: 'کانال‌های پیام', title: 'کانال‌های پیام', permission: 'messagechannels.view', icon: '📢', group: 'config', section: 'more' },
+  { to: '/person-groups', label: 'گروه‌های اشخاص', title: 'گروه‌های اشخاص', permission: 'persongroups.view', icon: '👥', group: 'base', section: 'more' },
   { to: '/settings', label: 'تنظیمات', title: 'تنظیمات', icon: '⚙️', group: 'config', section: 'more' },
   // Reports (sidebar last; bottom tab before «بیشتر»)
   { to: '/reports', label: 'گزارشات', title: 'گزارشات', permission: 'reports.view', icon: '📊', group: 'reports', tab: 'reports' },

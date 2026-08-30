@@ -45,6 +45,9 @@ const routes = [
         meta: { permission: 'deathanniversaries.view' }
       },
       { path: 'settings', name: 'settings', component: () => import('../views/SettingsView.vue') },
+      { path: 'message-center', name: 'message-center', component: () => import('../views/MessageCenterView.vue'), meta: { permissionsAny: ['messages.view', 'messages.send'] } },
+      { path: 'message-channels', name: 'message-channels', component: () => import('../views/MessageChannelsView.vue'), meta: { permission: 'messagechannels.view' } },
+      { path: 'person-groups', name: 'person-groups', component: () => import('../views/PersonGroupsView.vue'), meta: { permission: 'persongroups.view' } },
       { path: 'profile', name: 'profile', component: () => import('../views/ProfileView.vue') },
       { path: 'more', name: 'more', component: () => import('../views/MoreView.vue') }
     ]

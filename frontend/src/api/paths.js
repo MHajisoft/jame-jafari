@@ -31,6 +31,17 @@ export const ApiPaths = {
     accounts: '/lookups/accounts',
     costTypes: '/lookups/cost-types',
     generalTypes: '/lookups/general-types',
-    persons: '/lookups/persons'
-  }
+    persons: '/lookups/persons',
+    messageChannels: '/lookups/message-channels',
+    personGroups: '/lookups/person-groups'
+  },
+  baleMessages: '/bale-messages',
+  baleMessage: (id, scope = 'remote') => `/bale-messages/${id}?scope=${scope}`,
+  baleConfig: '/bale-messages/config',
+  baleSyncContacts: '/bale-messages/sync-contacts',
+  messageChannels: '/message-channels',
+  messageChannel: (id) => `/message-channels/${id}`,
+  personGroups: '/person-groups',
+  personGroup: (id) => `/person-groups/${id}`,
+  incomeTransactionSendReceipt: (id) => `/income-transactions/${id}/send-receipt`
 }

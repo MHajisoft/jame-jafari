@@ -27,8 +27,14 @@ alwaysApply: false
 - Use **`TransactionAttachmentsField`** (not single `FileUpload`) for income/cost forms
 - Gate with `attachments.view` / `attachments.add` / `attachments.delete` (`canView` / `canAdd` / `canDelete`)
 
+## Row actions (lists / cards)
+- All row actions live in **`RowActions`** kebab (three-dot) — never extra inline buttons beside it
+- Built-ins: `showEdit` / `showDelete` / `showChangePassword` / `showAudit`
+- Extra items: `:extras="[{ id, label, danger?, disabled?, title? }]"` + `@extra="id"` (income «ارسال رسید»; message-center remote/local delete as `danger`)
+- Hidden when no actions; only one menu open at a time
+
 ## Audit metadata (persisted records)
-- Gate with `audit.view` — **`RowActions`** `:show-audit` + `:audit="item.audit"`; opens **`AuditInfoPanel`**
+- Gate with `audit.view` — **`RowActions`** `:show-audit` + `:audit="item.audit"`; opens **`AuditInfoPanel`** from the kebab menu
 - Wire on **every** auditable CRUD list: accounts, persons, users, cost-types, **general-types**, food, income, cost
 - **`AuditInfoPanel`:** creator/editor username + **`EntityAvatar`** (`createdByAvatarPath` / `updatedByAvatarPath`)
 - Never show created/updated columns in list tables or cards

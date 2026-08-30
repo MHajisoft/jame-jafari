@@ -1,6 +1,7 @@
 using JameJafari.Core.Constants;
 using JameJafari.Core.Entities;
 using JameJafari.Core.Enums;
+using JameJafari.Core.Helpers;
 using JameJafari.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,50 +18,102 @@ public static class DbSeeder
         var passwordHasher = scope.ServiceProvider.GetRequiredService<IAppPasswordHasher>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
 
-        await db.Database.MigrateAsync();
-        await SyncPermissionsAsync(db, logger);
-
-        if (!await db.Users.AnyAsync())
+        try
         {
-            var allPerms = await db.Permissions.ToListAsync();
-            var admin = new User
+            logger.LogInformation("Applying EF migrations...");
+            await db.Database.MigrateAsync();
+            logger.LogInformation("EF migrations complete.");
+            await EnsureChatIdColumnsAreNvarcharAsync(db);
+
+            logger.LogInformation("Syncing permissions...");
+            await SyncPermissionsAsync(db, logger);
+
+            if (!await db.Users.AnyAsync())
             {
-                Username = SystemUsers.AdminUsername,
-                PasswordHash = passwordHasher.Hash("admin@123"),
-                IsActive = true,
-                Email = "admin@jame-jafari.local"
-            };
-            db.Users.Add(admin);
-            await db.SaveChangesAsync();
+                logger.LogInformation("Seeding default admin user...");
+                var allPerms = await db.Permissions.ToListAsync();
+                var admin = new User
+                {
+                    Username = SystemUsers.AdminUsername,
+                    PasswordHash = passwordHasher.Hash("admin@123"),
+                    IsActive = true,
+                    Email = "admin@jame-jafari.local"
+                };
+                db.Users.Add(admin);
+                await db.SaveChangesAsync();
 
-            db.UserPermissions.AddRange(allPerms.Select(p => new UserPermission { UserId = admin.Id, PermissionId = p.Id }));
-            await db.SaveChangesAsync();
-            logger.LogInformation("Default admin user created: {Username} (all permissions)", SystemUsers.AdminUsername);
+                db.UserPermissions.AddRange(allPerms.Select(p => new UserPermission { UserId = admin.Id, PermissionId = p.Id }));
+                await db.SaveChangesAsync();
+                logger.LogInformation("Default admin user created: {Username} (all permissions)", SystemUsers.AdminUsername);
+            }
+
+            if (!await db.GeneralTypes.AnyAsync())
+            {
+                logger.LogInformation("Seeding general types...");
+                db.GeneralTypes.AddRange(
+                    new GeneralType { Name = "کیلوگرم", Code = "kg", Category = GeneralTypeCategory.Unit, SortOrder = 1 },
+                    new GeneralType { Name = "گرم", Code = "g", Category = GeneralTypeCategory.Unit, SortOrder = 2 },
+                    new GeneralType { Name = "لیتر", Code = "l", Category = GeneralTypeCategory.Unit, SortOrder = 3 },
+                    new GeneralType { Name = "عدد", Code = "pcs", Category = GeneralTypeCategory.Unit, SortOrder = 4 },
+                    new GeneralType { Name = "مثقال", Code = "msgh", Category = GeneralTypeCategory.Unit, SortOrder = 5 },
+                    new GeneralType { Name = "حاج", Code = "haj", Category = GeneralTypeCategory.NamePrefix, SortOrder = 1 },
+                    new GeneralType { Name = "حاجیه", Code = "hajie", Category = GeneralTypeCategory.NamePrefix, SortOrder = 2 },
+                    new GeneralType { Name = "کربلایی", Code = "karbalaee", Category = GeneralTypeCategory.NamePrefix, SortOrder = 3 },
+                    new GeneralType { Name = "مشهدی", Code = "mashhady", Category = GeneralTypeCategory.NamePrefix, SortOrder = 4 },
+                    new GeneralType { Name = "دکتر", Code = "doctor", Category = GeneralTypeCategory.NamePrefix, SortOrder = 5 },
+                    new GeneralType { Name = "مهندس", Code = "engeener", Category = GeneralTypeCategory.NamePrefix, SortOrder = 6 }
+                );
+                await db.SaveChangesAsync();
+            }
+
+            if (!await db.Accounts.AnyAsync())
+            {
+                logger.LogInformation("Seeding default account...");
+                db.Accounts.Add(new Account { Name = "صندوق اصلی", Description = "صندوق مرکزی موسسه", IsActive = true });
+                await db.SaveChangesAsync();
+            }
+
+            logger.LogInformation("Seeding default message channel...");
+            await SeedDefaultMessageChannelAsync(scope.ServiceProvider, db, logger);
+            logger.LogInformation("Database seed complete.");
         }
-
-        if (!await db.GeneralTypes.AnyAsync())
+        catch (Exception ex)
         {
-            db.GeneralTypes.AddRange(
-                new GeneralType { Name = "کیلوگرم", Code = "kg", Category = GeneralTypeCategory.Unit, SortOrder = 1 },
-                new GeneralType { Name = "گرم", Code = "g", Category = GeneralTypeCategory.Unit, SortOrder = 2 },
-                new GeneralType { Name = "لیتر", Code = "l", Category = GeneralTypeCategory.Unit, SortOrder = 3 },
-                new GeneralType { Name = "عدد", Code = "pcs", Category = GeneralTypeCategory.Unit, SortOrder = 4 },
-                new GeneralType { Name = "مثقال", Code = "msgh", Category = GeneralTypeCategory.Unit, SortOrder = 5 },
-                new GeneralType { Name = "حاج", Code = "haj", Category = GeneralTypeCategory.NamePrefix, SortOrder = 1 },
-                new GeneralType { Name = "حاجیه", Code = "hajie", Category = GeneralTypeCategory.NamePrefix, SortOrder = 2 },
-                new GeneralType { Name = "کربلایی", Code = "karbalaee", Category = GeneralTypeCategory.NamePrefix, SortOrder = 3 },
-                new GeneralType { Name = "مشهدی", Code = "mashhady", Category = GeneralTypeCategory.NamePrefix, SortOrder = 4 },
-                new GeneralType { Name = "دکتر", Code = "doctor", Category = GeneralTypeCategory.NamePrefix, SortOrder = 5 },
-                new GeneralType { Name = "مهندس", Code = "engeener", Category = GeneralTypeCategory.NamePrefix, SortOrder = 6 }
-            );
-            await db.SaveChangesAsync();
+            logger.LogError(ex, "Database migration/seed failed: {Message}", ex.Message);
+            throw;
+        }
+    }
+
+    static async Task SeedDefaultMessageChannelAsync(IServiceProvider services, AppDbContext db, ILogger logger)
+    {
+        if (await db.MessageChannels.AnyAsync())
+            return;
+
+        var configuration = services.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
+        var raw = configuration["BALE_DEFAULT_GROUP_CHAT_ID"]
+            ?? configuration["Bale:DefaultGroupChatId"];
+        if (string.IsNullOrWhiteSpace(raw))
+            return;
+
+        string externalChatId;
+        try
+        {
+            externalChatId = BaleChatTargetHelper.Normalize(raw);
+        }
+        catch
+        {
+            return;
         }
 
-        if (!await db.Accounts.AnyAsync())
+        db.MessageChannels.Add(new MessageChannel
         {
-            db.Accounts.Add(new Account { Name = "صندوق اصلی", Description = "صندوق مرکزی موسسه", IsActive = true });
-            await db.SaveChangesAsync();
-        }
+            Name = "گروه پیش‌فرض",
+            MessengerKind = MessengerKind.Bale,
+            ExternalChatId = externalChatId,
+            IsActive = true
+        });
+        await db.SaveChangesAsync();
+        logger.LogInformation("Seeded default Bale message channel from BALE_DEFAULT_GROUP_CHAT_ID");
     }
 
     /// <summary>
@@ -160,5 +213,31 @@ public static class DbSeeder
                 "Backfilled {Count} permissions for system admin",
                 backfilled.Count);
         }
+    }
+
+    static async Task EnsureChatIdColumnsAreNvarcharAsync(AppDbContext db)
+    {
+        const string sql = """
+            SELECT c.name AS ColumnName, t.name AS TypeName
+            FROM sys.columns c
+            INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
+            WHERE (c.object_id = OBJECT_ID('dbo.MessageChannels') AND c.name = 'ExternalChatId')
+               OR (c.object_id = OBJECT_ID('dbo.BaleMessages') AND c.name = 'ChatId');
+            """;
+
+        var rows = await db.Database.SqlQueryRaw<ChatIdColumnTypeRow>(sql).ToListAsync();
+        var invalid = rows.Where(r => !string.Equals(r.TypeName, "nvarchar", StringComparison.OrdinalIgnoreCase)).ToList();
+        if (invalid.Count == 0)
+            return;
+
+        var details = string.Join(", ", invalid.Select(r => $"{r.ColumnName}={r.TypeName}"));
+        throw new InvalidOperationException(
+            $"ستون‌های شناسه گفتگو باید nvarchar باشند؛ مقدار فعلی: {details}. dotnet ef database update را اجرا کنید.");
+    }
+
+    sealed class ChatIdColumnTypeRow
+    {
+        public string ColumnName { get; set; } = "";
+        public string TypeName { get; set; } = "";
     }
 }

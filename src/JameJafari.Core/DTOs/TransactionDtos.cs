@@ -9,6 +9,9 @@ public class IncomeTransactionResponse : AttachmentResponseBase
     public int PersonId { get; init; }
     public string PersonName { get; init; } = "";
     public string? PersonNickName { get; init; }
+    public string? PersonMobile { get; init; }
+    public bool CanSendBaleReceipt { get; init; }
+    public string? BaleReceiptWarning { get; set; }
     public int AccountId { get; init; }
     public string AccountName { get; init; } = "";
     public decimal Amount { get; init; }

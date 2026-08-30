@@ -281,6 +281,7 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
             PersonLastName = t.Person.LastName,
             PersonNamePrefixName = t.Person.NamePrefix != null ? t.Person.NamePrefix.Name : null,
             PersonNickName = t.Person.NickName,
+            PersonMobile = t.Person.Mobile,
             AccountId = t.AccountId,
             AccountName = t.Account.Name,
             Amount = t.Amount,
@@ -332,6 +333,8 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
         PersonId = row.PersonId,
         PersonName = PersonDisplayNameHelper.Format(row.PersonFirstName, row.PersonLastName, row.PersonNamePrefixName),
         PersonNickName = row.PersonNickName,
+        PersonMobile = row.PersonMobile,
+        CanSendBaleReceipt = !string.IsNullOrWhiteSpace(row.PersonMobile),
         AccountId = row.AccountId,
         AccountName = row.AccountName,
         Amount = row.Amount,
@@ -380,6 +383,7 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
         public string? PersonLastName { get; init; }
         public string? PersonNamePrefixName { get; init; }
         public string? PersonNickName { get; init; }
+        public string? PersonMobile { get; init; }
         public int AccountId { get; init; }
         public string AccountName { get; init; } = "";
         public decimal Amount { get; init; }

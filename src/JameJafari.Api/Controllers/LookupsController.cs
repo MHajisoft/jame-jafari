@@ -14,7 +14,10 @@ namespace JameJafari.Api.Controllers;
 /// </summary>
 [Authorize]
 [Route("api/lookups")]
-public class LookupsController(LookupService service) : ApiControllerBase
+public class LookupsController(
+    LookupService service,
+    MessageChannelService messageChannelService,
+    PersonGroupService personGroupService) : ApiControllerBase
 {
     [HttpGet("accounts")]
     [RequirePermission(
@@ -84,4 +87,17 @@ public class LookupsController(LookupService service) : ApiControllerBase
         [FromQuery, Range(1, 100)] int page = 1,
         [FromQuery, Range(1, 200)] int pageSize = 20)
         => Ok(await service.SearchPersonsAsync(search, gender, page, pageSize));
+
+    [HttpGet("message-channels")]
+    [RequirePermission(PermissionCodes.MessagesView, PermissionCodes.MessagesSend)]
+    public async Task<ActionResult<IReadOnlyList<MessageChannelLookupItemResponse>>> GetMessageChannels(
+        [FromQuery] MessengerKind? messengerKind,
+        [FromQuery] bool activeOnly = true)
+        => Ok(await messageChannelService.GetLookupAsync(messengerKind, activeOnly));
+
+    [HttpGet("person-groups")]
+    [RequirePermission(PermissionCodes.MessagesView, PermissionCodes.MessagesSend)]
+    public async Task<ActionResult<IReadOnlyList<PersonGroupLookupItemResponse>>> GetPersonGroups(
+        [FromQuery] bool activeOnly = true)
+        => Ok(await personGroupService.GetLookupAsync(activeOnly));
 }

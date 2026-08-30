@@ -2,7 +2,8 @@
 import { storeToRefs } from 'pinia'
 import { useLoadingStore } from '../stores/loading'
 
-const { visible } = storeToRefs(useLoadingStore())
+const loading = useLoadingStore()
+const { visible, message } = storeToRefs(loading)
 </script>
 
 <template>
@@ -14,11 +15,11 @@ const { visible } = storeToRefs(useLoadingStore())
         role="status"
         aria-live="polite"
         aria-busy="true"
-        aria-label="در حال بارگذاری"
+        :aria-label="message"
       >
         <div class="global-loader-card">
           <span class="global-loader-spinner" aria-hidden="true" />
-          <span class="global-loader-text">در حال بارگذاری…</span>
+          <span class="global-loader-text">{{ message }}</span>
         </div>
       </div>
     </Transition>
@@ -42,7 +43,7 @@ const { visible } = storeToRefs(useLoadingStore())
   flex-direction: column;
   align-items: center;
   gap: 0.85rem;
-  min-width: 10rem;
+  min-width: 12rem;
   padding: 1.1rem 1.35rem;
   border-radius: 14px;
   background: var(--surface);

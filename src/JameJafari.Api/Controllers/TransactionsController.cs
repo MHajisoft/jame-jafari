@@ -15,6 +15,7 @@ namespace JameJafari.Api.Controllers;
 [Route("api/income-transactions")]
 public class IncomeTransactionsController(
     TransactionService service,
+    BaleMessageService baleMessages,
     FileStorageService storage) : ApiControllerBase
 {
     private static readonly JsonSerializerOptions FormJsonOptions = new()
@@ -54,7 +55,15 @@ public class IncomeTransactionsController(
         var paths = await SaveDocumentsAsync(documents);
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
-        return Ok(ResponseVisibility.ApplyAttachments(await service.CreateIncomeAsync(request, CurrentUserId, paths), User));
+        var created = await service.CreateIncomeAsync(request, CurrentUserId, paths);
+        if (created.CanSendBaleReceipt)
+        {
+            var receipt = await baleMessages.TrySendIncomeReceiptAsync(created.Id, CurrentUserId);
+            if (!receipt.Sent)
+                created.BaleReceiptWarning = receipt.Warning;
+        }
+
+        return Ok(ResponseVisibility.ApplyAttachments(created, User));
     }
 
     [HttpPut("{id:int}")]
@@ -103,6 +112,27 @@ public class IncomeTransactionsController(
         => await service.DeleteIncomeAsync(id, CurrentUserId, OwnRecordsFilter(PermissionCodes.IncomeView))
             ? NoContent()
             : NotFound();
+
+    [HttpPost("{id:int}/send-receipt")]
+    [RequirePermission(PermissionCodes.MessagesSend)]
+    public async Task<ActionResult<IncomeReceiptSendResult>> SendReceipt(int id)
+    {
+        if (!HasPermission(PermissionCodes.IncomeView)
+            && !HasPermission(PermissionCodes.IncomeCreate)
+            && !HasPermission(PermissionCodes.IncomeUpdate))
+            return Forbid();
+
+        var result = await baleMessages.TrySendIncomeReceiptAsync(id, CurrentUserId);
+        if (result.Message is not null)
+            result = new IncomeReceiptSendResult
+            {
+                Sent = result.Sent,
+                Warning = result.Warning,
+                Message = ResponseVisibility.Apply(result.Message, User)
+            };
+
+        return Ok(result);
+    }
 
     private async Task<IReadOnlyList<string>?> SaveDocumentsAsync(IFormFileCollection? documents)
     {

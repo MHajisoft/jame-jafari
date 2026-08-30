@@ -27,7 +27,7 @@ export function usePagedList(fetchPage, { pageSize: defaultPageSize = 20 } = {})
   )
   const hasPrev = computed(() => page.value > 1)
   const hasNext = computed(() => page.value < totalPages.value)
-  const showPagination = computed(() => totalPages.value > 1)
+  const showPagination = computed(() => totalCount.value > 0)
   const rangeStart = computed(() =>
     totalCount.value === 0 ? 0 : (page.value - 1) * pageSize + 1
   )

@@ -73,6 +73,181 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.ToTable("Accounts");
                 });
 
+            modelBuilder.Entity("JameJafari.Core.Entities.BaleBotState", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("LastUpdateId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BaleBotStates");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.BaleContactLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("ChatId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("LinkedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NormalizedPhone")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int?>("PersonId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatId");
+
+                    b.HasIndex("NormalizedPhone")
+                        .IsUnique();
+
+                    b.HasIndex("PersonId");
+
+                    b.ToTable("BaleContactLinks");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.BaleMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AttachmentPaths")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("BaleMessageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BaleMessageIds")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("BroadcastBatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Caption")
+                        .HasMaxLength(4096)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ChatId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeletedById")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("DeletedFromBale")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("IncomeTransactionId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LinkLabel")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("LinkUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("MessageChannelId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MessageType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MessengerKind")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PersonGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PersonId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TargetKind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TargetMobile")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(4096)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BroadcastBatchId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DeletedById");
+
+                    b.HasIndex("IncomeTransactionId");
+
+                    b.HasIndex("MessageChannelId");
+
+                    b.HasIndex("PersonGroupId");
+
+                    b.HasIndex("PersonId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("BaleMessages");
+                });
+
             modelBuilder.Entity("JameJafari.Core.Entities.CostTransaction", b =>
                 {
                     b.Property<int>("Id")
@@ -431,6 +606,64 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.ToTable("IncomeTransactions");
                 });
 
+            modelBuilder.Entity("JameJafari.Core.Entities.MessageChannel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeletedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ExternalChatId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MessengerKind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DeletedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.HasIndex("MessengerKind", "IsActive");
+
+                    b.ToTable("MessageChannels");
+                });
+
             modelBuilder.Entity("JameJafari.Core.Entities.Permission", b =>
                 {
                     b.Property<int>("Id")
@@ -470,6 +703,9 @@ namespace JameJafari.Infrastructure.Data.Migrations
 
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("BaleChatId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -545,6 +781,73 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.HasIndex("UpdatedById");
 
                     b.ToTable("Persons");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.PersonGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DeletedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DeletedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("PersonGroups");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.PersonGroupMember", b =>
+                {
+                    b.Property<int>("PersonGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PersonId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PersonGroupId", "PersonId");
+
+                    b.HasIndex("PersonId");
+
+                    b.ToTable("PersonGroupMembers");
                 });
 
             modelBuilder.Entity("JameJafari.Core.Entities.TransactionAttachment", b =>
@@ -679,6 +982,68 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("DeletedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.BaleContactLink", b =>
+                {
+                    b.HasOne("JameJafari.Core.Entities.Person", "Person")
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.BaleMessage", b =>
+                {
+                    b.HasOne("JameJafari.Core.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("JameJafari.Core.Entities.User", "DeletedBy")
+                        .WithMany()
+                        .HasForeignKey("DeletedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("JameJafari.Core.Entities.IncomeTransaction", "IncomeTransaction")
+                        .WithMany()
+                        .HasForeignKey("IncomeTransactionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("JameJafari.Core.Entities.MessageChannel", "MessageChannel")
+                        .WithMany()
+                        .HasForeignKey("MessageChannelId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("JameJafari.Core.Entities.PersonGroup", "PersonGroup")
+                        .WithMany()
+                        .HasForeignKey("PersonGroupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("JameJafari.Core.Entities.Person", "Person")
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("JameJafari.Core.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DeletedBy");
+
+                    b.Navigation("IncomeTransaction");
+
+                    b.Navigation("MessageChannel");
+
+                    b.Navigation("Person");
+
+                    b.Navigation("PersonGroup");
 
                     b.Navigation("UpdatedBy");
                 });
@@ -869,6 +1234,30 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("JameJafari.Core.Entities.MessageChannel", b =>
+                {
+                    b.HasOne("JameJafari.Core.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("JameJafari.Core.Entities.User", "DeletedBy")
+                        .WithMany()
+                        .HasForeignKey("DeletedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("JameJafari.Core.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DeletedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("JameJafari.Core.Entities.Person", b =>
                 {
                     b.HasOne("JameJafari.Core.Entities.User", "CreatedBy")
@@ -912,6 +1301,49 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.Navigation("NamePrefix");
 
                     b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.PersonGroup", b =>
+                {
+                    b.HasOne("JameJafari.Core.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("JameJafari.Core.Entities.User", "DeletedBy")
+                        .WithMany()
+                        .HasForeignKey("DeletedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("JameJafari.Core.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("DeletedBy");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.PersonGroupMember", b =>
+                {
+                    b.HasOne("JameJafari.Core.Entities.PersonGroup", "PersonGroup")
+                        .WithMany("Members")
+                        .HasForeignKey("PersonGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("JameJafari.Core.Entities.Person", "Person")
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Person");
+
+                    b.Navigation("PersonGroup");
                 });
 
             modelBuilder.Entity("JameJafari.Core.Entities.TransactionAttachment", b =>
@@ -1017,6 +1449,11 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.Navigation("ChildrenAsMother");
 
                     b.Navigation("IncomeTransactions");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.PersonGroup", b =>
+                {
+                    b.Navigation("Members");
                 });
 
             modelBuilder.Entity("JameJafari.Core.Entities.User", b =>

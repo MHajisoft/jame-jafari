@@ -57,6 +57,21 @@ public static class PermissionCodes
     /// <summary>View created/updated metadata on persisted records (no menu).</summary>
     public const string AuditView = "audit.view";
 
+    public const string MessagesView = "messages.view";
+    public const string MessagesSend = "messages.send";
+    public const string MessagesUpdate = "messages.update";
+    public const string MessagesDelete = "messages.delete";
+
+    public const string MessageChannelsView = "messagechannels.view";
+    public const string MessageChannelsCreate = "messagechannels.create";
+    public const string MessageChannelsUpdate = "messagechannels.update";
+    public const string MessageChannelsDelete = "messagechannels.delete";
+
+    public const string PersonGroupsView = "persongroups.view";
+    public const string PersonGroupsCreate = "persongroups.create";
+    public const string PersonGroupsUpdate = "persongroups.update";
+    public const string PersonGroupsDelete = "persongroups.delete";
+
     public static readonly string[] All =
     [
         AccountsView, AccountsCreate, AccountsUpdate, AccountsDelete,
@@ -70,6 +85,9 @@ public static class PermissionCodes
         DeathAnniversariesView,
         GeneralTypesView, GeneralTypesCreate, GeneralTypesUpdate, GeneralTypesDelete,
         AttachmentsView, AttachmentsAdd, AttachmentsDelete,
-        AuditView
+        AuditView,
+        MessagesView, MessagesSend, MessagesUpdate, MessagesDelete,
+        MessageChannelsView, MessageChannelsCreate, MessageChannelsUpdate, MessageChannelsDelete,
+        PersonGroupsView, PersonGroupsCreate, PersonGroupsUpdate, PersonGroupsDelete
     ];
 }

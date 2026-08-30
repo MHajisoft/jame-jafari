@@ -21,7 +21,7 @@ const { showForm, editing, form, openCreate, openEdit, closeForm } = useEntityFo
 
 ## API
 - `api/client.js` attaches Bearer token; 401 → logout redirect
-- **Global loader:** axios interceptors → `stores/loading.js` → `AppGlobalLoader`; opt out per request with `skipGlobalLoader: true`
+- **Global loader:** axios interceptors → `stores/loading.js` → `AppGlobalLoader`; message from HTTP method/path (بارگذاری / ارسال / ذخیره / حذف); override with `loaderMessage`, opt out with `skipGlobalLoader: true`
 - **List loading:** `AppSkeleton` (table shimmer) while page data loads; avoid plain «در حال بارگذاری…» text in list panels
 - Use `trySubmit` from `useFormValidation` for field-level API errors
 - **Form selects:** `useLookupsStore().getAccounts()` / `getCostTypes()` → `/api/lookups/*` by default
@@ -34,7 +34,7 @@ const { showForm, editing, form, openCreate, openEdit, closeForm } = useEntityFo
 
 ## Audit metadata (all CRUD lists)
 - Permission (no nav): `audit.view`
-- **List/card:** no audit columns — clock icon in `RowActions` opens `AuditInfoPanel` (modal desktop / bottom sheet mobile with `useOverlayBack`); wire on accounts, persons, users, cost-types, general-types, food, income, cost
+- **List/card:** no audit columns — kebab (`RowActions`) item «اطلاعات ثبت» opens `AuditInfoPanel` (modal desktop / bottom sheet mobile with `useOverlayBack`); wire on accounts, persons, users, cost-types, general-types, food, income, cost; extra actions via `:extras` + `@extra` (never sibling buttons)
 - API strips `audit` when caller lacks `audit.view` (same pattern as attachments)
 - **Form:** `TransactionAttachmentsField` with `canView` / `canAdd` / `canDelete`
 - **Preview:** `DocumentPreview` — image/PDF in modal (desktop) / bottom sheet (mobile)
@@ -90,6 +90,6 @@ Router: `meta: { permission: 'food.view' }`
 - `PersianDatePicker` mobile overlay (sheet or modal): `useOverlayBack` with `stateKey: 'appDatePicker'`
 - **App updates:** `vite-plugin-pwa` `registerType: 'autoUpdate'` + `initPwaUpdate()` — new SW activates and reloads automatically; poll every 30m + on visibility restore
 - **Exit on back (mobile):** `initPwaExitBack()` — on primary tabs, system back shows a bottom hint then leaves on second press within 2s; overlays/forms/nested routes still consume back first
-- **List pagination:** `PagedListPanel` — desktop: page scroll + sticky thead/footer; mobile: inline bar after list (no fixed overlap with FAB)
+- **List pagination:** `PagedListPanel` + `usePagedList` on all CRUD list views — footer visible when `totalCount > 0` (shows range and page even on a single page); desktop: page scroll + sticky thead/footer; mobile: inline bar after list (no fixed overlap with FAB)
 - Install prompt: `usePwaInstall` / `PwaInstallBanner`
 - `AppSelect` / `PersonSelect` mobile sheets: `useOverlayBack` (`appSelect` / `appPersonSelect`)

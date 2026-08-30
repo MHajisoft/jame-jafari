@@ -15,7 +15,10 @@ RUN dotnet publish JameJafari.Api/JameJafari.Api.csproj -c Release -o /app/publi
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
-RUN mkdir -p /app/uploads
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libfontconfig1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /app/uploads
 
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production

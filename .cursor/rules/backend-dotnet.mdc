@@ -67,5 +67,7 @@ Apply on user delete/update/password/avatar for admin account.
 - Admin list APIs (`/api/accounts`, `/api/cost-types`) stay behind module `*.view` for CRUD pages only
 - `LookupService` + separate cache keys; invalidated with account/cost-type/person writes
 
+- **Income receipt image:** `IncomeReceiptImageService` renders a PNG (Islamic geometric border; logo right / bismillah center / Jalali date left; name right-aligned; amount digits LTR-isolated; no caption) to `uploads/bale/` and `BaleMessageService.TrySendIncomeReceiptAsync` sends it as `BaleMessageType.Photo`
+
 ## Migrations
 - Add EF migration in Infrastructure; applied automatically at startup via `DbSeeder`

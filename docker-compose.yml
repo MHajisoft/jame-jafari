@@ -40,6 +40,10 @@ services:
       Jwt__Key: ${JWT_KEY:?Set JWT_KEY in .env}
       Jwt__Issuer: JameJafari
       Jwt__Audience: JameJafariApp
+      BALE_BOT_TOKEN: ${BALE_BOT_TOKEN:-}
+      Bale__DefaultGroupChatId: ${BALE_DEFAULT_GROUP_CHAT_ID:-}
+      BALE_BOT_USERNAME: ${BALE_BOT_USERNAME:-}
+      BALE_WEBHOOK_SECRET: ${BALE_WEBHOOK_SECRET:-}
     ports:
       - "5093:8080"
     volumes:

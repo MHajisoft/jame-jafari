@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { useToastStore } from '../stores/toast'
-import { useLoadingStore } from '../stores/loading'
+import { loaderMessageForRequest, useLoadingStore } from '../stores/loading'
 
 const api = axios.create({
   baseURL: '/api',
@@ -11,7 +11,7 @@ function trackLoading(config, active) {
   if (config?.skipGlobalLoader) return
   try {
     const loading = useLoadingStore()
-    if (active) loading.start()
+    if (active) loading.start(loaderMessageForRequest(config))
     else loading.stop()
   } catch {
     /* pinia may be unavailable during early boot */

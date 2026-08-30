@@ -1,132 +1,222 @@
+<script>
+let closeActiveMenu = null
+</script>
+
 <script setup>
-import { ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import AuditInfoPanel from './AuditInfoPanel.vue'
 
-defineProps({
+const props = defineProps({
   showEdit: { type: Boolean, default: false },
   showDelete: { type: Boolean, default: false },
   showChangePassword: { type: Boolean, default: false },
   showAudit: { type: Boolean, default: false },
   audit: { type: Object, default: null },
+  extras: { type: Array, default: () => [] },
   editLabel: { type: String, default: 'ویرایش' },
   deleteLabel: { type: String, default: 'حذف' },
   changePasswordLabel: { type: String, default: 'تغییر رمز' },
   auditLabel: { type: String, default: 'اطلاعات ثبت' }
 })
 
-defineEmits(['edit', 'delete', 'change-password'])
+const emit = defineEmits(['edit', 'delete', 'change-password', 'extra'])
 
+const open = ref(false)
 const auditOpen = ref(false)
+const triggerRef = ref(null)
+const menuRef = ref(null)
+const menuStyle = ref({})
+
+const safeExtras = computed(() => (Array.isArray(props.extras) ? props.extras : []))
+const extrasMain = computed(() => safeExtras.value.filter((x) => !x.danger))
+const extrasDanger = computed(() => safeExtras.value.filter((x) => x.danger))
+
+const hasAudit = computed(() => props.showAudit && !!props.audit)
+const hasActions = computed(() =>
+  props.showEdit
+  || props.showChangePassword
+  || hasAudit.value
+  || props.showDelete
+  || safeExtras.value.length > 0
+)
+
+function close() {
+  open.value = false
+  if (closeActiveMenu === close) closeActiveMenu = null
+}
+
+async function toggle(event) {
+  event.stopPropagation()
+  if (open.value) {
+    close()
+    return
+  }
+  closeActiveMenu?.()
+  closeActiveMenu = close
+  open.value = true
+  await nextTick()
+  positionMenu()
+}
+
+function positionMenu() {
+  const btn = triggerRef.value
+  const menu = menuRef.value
+  if (!btn || !menu) return
+  const rect = btn.getBoundingClientRect()
+  const mw = menu.offsetWidth
+  const mh = menu.offsetHeight
+  let top = rect.bottom + 6
+  if (top + mh > window.innerHeight - 12) top = Math.max(12, rect.top - mh - 6)
+  let left = rect.right - mw
+  left = Math.min(Math.max(12, left), window.innerWidth - mw - 12)
+  menuStyle.value = { top: `${top}px`, left: `${left}px` }
+}
+
+function onDocumentClick(event) {
+  if (!open.value) return
+  if (triggerRef.value?.contains(event.target) || menuRef.value?.contains(event.target)) return
+  close()
+}
+
+function onKeydown(event) {
+  if (event.key === 'Escape') close()
+}
+
+function run(fn) {
+  close()
+  fn()
+}
+
+function onExtra(item) {
+  if (item.disabled) return
+  run(() => emit('extra', item.id))
+}
+
+watch(open, (isOpen) => {
+  if (isOpen) {
+    document.addEventListener('click', onDocumentClick)
+    document.addEventListener('keydown', onKeydown)
+    document.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+  } else {
+    document.removeEventListener('click', onDocumentClick)
+    document.removeEventListener('keydown', onKeydown)
+    document.removeEventListener('scroll', close, true)
+    window.removeEventListener('resize', close)
+  }
+})
+
+onBeforeUnmount(() => {
+  close()
+  document.removeEventListener('click', onDocumentClick)
+  document.removeEventListener('keydown', onKeydown)
+  document.removeEventListener('scroll', close, true)
+  window.removeEventListener('resize', close)
+})
 </script>
 
 <template>
-  <div class="row-actions" role="group" aria-label="عملیات">
+  <div v-if="hasActions" class="row-actions">
     <button
-      v-if="showAudit && audit"
+      ref="triggerRef"
       type="button"
       class="icon-btn"
-      :aria-label="auditLabel"
-      :title="auditLabel"
-      @click.stop="auditOpen = true"
+      aria-haspopup="menu"
+      :aria-expanded="open"
+      aria-label="عملیات"
+      title="عملیات"
+      @click="toggle"
     >
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75" />
-        <path
-          d="M12 7v5l3 2"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="5" r="1.85" fill="currentColor" />
+        <circle cx="12" cy="12" r="1.85" fill="currentColor" />
+        <circle cx="12" cy="19" r="1.85" fill="currentColor" />
       </svg>
     </button>
-    <button
-      v-if="showEdit"
-      type="button"
-      class="icon-btn"
-      :aria-label="editLabel"
-      :title="editLabel"
-      @click.stop="$emit('edit')"
-    >
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-          d="M12 20h9"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-        />
-        <path
-          d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
-    </button>
-    <button
-      v-if="showChangePassword"
-      type="button"
-      class="icon-btn"
-      :aria-label="changePasswordLabel"
-      :title="changePasswordLabel"
-      @click.stop="$emit('change-password')"
-    >
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-          d="M7 11V8a5 5 0 0 1 10 0v3"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-        />
-        <rect
-          x="5"
-          y="11"
-          width="14"
-          height="10"
-          rx="2"
-          stroke="currentColor"
-          stroke-width="1.75"
-        />
-        <circle cx="12" cy="15" r="1.25" fill="currentColor" />
-      </svg>
-    </button>
-    <button
-      v-if="showDelete"
-      type="button"
-      class="icon-btn icon-btn-danger"
-      :aria-label="deleteLabel"
-      :title="deleteLabel"
-      @click.stop="$emit('delete')"
-    >
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-          d="M3 6h18"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-        />
-        <path
-          d="M8 6V4.8A1.8 1.8 0 0 1 9.8 3h4.4A1.8 1.8 0 0 1 16 4.8V6m2 0v13.2A1.8 1.8 0 0 1 16.2 21H7.8A1.8 1.8 0 0 1 6 19.2V6"
-          stroke="currentColor"
-          stroke-width="1.75"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-        <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
-      </svg>
-    </button>
-  </div>
 
-  <AuditInfoPanel v-model:show="auditOpen" :audit="audit" />
+    <Teleport to="body">
+      <div
+        v-if="open"
+        ref="menuRef"
+        class="row-actions-menu"
+        role="menu"
+        :style="menuStyle"
+        @click.stop
+      >
+        <button
+          v-if="showEdit"
+          type="button"
+          role="menuitem"
+          class="row-actions-item"
+          @click="run(() => emit('edit'))"
+        >
+          {{ editLabel }}
+        </button>
+        <button
+          v-if="showChangePassword"
+          type="button"
+          role="menuitem"
+          class="row-actions-item"
+          @click="run(() => emit('change-password'))"
+        >
+          {{ changePasswordLabel }}
+        </button>
+        <button
+          v-for="item in extrasMain"
+          :key="item.id"
+          type="button"
+          role="menuitem"
+          class="row-actions-item"
+          :disabled="item.disabled"
+          :title="item.title || undefined"
+          @click="onExtra(item)"
+        >
+          {{ item.label }}
+        </button>
+        <button
+          v-if="hasAudit"
+          type="button"
+          role="menuitem"
+          class="row-actions-item"
+          @click="run(() => { auditOpen = true })"
+        >
+          {{ auditLabel }}
+        </button>
+        <button
+          v-for="item in extrasDanger"
+          :key="item.id"
+          type="button"
+          role="menuitem"
+          class="row-actions-item is-danger"
+          :disabled="item.disabled"
+          :title="item.title || undefined"
+          @click="onExtra(item)"
+        >
+          {{ item.label }}
+        </button>
+        <button
+          v-if="showDelete"
+          type="button"
+          role="menuitem"
+          class="row-actions-item is-danger"
+          @click="run(() => emit('delete'))"
+        >
+          {{ deleteLabel }}
+        </button>
+      </div>
+    </Teleport>
+
+    <AuditInfoPanel v-model:show="auditOpen" :audit="audit" />
+  </div>
 </template>
 
 <style scoped>
 .row-actions {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  justify-content: flex-end;
 }
+
 .icon-btn {
   display: inline-flex;
   align-items: center;
@@ -152,15 +242,10 @@ const auditOpen = ref(false)
   display: block;
 }
 
-/* Desktop: subtle until hover/focus */
 @media (hover: hover) and (pointer: fine) {
   .icon-btn:hover {
     background: color-mix(in srgb, var(--primary) 12%, transparent);
     color: var(--primary);
-  }
-  .icon-btn-danger:hover {
-    background: color-mix(in srgb, var(--danger) 12%, transparent);
-    color: var(--danger);
   }
 }
 
@@ -171,11 +256,7 @@ const auditOpen = ref(false)
 .icon-btn:active {
   transform: scale(0.96);
 }
-.icon-btn-danger:focus-visible {
-  outline-color: var(--danger);
-}
 
-/* Mobile / touch: always visible chrome (no hover dependency) */
 @media (max-width: 768px), (hover: none), (pointer: coarse) {
   .icon-btn {
     width: 2.625rem;
@@ -191,21 +272,60 @@ const auditOpen = ref(false)
     height: 1.125rem;
   }
   .icon-btn:active {
-    transform: scale(0.96);
     background: color-mix(in srgb, var(--primary) 10%, var(--surface));
     border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
     color: var(--primary);
     box-shadow: none;
   }
-  .icon-btn-danger {
-    color: var(--danger-soft-text, var(--danger));
-    background: var(--danger-soft, color-mix(in srgb, var(--danger) 10%, var(--surface)));
-    border-color: color-mix(in srgb, var(--danger) 22%, var(--border));
-  }
-  .icon-btn-danger:active {
-    background: color-mix(in srgb, var(--danger) 16%, var(--danger-soft, var(--surface)));
-    border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
-    color: var(--danger);
-  }
+}
+</style>
+
+<style>
+.row-actions-menu {
+  position: fixed;
+  z-index: 3100;
+  min-width: 11.5rem;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+}
+
+.row-actions-item {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.row-actions-item:hover:not(:disabled),
+.row-actions-item:focus-visible {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+  outline: none;
+}
+
+.row-actions-item.is-danger {
+  color: var(--danger);
+}
+
+.row-actions-item.is-danger:hover:not(:disabled),
+.row-actions-item.is-danger:focus-visible {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  color: var(--danger);
+}
+
+.row-actions-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 </style>
