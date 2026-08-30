@@ -23,7 +23,7 @@ Persian RTL financial PWA for a religious organization (جامعه جعفری).
 - System admin username: `admin` (`SystemUsers.AdminUsername`) — protect in services
 - Default seeded admin password: `admin@123` (meets `PasswordPolicy`)
 - Do not pre-fill login form credentials
-- Minimize diff scope; match existing patterns before introducing abstractions
+- Minimize diff scope; match existing patterns before introducing abstractions (`ponytail.mdc` — lazy senior dev ladder)
 
 ## Documentation maintenance (required)
 When a change affects behavior, architecture, or conventions, **update docs in the same PR/change**:

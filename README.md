@@ -14,6 +14,7 @@ jame-jafari-source/
 ├── Dockerfile                       # image API
 ├── docker-compose.yml               # db + api + web
 ├── .env.example                     # نمونه متغیرهای Docker
+├── AGENTS.md                        # دستورالعمل agent (portable؛ شامل ponytail)
 └── .cursor/rules/                   # قوانین Agent برای توسعه یکپارچه
 ```
 
@@ -217,7 +218,9 @@ cd frontend && npm run build
 
 | Rule | محدوده |
 |------|--------|
+| `ponytail.mdc` | همیشه — [ponytail](https://github.com/DietrichGebert/ponytail): کمترین کد لازم، بدون حذف امنیت/دسترسی/اعتبارسنجی |
 | `project-overview.mdc` | همیشه — اهداف، مرزهای پروژه، **نگهداری مستندات** |
+| `AGENTS.md` | خلاصه قابل‌حمل برای agentهایی که فقط root `AGENTS.md` می‌خوانند |
 | `backend-dotnet.mdc` | `src/**/*.cs` |
 | `frontend-vue.mdc` | `frontend/**/*` |
 | `permissions-auth.mdc` | auth + permissions |
