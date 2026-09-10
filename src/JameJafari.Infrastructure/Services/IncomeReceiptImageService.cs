@@ -1,4 +1,5 @@
 using JameJafari.Core.Entities;
+using JameJafari.Core.Enums;
 using JameJafari.Core.Helpers;
 using JameJafari.Core.Options;
 using Microsoft.Extensions.Options;
@@ -29,7 +30,7 @@ public class IncomeReceiptImageService(IOptions<BaleOptions> options)
 
     private readonly string _uploadsRoot = options.Value.UploadsRootPath;
 
-    public string Create(IncomeTransaction tx)
+    public string Create(IncomeTransaction tx, MessengerKind messenger = MessengerKind.Bale)
     {
         IncomeReceiptCopy.SelfCheck();
 
@@ -106,12 +107,13 @@ public class IncomeReceiptImageService(IOptions<BaleOptions> options)
         if (data is null || data.Size < 1000)
             throw new InvalidOperationException("تولید تصویر رسید ناموفق بود");
 
-        var dir = Path.Combine(_uploadsRoot, "bale");
+        var folder = messenger == MessengerKind.Rubika ? "rubika" : "bale";
+        var dir = Path.Combine(_uploadsRoot, folder);
         Directory.CreateDirectory(dir);
         var fileName = $"{Guid.NewGuid():N}.png";
         using var output = File.OpenWrite(Path.Combine(dir, fileName));
         data.SaveTo(output);
-        return $"bale/{fileName}";
+        return $"{folder}/{fileName}";
     }
 
     static void DrawReligiousBorder(SKCanvas canvas, int w, int h)

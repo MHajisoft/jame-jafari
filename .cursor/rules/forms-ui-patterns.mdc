@@ -72,7 +72,10 @@ alwaysApply: false
 - Mouse click still clears; keyboard: **Esc** on focused text/currency input
 
 ## Select & date
-- `AppSelect` / `PersonSelect` — desktop dropdown, mobile bottom sheet; mobile sheets use **`useOverlayBack`**
+- `AppSelect` / `AppMultiSelect` / `PersonSelect` — desktop dropdown, mobile bottom sheet; mobile sheets use **`useOverlayBack`**
+- `AppMultiSelect` — `v-model` array; selected items as removable tags; optional option `group` for section headers + search; optional option `icon` (messenger kind) via `MessengerKindIcon`
+- `MessengerKindIcon` / `MessengerKindCell` — real بله/روبیکا logos from `/icons/messengers/` (lightweight, PWA-precached)
+- `PersonSelect` — optional `multiple` (`v-model` array, tag chips); used in Message Center person compose
 - `PersianDatePicker` — `variant="bar"` in toolbars, `field` in forms
 - **Optional date fields:** initial value `''`; no `todayGregorian()` / `toInputDate(new Date())` prefill; clear when parent condition hides the field (e.g. person `deathDate` when not `isDead`)
 - **Required date fields:** pass `required` on `PersianDatePicker`; may default to today in `blankForm()` (income/cost `transactionDate`, food `cookDate`, report range)

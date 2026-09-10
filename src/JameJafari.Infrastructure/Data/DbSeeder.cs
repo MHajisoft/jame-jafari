@@ -98,7 +98,7 @@ public static class DbSeeder
         string externalChatId;
         try
         {
-            externalChatId = BaleChatTargetHelper.Normalize(raw);
+            externalChatId = MessengerChatTargetHelper.Normalize(raw);
         }
         catch
         {
@@ -222,7 +222,7 @@ public static class DbSeeder
             FROM sys.columns c
             INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
             WHERE (c.object_id = OBJECT_ID('dbo.MessageChannels') AND c.name = 'ExternalChatId')
-               OR (c.object_id = OBJECT_ID('dbo.BaleMessages') AND c.name = 'ChatId');
+               OR (c.object_id = OBJECT_ID('dbo.MessengerMessages') AND c.name = 'ChatId');
             """;
 
         var rows = await db.Database.SqlQueryRaw<ChatIdColumnTypeRow>(sql).ToListAsync();

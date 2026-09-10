@@ -16,9 +16,9 @@ public class BaleMessengerSender(BaleBotClient bale, IOptions<BaleOptions> optio
     public Task<MessengerSendResult> SendAsync(MessengerSendRequest request, CancellationToken cancellationToken = default) =>
         request.MessageType switch
         {
-            BaleMessageType.Text => SendTextAsync(request, cancellationToken),
-            BaleMessageType.Photo => SendAttachmentsAsync(request, imageCompose: true, cancellationToken),
-            BaleMessageType.File => SendAttachmentsAsync(request, imageCompose: false, cancellationToken),
+            MessengerMessageType.Text => SendTextAsync(request, cancellationToken),
+            MessengerMessageType.Photo => SendAttachmentsAsync(request, imageCompose: true, cancellationToken),
+            MessengerMessageType.File => SendAttachmentsAsync(request, imageCompose: false, cancellationToken),
             _ => throw new InvalidOperationException("نوع پیام پشتیبانی نمی‌شود")
         };
 
@@ -33,7 +33,7 @@ public class BaleMessengerSender(BaleBotClient bale, IOptions<BaleOptions> optio
         var caption = request.Caption ?? request.Text;
         if (request.AttachmentPaths.Count >= 2)
         {
-            BaleMediaHelper.ValidateMediaGroup(request.AttachmentPaths, imageCompose);
+            MessengerMediaHelper.ValidateMediaGroup(request.AttachmentPaths, imageCompose);
             return await SendMediaGroupAsync(request, caption, cancellationToken);
         }
 
@@ -53,7 +53,7 @@ public class BaleMessengerSender(BaleBotClient bale, IOptions<BaleOptions> optio
             .Select((path, index) => new BaleMediaGroupItem
             {
                 RelativePath = path,
-                Kind = BaleMediaHelper.Classify(path),
+                Kind = MessengerMediaHelper.Classify(path),
                 Caption = index == 0 ? caption : null
             })
             .ToList();
@@ -61,8 +61,8 @@ public class BaleMessengerSender(BaleBotClient bale, IOptions<BaleOptions> optio
         var messages = await bale.SendMediaGroupAsync(request.ChatId, items, cancellationToken);
         return new MessengerSendResult
         {
-            MessageIds = messages.Select(m => m.MessageId).ToList(),
-            Chat = messages.FirstOrDefault()?.Chat
+            MessageIds = messages.Select(m => m.MessageId.ToString()).ToList(),
+            ChatId = messages.FirstOrDefault()?.Chat?.Id.ToString()
         };
     }
 
@@ -72,11 +72,11 @@ public class BaleMessengerSender(BaleBotClient bale, IOptions<BaleOptions> optio
         string? caption,
         CancellationToken cancellationToken)
     {
-        return BaleMediaHelper.Classify(relativePath) switch
+        return MessengerMediaHelper.Classify(relativePath) switch
         {
-            BaleMediaKind.Video => await SendVideoFileAsync(chatId, relativePath, caption, cancellationToken),
-            BaleMediaKind.Audio => await SendAudioFileAsync(chatId, relativePath, caption, cancellationToken),
-            BaleMediaKind.Document => await SendDocumentFileAsync(chatId, relativePath, caption, cancellationToken),
+            MessengerMediaKind.Video => await SendVideoFileAsync(chatId, relativePath, caption, cancellationToken),
+            MessengerMediaKind.Audio => await SendAudioFileAsync(chatId, relativePath, caption, cancellationToken),
+            MessengerMediaKind.Document => await SendDocumentFileAsync(chatId, relativePath, caption, cancellationToken),
             _ => await SendPhotoFileAsync(chatId, relativePath, caption, cancellationToken)
         };
     }
@@ -85,12 +85,12 @@ public class BaleMessengerSender(BaleBotClient bale, IOptions<BaleOptions> optio
     {
         switch (request.MessageType)
         {
-            case BaleMessageType.Text:
-                await bale.EditTextAsync(request.ChatId, request.MessageId, request.Text!, cancellationToken);
+            case MessengerMessageType.Text:
+                await bale.EditTextAsync(request.ChatId, ParseBaleMessageId(request.MessageId), request.Text!, cancellationToken);
                 break;
-            case BaleMessageType.Photo:
-            case BaleMessageType.File:
-                await bale.EditCaptionAsync(request.ChatId, request.MessageId, request.Caption ?? request.Text!, cancellationToken);
+            case MessengerMessageType.Photo:
+            case MessengerMessageType.File:
+                await bale.EditCaptionAsync(request.ChatId, ParseBaleMessageId(request.MessageId), request.Caption ?? request.Text!, cancellationToken);
                 break;
             default:
                 throw new InvalidOperationException("نوع پیام پشتیبانی نمی‌شود");
@@ -98,7 +98,14 @@ public class BaleMessengerSender(BaleBotClient bale, IOptions<BaleOptions> optio
     }
 
     public Task DeleteAsync(MessengerDeleteRequest request, CancellationToken cancellationToken = default)
-        => bale.DeleteMessageAsync(request.ChatId, request.MessageId, cancellationToken);
+        => bale.DeleteMessageAsync(request.ChatId, ParseBaleMessageId(request.MessageId), cancellationToken);
+
+    static int ParseBaleMessageId(string messageId)
+    {
+        if (!int.TryParse(messageId, out var id) || id <= 0)
+            throw new InvalidOperationException("شناسه پیام بله نامعتبر است");
+        return id;
+    }
 
     async Task<BaleMessageResult> SendPhotoFileAsync(string chatId, string relativePath, string? caption, CancellationToken cancellationToken)
     {
@@ -130,8 +137,8 @@ public class BaleMessengerSender(BaleBotClient bale, IOptions<BaleOptions> optio
 
     static MessengerSendResult ToResult(BaleMessageResult result) => new()
     {
-        MessageIds = [result.MessageId],
-        Chat = result.Chat
+        MessageIds = [result.MessageId.ToString()],
+        ChatId = result.Chat?.Id.ToString()
     };
 
     string ResolveUploadPath(string relativePath)

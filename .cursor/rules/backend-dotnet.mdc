@@ -67,7 +67,10 @@ Apply on user delete/update/password/avatar for admin account.
 - Admin list APIs (`/api/accounts`, `/api/cost-types`) stay behind module `*.view` for CRUD pages only
 - `LookupService` + separate cache keys; invalidated with account/cost-type/person writes
 
-- **Income receipt image:** `IncomeReceiptImageService` renders a PNG (Islamic geometric border; logo right / bismillah center / Jalali date left; name right-aligned; amount digits LTR-isolated; no caption) to `uploads/bale/` and `BaleMessageService.TrySendIncomeReceiptAsync` sends it as `BaleMessageType.Photo`
+- **Income receipt image:** `IncomeReceiptImageService` renders a PNG (Islamic geometric border; logo right / bismillah center / Jalali date left; name right-aligned; amount digits LTR-isolated; no caption) to `uploads/bale/` or `uploads/rubika/` and `MessengerMessageService.TrySendIncomeReceiptAsync` sends it as `MessengerMessageType.Photo` to **every** configured messenger where the person has a linked chat id (Bale and/or Rubika)
+- **Shared messaging API:** `MessagesController` at `/api/messages` (entity `MessengerMessage` / table `MessengerMessages`; remote ids as strings); compose accepts `Messengers[]` for person/person-group; for channels `MessageChannelIds[]` (one or more; messenger derived from each channel); for person-group `PersonGroupIds[]`; for person `PersonIds[]`
+- **Rubika group/channel ids:** not shown in Rubika UI — add bot as admin, send a bot-visible message, then `POST /api/message-channels/sync-rubika` (UI confirms with setup notice first; adds missing `MessageChannel` rows; soft-deleted same `chat_id` rows are restored). Send still uses opaque `chat_id` via `sendMessage` / `sendFile`.
+- **Contact link (primary):** set `MESSAGING_PUBLIC_BASE_URL` / `Messaging:PublicBaseUrl` (HTTPS), then `POST /api/messages/register-webhooks` (or auto on API startup) → Bale `setWebhook` + Rubika `updateBotEndpoints`/`ReceiveUpdate`. User `/start` / `StartedBot` → share-phone. Manual `sync-contacts` is backup only. No always-on getUpdates poller.
 
 ## Migrations
 - Add EF migration in Infrastructure; applied automatically at startup via `DbSeeder`

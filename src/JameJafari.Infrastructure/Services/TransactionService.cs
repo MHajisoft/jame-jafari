@@ -334,7 +334,7 @@ public class TransactionService(AppDbContext db, IFusionCache cache)
         PersonName = PersonDisplayNameHelper.Format(row.PersonFirstName, row.PersonLastName, row.PersonNamePrefixName),
         PersonNickName = row.PersonNickName,
         PersonMobile = row.PersonMobile,
-        CanSendBaleReceipt = !string.IsNullOrWhiteSpace(row.PersonMobile),
+        CanSendReceipt = !string.IsNullOrWhiteSpace(row.PersonMobile),
         AccountId = row.AccountId,
         AccountName = row.AccountName,
         Amount = row.Amount,

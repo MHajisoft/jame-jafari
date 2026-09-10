@@ -6,12 +6,13 @@ import PersonCell from './PersonCell.vue'
 import { useOverlayBack } from '../composables/useOverlayBack'
 
 const props = defineProps({
-  modelValue: { type: [String, Number], default: '' },
+  modelValue: { type: [String, Number, Array], default: '' },
   placeholder: { type: String, default: 'انتخاب شخص' },
   searchPlaceholder: { type: String, default: 'جستجو نام، لقب، پدر یا مادر...' },
   gender: { type: [Number, String], default: null }, // 1 Male, 2 Female
   excludeId: { type: [Number, String], default: null },
   allowEmpty: { type: Boolean, default: true },
+  multiple: { type: Boolean, default: false },
   invalid: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
   pageSize: { type: Number, default: 20 },
@@ -36,6 +37,7 @@ const dragging = ref(false)
 
 const items = ref([])
 const selected = ref(null)
+const selectedList = ref([])
 const page = ref(1)
 const totalCount = ref(0)
 const loading = ref(false)
@@ -46,9 +48,15 @@ let dragStartVh = SHEET_DEFAULT_VH
 let searchTimer = null
 let requestSeq = 0
 
-const hasValue = computed(() =>
-  !(props.modelValue === '' || props.modelValue === null || props.modelValue === undefined)
-)
+const selectedIds = computed(() => {
+  if (!props.multiple) return []
+  return Array.isArray(props.modelValue) ? props.modelValue : []
+})
+
+const hasValue = computed(() => {
+  if (props.multiple) return selectedIds.value.length > 0
+  return !(props.modelValue === '' || props.modelValue === null || props.modelValue === undefined)
+})
 
 const canClear = computed(() => props.allowEmpty && hasValue.value)
 const canSearch = computed(() => query.value.trim().length >= props.minSearchLength)
@@ -149,6 +157,10 @@ function hasParentHintFields(p) {
 }
 
 async function ensureSelected() {
+  if (props.multiple) {
+    await ensureSelectedList()
+    return
+  }
   if (!hasValue.value) {
     selected.value = null
     return
@@ -173,6 +185,37 @@ async function ensureSelected() {
     if (selected.value && sameId(selected.value.id, props.modelValue)) return
     selected.value = { id: props.modelValue, firstName: `#${props.modelValue}`, lastName: '' }
   }
+}
+
+async function ensureSelectedList() {
+  const ids = selectedIds.value
+  if (!ids.length) {
+    selectedList.value = []
+    return
+  }
+  const byId = new Map(selectedList.value.map((p) => [String(p.id), p]))
+  for (const p of items.value) byId.set(String(p.id), p)
+
+  const next = []
+  for (const id of ids) {
+    const key = String(id)
+    let person = byId.get(key)
+    if (!person || !hasParentHintFields(person)) {
+      try {
+        const { data } = await api.get(ApiPaths.person(id), { skipErrorToast: true })
+        person = data
+      } catch {
+        person = person || { id, firstName: `#${id}`, lastName: '' }
+      }
+    }
+    next.push(person)
+  }
+  selectedList.value = next
+}
+
+function isIdSelected(id) {
+  if (props.multiple) return selectedIds.value.some((v) => sameId(v, id))
+  return sameId(props.modelValue, id)
 }
 
 function positionDesktopPanel() {
@@ -226,18 +269,51 @@ function toggle() {
 }
 
 function selectPerson(person) {
+  if (props.multiple) {
+    const current = [...selectedIds.value]
+    const idx = current.findIndex((v) => sameId(v, person.id))
+    if (idx >= 0) {
+      if (!props.allowEmpty && current.length <= 1) return
+      current.splice(idx, 1)
+      selectedList.value = selectedList.value.filter((p) => !sameId(p.id, person.id))
+    } else {
+      current.push(person.id)
+      if (!selectedList.value.some((p) => sameId(p.id, person.id))) {
+        selectedList.value = [...selectedList.value, person]
+      }
+    }
+    emit('update:modelValue', current)
+    emit('change', current)
+    return
+  }
   selected.value = person
   emit('update:modelValue', person.id)
   emit('change', person.id)
   closeSelect()
 }
 
+function removeSelectedId(id, e) {
+  e?.stopPropagation?.()
+  if (!props.multiple || props.disabled) return
+  if (!props.allowEmpty && selectedIds.value.length <= 1) return
+  const next = selectedIds.value.filter((v) => !sameId(v, id))
+  selectedList.value = selectedList.value.filter((p) => !sameId(p.id, id))
+  emit('update:modelValue', next)
+  emit('change', next)
+}
+
 function clearSelection(e) {
   e?.stopPropagation?.()
   if (!props.allowEmpty || props.disabled) return
-  selected.value = null
-  emit('update:modelValue', '')
-  emit('change', '')
+  if (props.multiple) {
+    selectedList.value = []
+    emit('update:modelValue', [])
+    emit('change', [])
+  } else {
+    selected.value = null
+    emit('update:modelValue', '')
+    emit('change', '')
+  }
   if (open.value && isMobile.value) closeSelect()
 }
 
@@ -335,12 +411,27 @@ onBeforeUnmount(() => {
         ref="triggerRef"
         type="button"
         class="select-trigger form-control"
-        :class="{ 'field-invalid': invalid, placeholder: !selected, 'has-avatar': !!selected }"
+        :class="{ 'field-invalid': invalid, placeholder: !hasValue, 'has-avatar': !multiple && !!selected }"
         :disabled="disabled"
         :aria-expanded="open"
         @click="toggle"
       >
-        <div v-if="selected" class="select-selected-block">
+        <div v-if="multiple && selectedList.length" class="tag-list" @click.stop>
+          <span v-for="p in selectedList" :key="String(p.id)" class="tag tag-person">
+            <PersonCell :person="p" :size="22" :previewable="false" />
+            <button
+              type="button"
+              class="tag-remove"
+              :disabled="disabled || (!allowEmpty && selectedIds.length <= 1)"
+              :aria-label="`حذف ${personFullName(p) || p.id}`"
+              @mousedown.prevent
+              @click="removeSelectedId(p.id, $event)"
+            >
+              ×
+            </button>
+          </span>
+        </div>
+        <div v-else-if="!multiple && selected" class="select-selected-block">
           <div class="trigger-person-slot">
             <PersonCell :person="selected" :size="28" :previewable="false" />
           </div>
@@ -383,6 +474,7 @@ onBeforeUnmount(() => {
           <div class="sheet-header">
             <h3 class="sheet-title">{{ placeholder }}</h3>
             <button v-if="canClear" type="button" class="sheet-clear" @click="clearSelection">پاک کردن</button>
+            <button v-if="multiple" type="button" class="sheet-done" @click="closeSelect">تأیید</button>
           </div>
           <div class="sheet-search">
             <input
@@ -400,7 +492,7 @@ onBeforeUnmount(() => {
               :key="p.id"
               type="button"
               class="person-option"
-              :class="{ selected: sameId(modelValue, p.id) }"
+              :class="{ selected: isIdSelected(p.id) }"
               @click="selectPerson(p)"
             >
               <div class="person-info">
@@ -436,7 +528,7 @@ onBeforeUnmount(() => {
               :key="p.id"
               type="button"
               class="person-option"
-              :class="{ selected: sameId(modelValue, p.id) }"
+              :class="{ selected: isIdSelected(p.id) }"
               @click="selectPerson(p)"
             >
               <div class="person-info">
@@ -619,16 +711,104 @@ onBeforeUnmount(() => {
   gap: 0.75rem;
   padding: 0.15rem 1rem 0.65rem;
 }
-.sheet-title { font-size: 1rem; font-weight: 700; margin: 0; }
-.sheet-clear {
+.sheet-title { font-size: 1rem; font-weight: 700; margin: 0; flex: 1; }
+.sheet-clear,
+.sheet-done {
   border: none;
-  background: color-mix(in srgb, var(--danger) 14%, transparent);
-  color: var(--danger);
   border-radius: 999px;
   padding: 0.3rem 0.75rem;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
+  background: transparent;
+}
+.sheet-clear {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+.sheet-done { color: var(--primary); }
+.tag-list {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  max-width: 100%;
+  padding-block: 0.15rem;
+  padding-inline-start: 0.5rem;
+  padding-inline-end: 0.2rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--border));
+  background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.tag-person {
+  max-width: min(100%, 16rem);
+  padding-block: 0.12rem;
+  padding-inline-start: 0.28rem;
+  padding-inline-end: 0.15rem;
+  border-radius: 999px;
+  gap: 0.15rem;
+  color: var(--text);
+  font-weight: 500;
+}
+.tag-person :deep(.person-cell) {
+  gap: 0.35rem;
+  min-width: 0;
+}
+.tag-person :deep(.person-cell-name) {
+  gap: 0.2rem;
+  font-size: 0.78rem;
+}
+.tag-person :deep(.person-cell-name strong) {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.tag-person :deep(.nick-badge) {
+  font-size: 0.65rem;
+  padding-block: 0.05rem;
+  padding-inline: 0.3rem;
+}
+.tag-person :deep(.life-badge) {
+  font-size: 0.65rem;
+  padding-block: 0.02rem;
+  padding-inline: 0.28rem;
+}
+.tag-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tag-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+.tag-remove:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: var(--danger);
+}
+.tag-remove:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 .sheet-search { padding: 0 1rem 0.75rem; }
 .sheet-search .form-control {

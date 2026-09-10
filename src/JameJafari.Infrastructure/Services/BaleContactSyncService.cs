@@ -64,19 +64,9 @@ public class BaleContactSyncService(
     {
         var state = await GetOrCreateStateAsync(cancellationToken);
 
-        if (state.LastUpdateId == 0)
-        {
-            var flushed = await bale.GetUpdatesAsync(offset: -1, cancellationToken: cancellationToken);
-            if (flushed.Count > 0)
-            {
-                state.LastUpdateId = flushed.Max(u => u.UpdateId);
-                await db.SaveChangesAsync(cancellationToken);
-            }
-
-            return 0;
-        }
-
-        var updates = await bale.GetUpdatesAsync(offset: state.LastUpdateId + 1, cancellationToken: cancellationToken);
+        // Cold start: process pending updates (incl. /start + contact) instead of discarding via offset=-1.
+        int? offset = state.LastUpdateId > 0 ? state.LastUpdateId + 1 : null;
+        var updates = await bale.GetUpdatesAsync(offset: offset, limit: 100, cancellationToken: cancellationToken);
         var linked = 0;
         foreach (var update in updates)
             linked += await ProcessWebhookUpdateAsync(update, cancellationToken);

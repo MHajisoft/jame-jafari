@@ -15,13 +15,15 @@ Standard actions: `view`, `create`, `update`, `delete` (+ `users.changepassword`
 
 `messages` — menu **مرکز پیام** (پیکربندی): `view` = list log, `send` = compose + income receipt + sync-contacts, `update` = edit on channel (within 48h; not person-group broadcasts), `delete` = remote (`scope=remote`) or local (`scope=local`)
 
-`messagechannels` — menu **کانال‌های پیام** (پیکربندی): CRUD named channels (`MessengerKind` + `ExternalChatId` string — numeric or `@username`)
+`messagechannels` — menu **کانال‌های پیام** (پیکربندی): CRUD named channels (`MessengerKind` + `ExternalChatId` string — Bale: numeric/`@username`; Rubika: opaque chat_id)
 
 `persongroups` — menu **گروه‌های اشخاص** (اطلاعات پایه): CRUD named person groups for broadcast compose
 
 Bale contact linking: mobile on Person → webhook `POST /api/bale/webhook` or `sync-contacts` → `BaleContactLink` + `Person.BaleChatId` (read-only in API). `BaleBotState.LastUpdateId` dedupes webhook/poll updates; first `getUpdates` uses `offset=-1` to skip backlog. Person-group sends may sit in `AwaitingContact` until linked.
 
-Messenger extensibility: `IMessengerSender` + `MessengerKind` enum; only Bale implemented; channels are per-messenger.
+Rubika contact linking: mobile on Person → webhook `POST /api/rubika/webhook` (`{ update }`) or same `sync-contacts` → `RubikaContactLink` + `Person.RubikaChatId`. Contact request via ChatKeypad `AskMyPhoneNumber`. `RubikaBotState.LastOffsetId` stores `next_offset_id`; first poll stores offset without linking backlog.
+
+Messenger extensibility: `IMessengerSender` + `MessengerKind` (`Bale`, `Rubika`); remote message ids stored as strings on `MessengerMessage` for both messengers; channels are per-messenger; HTTP surface `/api/messages` with multi-messenger compose (`Messengers[]`).
 
 `attachments` has no menu — `view` = list/preview, `add` = upload, `delete` = remove saved file
 

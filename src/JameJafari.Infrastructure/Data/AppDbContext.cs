@@ -19,9 +19,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<TransactionAttachment> TransactionAttachments => Set<TransactionAttachment>();
     public DbSet<FoodGeneration> FoodGenerations => Set<FoodGeneration>();
     public DbSet<FoodIngredient> FoodIngredients => Set<FoodIngredient>();
-    public DbSet<BaleMessage> BaleMessages => Set<BaleMessage>();
+    public DbSet<MessengerMessage> MessengerMessages => Set<MessengerMessage>();
     public DbSet<BaleContactLink> BaleContactLinks => Set<BaleContactLink>();
     public DbSet<BaleBotState> BaleBotStates => Set<BaleBotState>();
+    public DbSet<RubikaContactLink> RubikaContactLinks => Set<RubikaContactLink>();
+    public DbSet<RubikaBotState> RubikaBotStates => Set<RubikaBotState>();
     public DbSet<MessageChannel> MessageChannels => Set<MessageChannel>();
     public DbSet<PersonGroup> PersonGroups => Set<PersonGroup>();
     public DbSet<PersonGroupMember> PersonGroupMembers => Set<PersonGroupMember>();
@@ -68,6 +70,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.NickName).HasMaxLength(100);
             e.Property(x => x.Mobile).HasMaxLength(20);
             e.Property(x => x.BaleChatId);
+            e.Property(x => x.RubikaChatId).HasMaxLength(100);
             e.Property(x => x.DeathDate).HasColumnType("date");
             e.HasOne(x => x.Father).WithMany(x => x.ChildrenAsFather).HasForeignKey(x => x.FatherId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Mother).WithMany(x => x.ChildrenAsMother).HasForeignKey(x => x.MotherId).OnDelete(DeleteBehavior.Restrict);
@@ -146,7 +149,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(x => x.CostType).WithMany(x => x.FoodIngredients).HasForeignKey(x => x.CostTypeId);
         });
 
-        modelBuilder.Entity<BaleMessage>(e =>
+        modelBuilder.Entity<MessengerMessage>(e =>
         {
             e.Property(x => x.ChatId).HasMaxLength(100);
             e.Property(x => x.Text).HasMaxLength(4096);
@@ -167,13 +170,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                         v => v.ToList()))
                 .HasColumnType("nvarchar(max)");
 
-            e.Property(x => x.BaleMessageIds)
+            e.Property(x => x.RemoteMessageId).HasMaxLength(64);
+            e.Property(x => x.RemoteMessageIds)
                 .HasConversion(
                     v => JsonSerializer.Serialize(v, jsonOptions),
-                    v => JsonSerializer.Deserialize<List<int>>(v, jsonOptions) ?? new List<int>(),
-                    new ValueComparer<List<int>>(
+                    v => JsonSerializer.Deserialize<List<string>>(v, jsonOptions) ?? new List<string>(),
+                    new ValueComparer<List<string>>(
                         (a, b) => a!.SequenceEqual(b!),
-                        v => v.Aggregate(0, (hash, item) => HashCode.Combine(hash, item)),
+                        v => v.Aggregate(0, (hash, item) => HashCode.Combine(hash, item.GetHashCode())),
                         v => v.ToList()))
                 .HasColumnType("nvarchar(max)");
             e.HasOne(x => x.IncomeTransaction).WithMany().HasForeignKey(x => x.IncomeTransactionId).OnDelete(DeleteBehavior.SetNull);
@@ -221,6 +225,23 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.LastUpdateId);
         });
 
+        modelBuilder.Entity<RubikaContactLink>(e =>
+        {
+            // chat:{rubikaChatId} placeholders exceed phone length (opaque ids ≈ 30+)
+            e.Property(x => x.NormalizedPhone).HasMaxLength(128);
+            e.Property(x => x.ChatId).HasMaxLength(100);
+            e.HasIndex(x => x.NormalizedPhone).IsUnique();
+            e.HasIndex(x => x.ChatId);
+            e.HasOne(x => x.Person).WithMany().HasForeignKey(x => x.PersonId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<RubikaBotState>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.LastOffsetId).HasMaxLength(100);
+            e.Property(x => x.KnownGroupChatsJson).HasColumnType("nvarchar(max)");
+        });
+
         ConfigureAuditRelations<User>(modelBuilder);
         ConfigureAuditRelations<GeneralType>(modelBuilder);
         ConfigureAuditRelations<Person>(modelBuilder);
@@ -229,7 +250,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         ConfigureAuditRelations<IncomeTransaction>(modelBuilder);
         ConfigureAuditRelations<CostTransaction>(modelBuilder);
         ConfigureAuditRelations<FoodGeneration>(modelBuilder);
-        ConfigureAuditRelations<BaleMessage>(modelBuilder);
+        ConfigureAuditRelations<MessengerMessage>(modelBuilder);
         ConfigureAuditRelations<MessageChannel>(modelBuilder);
         ConfigureAuditRelations<PersonGroup>(modelBuilder);
     }

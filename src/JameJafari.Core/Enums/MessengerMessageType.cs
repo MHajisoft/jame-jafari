@@ -1,6 +1,6 @@
 namespace JameJafari.Core.Enums;
 
-public enum BaleMessageType
+public enum MessengerMessageType
 {
     Text = 1,
     Photo = 2,

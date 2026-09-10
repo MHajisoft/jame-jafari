@@ -18,7 +18,9 @@ export default defineConfig({
         'icons/icon-512.png',
         'icons/icon-512-maskable.png',
         'icons/logo-512.png',
-        'icons/og-image.png'
+        'icons/og-image.png',
+        'icons/messengers/bale.svg',
+        'icons/messengers/rubika.png'
       ],
       manifest: {
         id: '/',

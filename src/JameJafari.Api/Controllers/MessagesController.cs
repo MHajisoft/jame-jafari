@@ -12,10 +12,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace JameJafari.Api.Controllers;
 
 [Authorize]
-[Route("api/bale-messages")]
-public class BaleMessagesController(
-    BaleMessageService service,
+[Route("api/messages")]
+public class MessagesController(
+    MessengerMessageService service,
     BaleContactSyncService syncService,
+    RubikaContactSyncService rubikaSyncService,
+    MessengerWebhookRegistrationService webhookRegistration,
     FileStorageService storage) : ApiControllerBase
 {
     private static readonly JsonSerializerOptions FormJsonOptions = new()
@@ -26,11 +28,11 @@ public class BaleMessagesController(
 
     [HttpGet("config")]
     [RequirePermission(PermissionCodes.MessagesView, PermissionCodes.MessagesSend)]
-    public async Task<ActionResult<BaleConfigResponse>> GetConfig() => Ok(await service.GetConfigAsync());
+    public async Task<ActionResult<MessengerConfigResponse>> GetConfig() => Ok(await service.GetConfigAsync());
 
     [HttpGet]
     [RequirePermission(PermissionCodes.MessagesView)]
-    public async Task<ActionResult<PagedResult<BaleMessageResponse>>> GetAll(
+    public async Task<ActionResult<PagedResult<MessengerMessageResponse>>> GetAll(
         [FromQuery, Range(1, 100)] int page = 1,
         [FromQuery, Range(1, 200)] int pageSize = 20)
     {
@@ -48,21 +50,33 @@ public class BaleMessagesController(
         if (string.IsNullOrWhiteSpace(data))
             return BadRequest("داده ارسالی نامعتبر است");
 
-        var request = JsonSerializer.Deserialize<SendBaleMessageRequest>(data, FormJsonOptions);
+        var request = JsonSerializer.Deserialize<SendMessengerMessageRequest>(data, FormJsonOptions);
         if (request is null)
             return BadRequest("داده ارسالی نامعتبر است");
 
+        var messengers = (request.Messengers ?? [])
+            .Distinct()
+            .ToList();
+        var isChannel = request.TargetType == Core.Enums.MessageComposeTarget.Channel;
+        if (!isChannel && messengers.Count == 0)
+            return BadRequest(new { message = "انتخاب حداقل یک پیام‌رسان الزامی است" });
+
+        // Folder is organizational; both senders resolve under the shared uploads root.
+        var uploadFolder = messengers.Contains(Core.Enums.MessengerKind.Rubika)
+                           && !messengers.Contains(Core.Enums.MessengerKind.Bale)
+            ? "rubika"
+            : "bale";
         var attachmentPaths = new List<string>();
         try
         {
             if (files is { Count: > 0 })
             {
                 foreach (var file in files)
-                    attachmentPaths.Add(await storage.SaveAsync(file, "bale"));
+                    attachmentPaths.Add(await storage.SaveAsync(file, uploadFolder));
             }
             else if (photo is not null)
             {
-                attachmentPaths.Add(await storage.SaveAsync(photo, "bale"));
+                attachmentPaths.Add(await storage.SaveAsync(photo, uploadFolder));
             }
         }
         catch (InvalidOperationException ex)
@@ -94,7 +108,7 @@ public class BaleMessagesController(
 
     [HttpPut("{id:int}")]
     [RequirePermission(PermissionCodes.MessagesUpdate)]
-    public async Task<ActionResult<BaleMessageResponse>> Update(int id, [FromBody] UpdateBaleMessageRequest request)
+    public async Task<ActionResult<MessengerMessageResponse>> Update(int id, [FromBody] UpdateMessengerMessageRequest request)
     {
         try
         {
@@ -137,8 +151,23 @@ public class BaleMessagesController(
     {
         try
         {
-            var linked = await syncService.SyncFromUpdatesAsync(cancellationToken);
-            return Ok(new { linked });
+            var baleLinked = await syncService.SyncFromUpdatesAsync(cancellationToken);
+            var rubikaLinked = await rubikaSyncService.SyncFromUpdatesAsync(cancellationToken);
+            return Ok(new { linked = baleLinked + rubikaLinked, baleLinked, rubikaLinked });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("register-webhooks")]
+    [RequirePermission(PermissionCodes.MessagesSend)]
+    public async Task<ActionResult<RegisterMessengerWebhooksResponse>> RegisterWebhooks(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await webhookRegistration.RegisterAsync(cancellationToken));
         }
         catch (InvalidOperationException ex)
         {

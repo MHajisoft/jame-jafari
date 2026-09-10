@@ -171,7 +171,7 @@ async function submit() {
         headers: { 'Content-Type': 'multipart/form-data' },
         loaderMessage: 'در حال ذخیره…'
       })
-      if (data.baleReceiptWarning) toast.warning(data.baleReceiptWarning)
+      if (data.receiptWarning) toast.warning(data.receiptWarning)
     }
   }, {
     successMessage: editing.value ? 'درآمد ویرایش شد' : 'درآمد با موفقیت ثبت شد'
@@ -197,12 +197,13 @@ async function sendReceipt(item) {
     toast.warning('شماره موبایل شخص ثبت نشده است')
     return
   }
-  if (!(await dialog.confirm({ message: 'ارسال رسید از طریق پیام‌رسان؟' }))) return
+  if (!(await dialog.confirm({ message: 'ارسال رسید از طریق همه پیام‌رسان‌های متصل؟' }))) return
   try {
     const { data } = await api.post(ApiPaths.incomeTransactionSendReceipt(item.id), null, {
       loaderMessage: 'در حال ارسال…'
     })
-    if (data.warning) toast.warning(data.warning)
+    if (data.sent && data.warning) toast.warning(data.warning)
+    else if (data.warning) toast.warning(data.warning)
     else if (data.sent) toast.success('رسید ارسال شد')
     await reloadTransactions()
   } catch (e) {
@@ -215,8 +216,8 @@ function incomeExtras(item) {
   return [{
     id: 'receipt',
     label: 'ارسال رسید',
-    disabled: !item.canSendBaleReceipt,
-    title: item.canSendBaleReceipt ? 'ارسال رسید' : 'موبایل شخص ثبت نشده'
+    disabled: !item.canSendReceipt,
+    title: item.canSendReceipt ? 'ارسال رسید' : 'موبایل شخص ثبت نشده'
   }]
 }
 

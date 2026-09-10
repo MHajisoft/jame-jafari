@@ -42,7 +42,7 @@ export function loaderMessageForRequest(config) {
   if (method === 'get') return MSG.load
 
   if (method === 'delete') {
-    if (path.includes('/bale-messages/') && query.includes('scope=remote'))
+    if (path.includes('/messages/') && query.includes('scope=remote'))
       return 'در حال حذف از گفتگو…'
     return MSG.remove
   }
@@ -52,8 +52,9 @@ export function loaderMessageForRequest(config) {
   if (method === 'post') {
     if (path.includes('/auth/login')) return MSG.login
     if (path.includes('/sync-contacts')) return MSG.sync
+    if (path.includes('/sync-rubika') || path.includes('/discover-rubika')) return MSG.sync
     if (path.includes('/send-receipt')) return MSG.send
-    if (path === '/bale-messages' || path === '/bale-messages/') return MSG.send
+    if (path === '/messages' || path === '/messages/') return MSG.send
     return MSG.save
   }
 

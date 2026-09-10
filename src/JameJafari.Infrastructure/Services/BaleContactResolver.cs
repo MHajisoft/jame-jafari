@@ -2,8 +2,8 @@ using System.Text.Json.Serialization;
 using JameJafari.Core.Entities;
 using JameJafari.Core.Helpers;
 using JameJafari.Core.Options;
-using JameJafari.Infrastructure.Bale;
 using JameJafari.Infrastructure.Data;
+using JameJafari.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -199,7 +199,7 @@ public class BaleUpdateModels
     public class BaleWebhookContact
     {
         [JsonPropertyName("phone_number")]
-        [JsonConverter(typeof(BaleFlexibleStringJsonConverter))]
+        [JsonConverter(typeof(FlexibleStringJsonConverter))]
         public string? PhoneNumber { get; set; }
 
         [JsonPropertyName("user_id")]

@@ -2,11 +2,11 @@ using JameJafari.Core.Enums;
 
 namespace JameJafari.Core.Entities;
 
-public class BaleMessage : AuditableEntity
+public class MessengerMessage : AuditableEntity
 {
     public MessengerKind MessengerKind { get; set; } = MessengerKind.Bale;
-    public BaleMessageType MessageType { get; set; }
-    public BaleMessageTargetKind TargetKind { get; set; }
+    public MessengerMessageType MessageType { get; set; }
+    public MessengerMessageTargetKind TargetKind { get; set; }
     public int? MessageChannelId { get; set; }
     public MessageChannel? MessageChannel { get; set; }
     public int? PersonGroupId { get; set; }
@@ -14,15 +14,15 @@ public class BaleMessage : AuditableEntity
     public Guid? BroadcastBatchId { get; set; }
     public string ChatId { get; set; } = "";
     public string? TargetMobile { get; set; }
-    public int? BaleMessageId { get; set; }
-    public bool DeletedFromBale { get; set; }
+    public string? RemoteMessageId { get; set; }
+    public bool DeletedFromRemote { get; set; }
     public string? Text { get; set; }
     public string? Caption { get; set; }
     public string? LinkUrl { get; set; }
     public string? LinkLabel { get; set; }
     public List<string> AttachmentPaths { get; set; } = [];
-    public List<int> BaleMessageIds { get; set; } = [];
-    public BaleMessageStatus Status { get; set; } = BaleMessageStatus.Pending;
+    public List<string> RemoteMessageIds { get; set; } = [];
+    public MessengerMessageStatus Status { get; set; } = MessengerMessageStatus.Pending;
     public string? ErrorMessage { get; set; }
     public DateTime? SentAt { get; set; }
     public int? IncomeTransactionId { get; set; }

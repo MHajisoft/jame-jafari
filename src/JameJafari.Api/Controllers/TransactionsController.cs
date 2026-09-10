@@ -15,7 +15,7 @@ namespace JameJafari.Api.Controllers;
 [Route("api/income-transactions")]
 public class IncomeTransactionsController(
     TransactionService service,
-    BaleMessageService baleMessages,
+    MessengerMessageService messengerMessages,
     FileStorageService storage) : ApiControllerBase
 {
     private static readonly JsonSerializerOptions FormJsonOptions = new()
@@ -56,11 +56,11 @@ public class IncomeTransactionsController(
         if (paths is null) return BadRequest(new { message = "خطا در ذخیره پیوست" });
 
         var created = await service.CreateIncomeAsync(request, CurrentUserId, paths);
-        if (created.CanSendBaleReceipt)
+        if (created.CanSendReceipt)
         {
-            var receipt = await baleMessages.TrySendIncomeReceiptAsync(created.Id, CurrentUserId);
+            var receipt = await messengerMessages.TrySendIncomeReceiptAsync(created.Id, CurrentUserId);
             if (!receipt.Sent)
-                created.BaleReceiptWarning = receipt.Warning;
+                created.ReceiptWarning = receipt.Warning;
         }
 
         return Ok(ResponseVisibility.ApplyAttachments(created, User));
@@ -122,14 +122,21 @@ public class IncomeTransactionsController(
             && !HasPermission(PermissionCodes.IncomeUpdate))
             return Forbid();
 
-        var result = await baleMessages.TrySendIncomeReceiptAsync(id, CurrentUserId);
-        if (result.Message is not null)
+        var result = await messengerMessages.TrySendIncomeReceiptAsync(id, CurrentUserId);
+        if (result.Messages.Count > 0 || result.Message is not null)
+        {
+            var messages = result.Messages.Count > 0
+                ? result.Messages
+                : result.Message is not null ? [result.Message] : Array.Empty<MessengerMessageResponse>();
+            var visible = messages.Select(m => ResponseVisibility.Apply(m, User)!).ToList();
             result = new IncomeReceiptSendResult
             {
                 Sent = result.Sent,
                 Warning = result.Warning,
-                Message = ResponseVisibility.Apply(result.Message, User)
+                Message = visible.FirstOrDefault(),
+                Messages = visible
             };
+        }
 
         return Ok(result);
     }

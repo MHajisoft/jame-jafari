@@ -1,6 +1,6 @@
 namespace JameJafari.Core.Enums;
 
-public enum BaleMessageStatus
+public enum MessengerMessageStatus
 {
     Pending = 1,
     Sent = 2,

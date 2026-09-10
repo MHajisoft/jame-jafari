@@ -9,8 +9,8 @@ export {
   transactionDirections,
   generalTypeCategories,
   messengerKinds,
-  baleMessageTypes,
-  baleMessageStatuses,
+  messengerMessageTypes,
+  messengerMessageStatuses,
   enumLabel,
   enumValue,
   genderLabel,
@@ -18,9 +18,9 @@ export {
   transactionDirectionLabel,
   generalTypeCategoryLabel,
   messengerKindLabel,
-  baleMessageTypeLabel,
-  baleMessageStatusLabel,
-  isBaleMessageType
+  messengerMessageTypeLabel,
+  messengerMessageStatusLabel,
+  isMessengerMessageType
 } from './enums'
 
 dayjs.extend(jalaliday)

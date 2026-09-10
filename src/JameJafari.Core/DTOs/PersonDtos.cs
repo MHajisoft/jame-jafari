@@ -19,6 +19,7 @@ public class PersonResponse : ResponseBase
     public string? PicturePath { get; init; }
     public string? Mobile { get; init; }
     public long? BaleChatId { get; init; }
+    public string? RubikaChatId { get; init; }
     public string? Address { get; init; }
     public int? NamePrefixId { get; init; }
     public string? NamePrefixName { get; init; }

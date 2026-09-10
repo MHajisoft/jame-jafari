@@ -26,16 +26,17 @@ export const generalTypeCategories = [
 ]
 
 export const messengerKinds = [
-  { value: 1, key: 'Bale', label: 'بله' }
+  { value: 1, key: 'Bale', label: 'بله' },
+  { value: 2, key: 'Rubika', label: 'روبیکا' }
 ]
 
-export const baleMessageTypes = [
+export const messengerMessageTypes = [
   { value: 1, key: 'Text', label: 'متن' },
   { value: 2, key: 'Photo', label: 'تصویر / ویدیو' },
   { value: 3, key: 'File', label: 'فایل' }
 ]
 
-export const baleMessageStatuses = [
+export const messengerMessageStatuses = [
   { value: 1, key: 'Pending', label: 'در انتظار' },
   { value: 2, key: 'Sent', label: 'ارسال‌شده' },
   { value: 3, key: 'Failed', label: 'ناموفق' },
@@ -70,6 +71,6 @@ export const paymentTypeLabel = (v) => enumLabel(paymentTypes, v)
 export const transactionDirectionLabel = (v) => enumLabel(transactionDirections, v)
 export const generalTypeCategoryLabel = (v) => enumLabel(generalTypeCategories, v)
 export const messengerKindLabel = (v) => enumLabel(messengerKinds, v)
-export const baleMessageTypeLabel = (v) => enumLabel(baleMessageTypes, v)
-export const baleMessageStatusLabel = (v) => enumLabel(baleMessageStatuses, v)
-export const isBaleMessageType = (v, typeValue) => enumValue(baleMessageTypes, v, 0) === typeValue
+export const messengerMessageTypeLabel = (v) => enumLabel(messengerMessageTypes, v)
+export const messengerMessageStatusLabel = (v) => enumLabel(messengerMessageStatuses, v)
+export const isMessengerMessageType = (v, typeValue) => enumValue(messengerMessageTypes, v, 0) === typeValue

@@ -74,7 +74,11 @@ Router: `meta: { permission: 'food.view' }`
 ## Lookups
 - Use `useLookupsStore()` for accounts/cost-types/general-types dropdowns
 - **AppSelect:** searchable by default (desktop + mobile); multi-token ALL-match + Persian normalize via `utils/selectSearch.js` (same idea as PersonSelect)
-- **PersonSelect:** search via `ApiPaths.lookups.persons`; resolve selected id via `ApiPaths.person(id)`
+- **AppMultiSelect:** same overlay as AppSelect; optional `group` / `icon` on options
+- **MessengerKindIcon / MessengerKindCell:** real brand marks from `/icons/messengers/` (`bale.svg` ≈2.6KB, `rubika.png` ≈3KB official minimal); PWA-precached; use in grids; pass option `icon: messengerKind` for `AppSelect` / `AppMultiSelect`
+- **PrefIconLabelCell** + `MessengerMessageTypeCell` / `MessengerMessageStatusCell` / `ActiveStatusCell`: symbolic table cells; display mode from `stores/uiPrefs` (`tableLabelMode`: `icon` default | `icon-text` | `text`); Settings «نمایش نمادین جداول»; `title` tooltip when icon-only
+- Message Center: when `tableLabelMode === 'icon'`, messenger+type+status render as one `MessengerMessageMetaCluster` column/row (`مشخصات`); text / icon-text keep separate columns for scanning
+- **PersonSelect:** search via `ApiPaths.lookups.persons`; resolve selected id via `ApiPaths.person(id)`; optional `multiple` → `v-model` array with compact `PersonCell` chips (avatar + name + nick/life badges)
 - Person life status uses `isDead`: `PersonLifeStatus` badge **only when deceased** (same row as `NickBadge`); living people show no life badge
 - Person **تاریخ وفات** (`deathDate`): edit/create form only when `isDead`; starts **empty** until user picks; not shown on Persons list or PersonSelect
 - Person **لقب** (`nickName`): `NickBadge` on Persons list, PersonSelect, Income person column, person-income report
@@ -87,9 +91,10 @@ Router: `meta: { permission: 'food.view' }`
 - Mobile breakpoint: 768px (`useIsMobile`)
 - Mobile datepicker mode (`stores/uiPrefs`): `sheet` (bottom wheels) | `modal` (calendar); Settings card only when `useIsMobile`; desktop always calendar modal
 - Currency display (`stores/uiPrefs`): `rial` | `toman`; Settings card «واحد پول»; preference in localStorage
+- Messenger / type / status label (`stores/uiPrefs`): `tableLabelMode` `icon` | `icon-text` | `text`; Settings «نمایش نمادین جداول»; used by `PrefIconLabelCell` family
 - `PersianDatePicker` mobile overlay (sheet or modal): `useOverlayBack` with `stateKey: 'appDatePicker'`
 - **App updates:** `vite-plugin-pwa` `registerType: 'autoUpdate'` + `initPwaUpdate()` — new SW activates and reloads automatically; poll every 30m + on visibility restore
 - **Exit on back (mobile):** `initPwaExitBack()` — on primary tabs, system back shows a bottom hint then leaves on second press within 2s; overlays/forms/nested routes still consume back first
 - **List pagination:** `PagedListPanel` + `usePagedList` on all CRUD list views — footer visible when `totalCount > 0` (shows range and page even on a single page); desktop: page scroll + sticky thead/footer; mobile: inline bar after list (no fixed overlap with FAB)
 - Install prompt: `usePwaInstall` / `PwaInstallBanner`
-- `AppSelect` / `PersonSelect` mobile sheets: `useOverlayBack` (`appSelect` / `appPersonSelect`)
+- `AppSelect` / `AppMultiSelect` / `PersonSelect` mobile sheets: `useOverlayBack` (`appSelect` / `appMultiSelect` / `appPersonSelect`)

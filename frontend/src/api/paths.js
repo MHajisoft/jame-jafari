@@ -35,12 +35,14 @@ export const ApiPaths = {
     messageChannels: '/lookups/message-channels',
     personGroups: '/lookups/person-groups'
   },
-  baleMessages: '/bale-messages',
-  baleMessage: (id, scope = 'remote') => `/bale-messages/${id}?scope=${scope}`,
-  baleConfig: '/bale-messages/config',
-  baleSyncContacts: '/bale-messages/sync-contacts',
+  messages: '/messages',
+  message: (id, scope = 'remote') => `/messages/${id}?scope=${scope}`,
+  messagesConfig: '/messages/config',
+  messagesSyncContacts: '/messages/sync-contacts',
+  messagesRegisterWebhooks: '/messages/register-webhooks',
   messageChannels: '/message-channels',
   messageChannel: (id) => `/message-channels/${id}`,
+  messageChannelsSyncRubika: '/message-channels/sync-rubika',
   personGroups: '/person-groups',
   personGroup: (id) => `/person-groups/${id}`,
   incomeTransactionSendReceipt: (id) => `/income-transactions/${id}/send-receipt`

@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace JameJafari.Infrastructure.Bale;
+namespace JameJafari.Infrastructure.Messaging;
 
-public sealed class BaleFlexibleStringJsonConverter : JsonConverter<string?>
+public sealed class FlexibleStringJsonConverter : JsonConverter<string?>
 {
     public override string? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
         reader.TokenType switch

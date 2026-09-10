@@ -1,11 +1,10 @@
 using JameJafari.Core.Enums;
-using JameJafari.Infrastructure.Bale;
 
 namespace JameJafari.Infrastructure.Messaging;
 
 public sealed class MessengerSendRequest
 {
-    public BaleMessageType MessageType { get; init; }
+    public MessengerMessageType MessageType { get; init; }
     public string ChatId { get; init; } = "";
     public string? Text { get; init; }
     public string? Caption { get; init; }
@@ -14,9 +13,9 @@ public sealed class MessengerSendRequest
 
 public sealed class MessengerEditRequest
 {
-    public BaleMessageType MessageType { get; init; }
+    public MessengerMessageType MessageType { get; init; }
     public string ChatId { get; init; } = "";
-    public int MessageId { get; init; }
+    public string MessageId { get; init; } = "";
     public string? Text { get; init; }
     public string? Caption { get; init; }
 }
@@ -24,7 +23,7 @@ public sealed class MessengerEditRequest
 public sealed class MessengerDeleteRequest
 {
     public string ChatId { get; init; } = "";
-    public int MessageId { get; init; }
+    public string MessageId { get; init; } = "";
 }
 
 public interface IMessengerSender

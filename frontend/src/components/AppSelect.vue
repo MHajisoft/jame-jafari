@@ -2,12 +2,15 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { matchesAllTokens } from '../utils/selectSearch'
 import { useOverlayBack } from '../composables/useOverlayBack'
+import MessengerKindIcon from './MessengerKindIcon.vue'
 
 const props = defineProps({
   modelValue: { type: [String, Number, Boolean], default: '' },
   options: { type: Array, default: () => [] },
   optionValue: { type: String, default: 'value' },
   optionLabel: { type: String, default: 'label' },
+  /** Optional field for messenger (or other) icon key/kind on each option. */
+  optionIcon: { type: String, default: 'icon' },
   placeholder: { type: String, default: 'انتخاب کنید' },
   searchable: { type: Boolean, default: true },
   searchPlaceholder: { type: String, default: 'جستجو...' },
@@ -37,11 +40,13 @@ let dragStartVh = SHEET_DEFAULT_VH
 const normalized = computed(() =>
   props.options.map((opt) => {
     if (opt == null || typeof opt !== 'object') {
-      return { value: opt, label: String(opt ?? '') }
+      return { value: opt, label: String(opt ?? ''), icon: null }
     }
+    const icon = opt[props.optionIcon]
     return {
       value: opt[props.optionValue],
-      label: String(opt[props.optionLabel] ?? '')
+      label: String(opt[props.optionLabel] ?? ''),
+      icon: icon === undefined || icon === '' ? null : icon
     }
   })
 )
@@ -50,11 +55,13 @@ const hasValue = computed(() =>
   !(props.modelValue === '' || props.modelValue === null || props.modelValue === undefined)
 )
 
-const selectedLabel = computed(() => {
-  if (!hasValue.value) return ''
-  const match = normalized.value.find((o) => String(o.value) === String(props.modelValue))
-  return match?.label || ''
+const selectedOption = computed(() => {
+  if (!hasValue.value) return null
+  return normalized.value.find((o) => String(o.value) === String(props.modelValue)) || null
 })
+
+const selectedLabel = computed(() => selectedOption.value?.label || '')
+const selectedIcon = computed(() => selectedOption.value?.icon ?? null)
 
 const filtered = computed(() => {
   if (!props.searchable) return normalized.value
@@ -221,7 +228,10 @@ onBeforeUnmount(() => {
         aria-haspopup="listbox"
         @click="toggle"
       >
-        <span class="select-value">{{ selectedLabel || placeholder }}</span>
+        <span class="select-value" :class="{ 'has-icon': selectedIcon != null }">
+          <MessengerKindIcon v-if="selectedIcon != null" :kind="selectedIcon" :size="18" />
+          <span>{{ selectedLabel || placeholder }}</span>
+        </span>
         <span class="select-caret" aria-hidden="true">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9" />
@@ -295,7 +305,8 @@ onBeforeUnmount(() => {
               role="option"
               @click="selectValue(opt.value)"
             >
-              {{ opt.label }}
+              <MessengerKindIcon v-if="opt.icon != null" :kind="opt.icon" :size="18" />
+              <span>{{ opt.label }}</span>
             </button>
             <div v-if="!filtered.length" class="option-empty">{{ emptyMessage }}</div>
           </div>
@@ -337,7 +348,8 @@ onBeforeUnmount(() => {
               role="option"
               @click="selectValue(opt.value)"
             >
-              {{ opt.label }}
+              <MessengerKindIcon v-if="opt.icon != null" :kind="opt.icon" :size="18" />
+              <span>{{ opt.label }}</span>
             </button>
             <div v-if="!filtered.length" class="option-empty">{{ emptyMessage }}</div>
           </div>
@@ -379,9 +391,20 @@ onBeforeUnmount(() => {
 }
 .select-value {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.select-value.has-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.select-value.has-icon > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .select-caret {
   display: inline-flex;
@@ -542,7 +565,9 @@ onBeforeUnmount(() => {
   touch-action: pan-y;
 }
 .option-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   width: 100%;
   border: none;
   background: transparent;

@@ -159,6 +159,7 @@ watch(
   color: var(--text-muted);
   font-size: 0.92rem;
   line-height: 1.6;
+  white-space: pre-line;
 }
 
 .dialog-actions {

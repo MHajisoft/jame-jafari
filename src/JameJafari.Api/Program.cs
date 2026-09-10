@@ -26,6 +26,13 @@ builder.Services.AddControllers(options =>
 });
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.Configure<MessagingOptions>(options =>
+{
+    builder.Configuration.GetSection(MessagingOptions.SectionName).Bind(options);
+    options.PublicBaseUrl = builder.Configuration["MESSAGING_PUBLIC_BASE_URL"]
+        ?? builder.Configuration["Messaging:PublicBaseUrl"]
+        ?? options.PublicBaseUrl;
+});
 builder.Services.Configure<BaleOptions>(options =>
 {
     builder.Configuration.GetSection(BaleOptions.SectionName).Bind(options);
@@ -36,6 +43,18 @@ builder.Services.Configure<BaleOptions>(options =>
         ?? builder.Configuration["Bale:BotUsername"];
     options.WebhookSecret = builder.Configuration["BALE_WEBHOOK_SECRET"]
         ?? builder.Configuration["Bale:WebhookSecret"];
+    options.UploadsRootPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
+});
+builder.Services.Configure<RubikaOptions>(options =>
+{
+    builder.Configuration.GetSection(RubikaOptions.SectionName).Bind(options);
+    options.BotToken = builder.Configuration["RUBIKA_BOT_TOKEN"]
+        ?? builder.Configuration["Rubika:BotToken"]
+        ?? "";
+    options.BotUsername = builder.Configuration["RUBIKA_BOT_USERNAME"]
+        ?? builder.Configuration["Rubika:BotUsername"];
+    options.WebhookSecret = builder.Configuration["RUBIKA_WEBHOOK_SECRET"]
+        ?? builder.Configuration["Rubika:WebhookSecret"];
     options.UploadsRootPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
 });
 builder.Services.AddScoped<ImageProcessingService>();
@@ -74,6 +93,7 @@ var app = builder.Build();
 Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, "uploads"));
 
 await DbSeeder.SeedAsync(app.Services);
+await TryRegisterMessengerWebhooksAsync(app.Services);
 
 if (app.Environment.IsDevelopment())
     app.MapOpenApi();
@@ -93,3 +113,27 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 app.Run();
+
+static async Task TryRegisterMessengerWebhooksAsync(IServiceProvider services)
+{
+    using var scope = services.CreateScope();
+    var messaging = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<MessagingOptions>>().Value;
+    if (!messaging.HasPublicBaseUrl)
+        return;
+
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("MessengerWebhookRegistration");
+    try
+    {
+        var result = await scope.ServiceProvider
+            .GetRequiredService<JameJafari.Infrastructure.Services.MessengerWebhookRegistrationService>()
+            .RegisterAsync();
+        logger.LogInformation(
+            "Startup webhook registration: bale={Bale} rubika={Rubika}",
+            result.BaleRegistered,
+            result.RubikaRegistered);
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "Startup messenger webhook registration skipped/failed");
+    }
+}

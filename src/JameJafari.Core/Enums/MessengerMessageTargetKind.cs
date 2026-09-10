@@ -1,6 +1,6 @@
 namespace JameJafari.Core.Enums;
 
-public enum BaleMessageTargetKind
+public enum MessengerMessageTargetKind
 {
     Private = 1,
     Group = 2

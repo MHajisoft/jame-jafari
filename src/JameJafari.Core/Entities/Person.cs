@@ -16,6 +16,8 @@ public class Person : AuditableEntity
     public string? Mobile { get; set; }
     /// <summary>Bale private chat id — user must have started the bot once.</summary>
     public long? BaleChatId { get; set; }
+    /// <summary>Rubika private chat id — user must have started the bot and shared phone.</summary>
+    public string? RubikaChatId { get; set; }
     public string? Address { get; set; }
     public int? NamePrefixId { get; set; }
     public GeneralType? NamePrefix { get; set; }

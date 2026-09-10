@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using JameJafari.Core.Options;
+using JameJafari.Infrastructure.Messaging;
 using JameJafari.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -94,8 +95,8 @@ public class BaleBotClient(HttpClient http, IOptions<BaleOptions> options, ILogg
         CancellationToken cancellationToken = default)
     {
         EnsureConfigured();
-        if (items.Count is < 2 or > BaleMediaHelper.MaxGroupSize)
-            throw new InvalidOperationException($"آلبوم باید بین ۲ تا {BaleMediaHelper.MaxGroupSize} فایل باشد");
+        if (items.Count is < 2 or > MessengerMediaHelper.MaxGroupSize)
+            throw new InvalidOperationException($"آلبوم باید بین ۲ تا {MessengerMediaHelper.MaxGroupSize} فایل باشد");
 
         using var content = new MultipartFormDataContent();
         content.Add(new StringContent(chatId), "chat_id");
@@ -108,7 +109,7 @@ public class BaleBotClient(HttpClient http, IOptions<BaleOptions> options, ILogg
             var item = items[i];
             var entry = new Dictionary<string, object?>
             {
-                ["type"] = BaleMediaHelper.ApiType(item.Kind),
+                ["type"] = MessengerMediaHelper.ApiType(item.Kind),
                 ["media"] = $"attach://{attachName}"
             };
             if (i == 0 && !string.IsNullOrWhiteSpace(item.Caption))
@@ -232,6 +233,41 @@ public class BaleBotClient(HttpClient http, IOptions<BaleOptions> options, ILogg
         return envelope.Result;
     }
 
+    /// <summary>Registers HTTPS webhook URL with Bale (Telegram-compatible setWebhook).</summary>
+    public async Task SetWebhookAsync(string url, CancellationToken cancellationToken = default)
+    {
+        EnsureConfigured();
+        if (string.IsNullOrWhiteSpace(url))
+            throw new InvalidOperationException("آدرس وب‌هوک بله الزامی است");
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, BuildUrl("setWebhook"));
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(new { url }, JsonOptions),
+            Encoding.UTF8,
+            "application/json");
+
+        using var response = await http.SendAsync(request, cancellationToken);
+        var raw = await response.Content.ReadAsStringAsync(cancellationToken);
+        BaleApiResponse<object?>? envelope;
+        try
+        {
+            envelope = JsonSerializer.Deserialize<BaleApiResponse<object?>>(raw, JsonOptions);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Bale setWebhook returned non-JSON response");
+            throw new InvalidOperationException("پاسخ نامعتبر از سرور بله برای ثبت وب‌هوک دریافت شد");
+        }
+
+        if (envelope?.Ok == true)
+            return;
+
+        var description = envelope?.Description;
+        if (string.IsNullOrWhiteSpace(description))
+            description = "ثبت وب‌هوک بله ناموفق بود";
+        throw new InvalidOperationException(description);
+    }
+
     void EnsureConfigured()
     {
         if (!_options.IsConfigured)
@@ -314,6 +350,6 @@ public class BaleChatResult
 public sealed class BaleMediaGroupItem
 {
     public string RelativePath { get; init; } = "";
-    public BaleMediaKind Kind { get; init; }
+    public MessengerMediaKind Kind { get; init; }
     public string? Caption { get; init; }
 }

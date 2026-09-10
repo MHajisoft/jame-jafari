@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JameJafari.Infrastructure.Services;
 
-public class MessageChannelService(AppDbContext db)
+public class MessageChannelService(AppDbContext db, RubikaContactSyncService rubikaSync)
 {
     public async Task<IReadOnlyList<MessageChannelResponse>> GetAllAsync(bool activeOnly = false)
     {
@@ -42,7 +42,7 @@ public class MessageChannelService(AppDbContext db)
         {
             Name = request.Name.Trim(),
             MessengerKind = request.MessengerKind,
-            ExternalChatId = BaleChatTargetHelper.Normalize(request.ExternalChatId),
+            ExternalChatId = MessengerChatTargetHelper.Normalize(request.MessengerKind, request.ExternalChatId),
             IsActive = request.IsActive,
             CreatedById = userId
         };
@@ -58,7 +58,7 @@ public class MessageChannelService(AppDbContext db)
 
         entity.Name = request.Name.Trim();
         entity.MessengerKind = request.MessengerKind;
-        entity.ExternalChatId = BaleChatTargetHelper.Normalize(request.ExternalChatId);
+        entity.ExternalChatId = MessengerChatTargetHelper.Normalize(request.MessengerKind, request.ExternalChatId);
         entity.IsActive = request.IsActive;
         entity.UpdatedById = userId;
         await db.SaveChangesAsync();
@@ -76,6 +76,103 @@ public class MessageChannelService(AppDbContext db)
         await db.SaveChangesAsync();
         return true;
     }
+
+    /// <summary>
+    /// Discovers Rubika Group/Channel chats from bot updates and creates MessageChannel rows for missing ones.
+    /// Soft-deleted rows with the same chat id are restored. Existing active rows are left unchanged.
+    /// </summary>
+    public async Task<RubikaChannelSyncResult> SyncMissingRubikaAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        var discovered = await rubikaSync.DiscoverGroupChatsAsync(cancellationToken);
+        var existing = await db.MessageChannels
+            .IgnoreQueryFilters()
+            .Where(c => c.MessengerKind == MessengerKind.Rubika)
+            .ToListAsync(cancellationToken);
+        // Prefer a live row when both soft-deleted and active exist for the same chat id.
+        var byChatId = existing
+            .GroupBy(c => c.ExternalChatId, StringComparer.Ordinal)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderBy(c => c.IsDeleted).ThenByDescending(c => c.Id).First(),
+                StringComparer.Ordinal);
+
+        var addedNames = new List<string>();
+        var skipped = 0;
+        var dirty = false;
+
+        foreach (var chat in discovered)
+        {
+            string chatId;
+            try
+            {
+                chatId = MessengerChatTargetHelper.Normalize(MessengerKind.Rubika, chat.ChatId);
+            }
+            catch (InvalidOperationException)
+            {
+                skipped++;
+                continue;
+            }
+
+            var name = Truncate(
+                !string.IsNullOrWhiteSpace(chat.Title)
+                    ? chat.Title.Trim()
+                    : DefaultRubikaChannelName(chat.ChatType, chatId),
+                200);
+
+            if (byChatId.TryGetValue(chatId, out var existingRow))
+            {
+                if (!existingRow.IsDeleted)
+                {
+                    skipped++;
+                    continue;
+                }
+
+                existingRow.IsDeleted = false;
+                existingRow.DeletedAt = null;
+                existingRow.DeletedById = null;
+                existingRow.IsActive = true;
+                existingRow.Name = name;
+                existingRow.UpdatedById = userId;
+                dirty = true;
+                addedNames.Add(name);
+                continue;
+            }
+
+            var entity = new MessageChannel
+            {
+                Name = name,
+                MessengerKind = MessengerKind.Rubika,
+                ExternalChatId = chatId,
+                IsActive = true,
+                CreatedById = userId
+            };
+            db.MessageChannels.Add(entity);
+            byChatId[chatId] = entity;
+            addedNames.Add(name);
+            dirty = true;
+        }
+
+        if (dirty)
+            await db.SaveChangesAsync(cancellationToken);
+
+        return new RubikaChannelSyncResult
+        {
+            Discovered = discovered.Count,
+            Added = addedNames.Count,
+            Skipped = skipped,
+            AddedNames = addedNames
+        };
+    }
+
+    static string DefaultRubikaChannelName(string? chatType, string chatId)
+    {
+        var kind = string.Equals(chatType, "Channel", StringComparison.OrdinalIgnoreCase) ? "کانال" : "گروه";
+        var shortId = chatId.Length <= 12 ? chatId : chatId[..12];
+        return $"{kind} روبیکا ({shortId})";
+    }
+
+    static string Truncate(string value, int max) =>
+        value.Length <= max ? value : value[..max];
 
     public async Task<IReadOnlyList<MessageChannelLookupItemResponse>> GetLookupAsync(
         MessengerKind? messengerKind,

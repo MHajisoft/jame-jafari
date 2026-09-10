@@ -1,6 +1,7 @@
 using JameJafari.Core.Options;
 using JameJafari.Infrastructure.Bale;
 using JameJafari.Infrastructure.Messaging;
+using JameJafari.Infrastructure.Rubika;
 using JameJafari.Infrastructure.Caching;
 using JameJafari.Infrastructure.Data;
 using JameJafari.Infrastructure.Security;
@@ -43,12 +44,17 @@ public static class DependencyInjection
         services.AddScoped<FoodService>();
         services.AddScoped<ReportService>();
         services.AddHttpClient<BaleBotClient>();
+        services.AddHttpClient<RubikaBotClient>();
         services.AddScoped<IMessengerSender, BaleMessengerSender>();
+        services.AddScoped<IMessengerSender, RubikaMessengerSender>();
         services.AddScoped<MessengerSenderResolver>();
         services.AddScoped<BaleContactResolver>();
         services.AddScoped<BaleContactSyncService>();
+        services.AddScoped<RubikaContactResolver>();
+        services.AddScoped<RubikaContactSyncService>();
+        services.AddScoped<MessengerWebhookRegistrationService>();
         services.AddScoped<IncomeReceiptImageService>();
-        services.AddScoped<BaleMessageService>();
+        services.AddScoped<MessengerMessageService>();
         services.AddScoped<MessageChannelService>();
         services.AddScoped<PersonGroupService>();
 

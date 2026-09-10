@@ -1,6 +1,11 @@
 <script setup>
 import { useThemeStore, THEME_OPTIONS } from '../stores/theme'
-import { useUiPrefsStore, CURRENCY_DISPLAY_OPTIONS, DATE_PICKER_MOBILE_MODES } from '../stores/uiPrefs'
+import {
+  useUiPrefsStore,
+  CURRENCY_DISPLAY_OPTIONS,
+  DATE_PICKER_MOBILE_MODES,
+  TABLE_LABEL_MODES
+} from '../stores/uiPrefs'
 import { useIsMobile } from '../composables/useMediaQuery'
 import { usePwaInstall } from '../composables/usePwaInstall'
 
@@ -86,6 +91,32 @@ async function installApp() {
           :aria-selected="uiPrefs.currencyDisplayUnit === opt.id"
           :class="{ active: uiPrefs.currencyDisplayUnit === opt.id }"
           @click="uiPrefs.setCurrencyDisplayUnit(opt.id)"
+        >
+          <strong>{{ opt.label }}</strong>
+          <span class="text-muted">{{ opt.hint }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card table-label-card">
+      <div class="theme-card-head">
+        <h3>نمایش نمادین جداول</h3>
+        <p class="text-muted">برای ستون‌هایی مثل پیام‌رسان، نوع و وضعیت. در حالت فقط آیکون، این‌ها در مرکز پیام در یک ردیف/ستون «مشخصات» جمع می‌شوند.</p>
+      </div>
+      <div
+        class="datepicker-mode-grid"
+        role="listbox"
+        aria-label="حالت نمایش نمادین جداول"
+      >
+        <button
+          v-for="opt in TABLE_LABEL_MODES"
+          :key="opt.id"
+          type="button"
+          class="datepicker-mode-option"
+          role="option"
+          :aria-selected="uiPrefs.tableLabelMode === opt.id"
+          :class="{ active: uiPrefs.tableLabelMode === opt.id }"
+          @click="uiPrefs.setTableLabelMode(opt.id)"
         >
           <strong>{{ opt.label }}</strong>
           <span class="text-muted">{{ opt.hint }}</span>

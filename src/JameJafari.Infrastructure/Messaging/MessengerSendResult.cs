@@ -1,10 +1,8 @@
-using JameJafari.Infrastructure.Bale;
-
 namespace JameJafari.Infrastructure.Messaging;
 
 public sealed class MessengerSendResult
 {
-    public IReadOnlyList<int> MessageIds { get; init; } = [];
-    public BaleChatResult? Chat { get; init; }
-    public int MessageId => MessageIds.Count > 0 ? MessageIds[0] : 0;
+    public IReadOnlyList<string> MessageIds { get; init; } = [];
+    public string? ChatId { get; init; }
+    public string? MessageId => MessageIds.Count > 0 ? MessageIds[0] : null;
 }

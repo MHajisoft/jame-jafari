@@ -1,8 +1,8 @@
 using JameJafari.Core.Enums;
 
-namespace JameJafari.Infrastructure.Bale;
+namespace JameJafari.Infrastructure.Messaging;
 
-public enum BaleMediaKind
+public enum MessengerMediaKind
 {
     Photo,
     Video,
@@ -10,7 +10,7 @@ public enum BaleMediaKind
     Audio
 }
 
-public static class BaleMediaHelper
+public static class MessengerMediaHelper
 {
     private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -29,23 +29,23 @@ public static class BaleMediaHelper
 
     public const int MaxGroupSize = 10;
 
-    public static BaleMediaKind Classify(string relativePath)
+    public static MessengerMediaKind Classify(string relativePath)
     {
         var ext = Path.GetExtension(relativePath);
         if (ImageExtensions.Contains(ext))
-            return BaleMediaKind.Photo;
+            return MessengerMediaKind.Photo;
         if (VideoExtensions.Contains(ext))
-            return BaleMediaKind.Video;
+            return MessengerMediaKind.Video;
         if (AudioExtensions.Contains(ext))
-            return BaleMediaKind.Audio;
-        return BaleMediaKind.Document;
+            return MessengerMediaKind.Audio;
+        return MessengerMediaKind.Document;
     }
 
-    public static string ApiType(BaleMediaKind kind) => kind switch
+    public static string ApiType(MessengerMediaKind kind) => kind switch
     {
-        BaleMediaKind.Photo => "photo",
-        BaleMediaKind.Video => "video",
-        BaleMediaKind.Audio => "audio",
+        MessengerMediaKind.Photo => "photo",
+        MessengerMediaKind.Video => "video",
+        MessengerMediaKind.Audio => "audio",
         _ => "document"
     };
 
@@ -55,17 +55,17 @@ public static class BaleMediaHelper
             throw new InvalidOperationException($"تعداد پیوست باید بین ۱ تا {MaxGroupSize} باشد");
     }
 
-    public static BaleMessageType InferMessageType(IReadOnlyList<string> paths)
+    public static MessengerMessageType InferMessageType(IReadOnlyList<string> paths)
     {
         if (paths.Count == 0)
-            return BaleMessageType.Text;
+            return MessengerMessageType.Text;
 
         ValidateAttachmentCount(paths.Count);
-        var imageCompose = paths.All(p => Classify(p) is BaleMediaKind.Photo or BaleMediaKind.Video);
+        var imageCompose = paths.All(p => Classify(p) is MessengerMediaKind.Photo or MessengerMediaKind.Video);
         if (paths.Count >= 2)
             ValidateMediaGroup(paths, imageCompose);
 
-        return imageCompose ? BaleMessageType.Photo : BaleMessageType.File;
+        return imageCompose ? MessengerMessageType.Photo : MessengerMessageType.File;
     }
 
     public static void ValidateMediaGroup(IReadOnlyList<string> paths, bool imageCompose)
@@ -77,7 +77,7 @@ public static class BaleMediaHelper
         var kinds = paths.Select(Classify).Distinct().ToList();
         if (imageCompose)
         {
-            if (kinds.Any(k => k is BaleMediaKind.Document or BaleMediaKind.Audio))
+            if (kinds.Any(k => k is MessengerMediaKind.Document or MessengerMediaKind.Audio))
                 throw new InvalidOperationException("در حالت تصویر فقط تصویر و ویدیو قابل ارسال گروهی هستند");
             return;
         }

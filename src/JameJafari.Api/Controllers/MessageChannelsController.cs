@@ -29,6 +29,23 @@ public class MessageChannelsController(MessageChannelService service) : ApiContr
         return item is null ? NotFound() : Ok(ResponseVisibility.Apply(item, User));
     }
 
+    /// <summary>
+    /// Discover Rubika groups/channels from bot updates and add missing MessageChannel rows.
+    /// </summary>
+    [HttpPost("sync-rubika")]
+    [RequirePermission(PermissionCodes.MessageChannelsCreate)]
+    public async Task<ActionResult<RubikaChannelSyncResult>> SyncRubika(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await service.SyncMissingRubikaAsync(CurrentUserId, cancellationToken));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpPost]
     [RequirePermission(PermissionCodes.MessageChannelsCreate)]
     public async Task<ActionResult<MessageChannelResponse>> Create([FromBody] CreateMessageChannelRequest request)

@@ -3,11 +3,9 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import api from '../api/client'
 import { ApiPaths } from '../api/paths'
 import {
-  baleMessageStatusLabel,
-  baleMessageTypeLabel,
   documentUrl,
   enumValue,
-  isBaleMessageType,
+  isMessengerMessageType,
   messengerKindLabel,
   messengerKinds
 } from '../utils/format'
@@ -19,6 +17,11 @@ import { useEntityForm } from '../composables/useEntityForm'
 import { useIsMobile } from '../composables/useMediaQuery'
 import { usePagedList } from '../composables/usePagedList'
 import AppSelect from '../components/AppSelect.vue'
+import AppMultiSelect from '../components/AppMultiSelect.vue'
+import MessengerKindCell from '../components/MessengerKindCell.vue'
+import MessengerMessageTypeCell from '../components/MessengerMessageTypeCell.vue'
+import MessengerMessageStatusCell from '../components/MessengerMessageStatusCell.vue'
+import MessengerMessageMetaCluster from '../components/MessengerMessageMetaCluster.vue'
 import FormHost from '../components/FormHost.vue'
 import RowActions from '../components/RowActions.vue'
 import PersonCell from '../components/PersonCell.vue'
@@ -27,14 +30,18 @@ import PagedListPanel from '../components/PagedListPanel.vue'
 import DateDisplay from '../components/DateDisplay.vue'
 import PersonSelect from '../components/PersonSelect.vue'
 import ClearableInput from '../components/ClearableInput.vue'
+import { useUiPrefsStore } from '../stores/uiPrefs'
 
 const auth = useAuthStore()
 const dialog = useDialogStore()
 const isMobile = useIsMobile()
+const uiPrefs = useUiPrefsStore()
+/** Icon-only mode: one meta cluster; text modes keep separate scannable columns. */
+const combineMessageMeta = computed(() => uiPrefs.tableLabelMode === 'icon')
 const { error, errors, validate, trySubmit, clearErrors } = useFormValidation()
 
 const config = ref({ isConfigured: false, availableMessengers: [] })
-const channels = ref([])
+const allChannels = ref([])
 const personGroups = ref([])
 const attachmentFiles = ref([])
 const attachmentInput = ref(null)
@@ -53,13 +60,27 @@ const messengerOptions = computed(() =>
     .filter((m) => m.isConfigured)
     .map((m) => ({
       value: enumValue(messengerKinds, m.kind, 1),
-      label: m.label || messengerKindLabel(m.kind)
+      label: m.label || messengerKindLabel(m.kind),
+      icon: enumValue(messengerKinds, m.kind, 1)
     }))
 )
 
-const channelOptions = computed(() =>
-  channels.value.map((c) => ({ value: c.id, label: c.name }))
-)
+/** Channel destinations grouped by messenger (channel mode only). */
+const channelSelectOptions = computed(() => {
+  const items = []
+  for (const opt of messengerOptions.value) {
+    for (const c of allChannels.value) {
+      if (enumValue(messengerKinds, c.messengerKind, 0) !== opt.value) continue
+      items.push({
+        value: c.id,
+        label: c.name,
+        group: opt.label,
+        icon: opt.value
+      })
+    }
+  }
+  return items
+})
 
 const personGroupOptions = computed(() =>
   personGroups.value.map((g) => ({
@@ -76,13 +97,13 @@ const attachmentKindOptions = [
 ]
 
 function blankForm() {
-  const defaultMessenger = messengerOptions.value[0]?.value ?? 1
+  const defaults = messengerOptions.value.map((o) => o.value)
   return {
     targetType: 1,
-    messenger: defaultMessenger,
-    messageChannelId: '',
-    personGroupId: '',
-    personId: '',
+    messengers: defaults.length ? [...defaults] : [],
+    channelIds: [],
+    personGroupIds: [],
+    personIds: [],
     text: '',
     caption: ''
   }
@@ -112,7 +133,7 @@ const {
   goNext,
   reload
 } = usePagedList(async ({ page, pageSize }) => {
-  const { data } = await api.get(ApiPaths.baleMessages, { params: { page, pageSize } })
+  const { data } = await api.get(ApiPaths.messages, { params: { page, pageSize } })
   return data
 })
 
@@ -142,11 +163,22 @@ const rules = computed(() => {
 
   const base = {}
   if (isChannelTarget.value) {
-    base.messageChannelId = [{ type: 'required', msg: 'انتخاب کانال الزامی است' }]
-  } else if (isPersonGroupTarget.value) {
-    base.personGroupId = [{ type: 'required', msg: 'انتخاب گروه اشخاص الزامی است' }]
-  } else if (isPersonTarget.value) {
-    base.personId = [{ type: 'required', msg: 'انتخاب شخص الزامی است' }]
+    base.channelIds = [
+      (v) => (!Array.isArray(v) || v.length === 0 ? 'انتخاب حداقل یک کانال الزامی است' : null)
+    ]
+  } else {
+    base.messengers = [
+      (v) => (!Array.isArray(v) || v.length === 0 ? 'انتخاب حداقل یک پیام‌رسان الزامی است' : null)
+    ]
+    if (isPersonGroupTarget.value) {
+      base.personGroupIds = [
+        (v) => (!Array.isArray(v) || v.length === 0 ? 'انتخاب حداقل یک گروه اشخاص الزامی است' : null)
+      ]
+    } else if (isPersonTarget.value) {
+      base.personIds = [
+        (v) => (!Array.isArray(v) || v.length === 0 ? 'انتخاب حداقل یک شخص الزامی است' : null)
+      ]
+    }
   }
   if (!attachmentFiles.value.length) {
     base.text = [{ type: 'required', msg: 'متن پیام الزامی است' }]
@@ -154,19 +186,9 @@ const rules = computed(() => {
   return base
 })
 
-function messageTypeLabel(value) {
-  return baleMessageTypeLabel(value) || '—'
-}
-
 function attachmentLinkLabel(messageType, index, total) {
-  if (isBaleMessageType(messageType, 3)) return total > 1 ? `فایل ${index + 1}/${total}` : 'فایل'
+  if (isMessengerMessageType(messageType, 3)) return total > 1 ? `فایل ${index + 1}/${total}` : 'فایل'
   return total > 1 ? `تصویر ${index + 1}/${total}` : 'تصویر'
-}
-
-function messengerLabel(value) {
-  return messengerOptions.value.find((o) => o.value === value)?.label
-    || messengerKindLabel(value)
-    || '—'
 }
 
 function toggleError(item, event) {
@@ -233,20 +255,13 @@ function openCompose() {
 }
 
 async function loadChannels() {
-  if (!form.value.messenger) {
-    channels.value = []
-    return
-  }
   try {
     const { data } = await api.get(ApiPaths.lookups.messageChannels, {
-      params: { messengerKind: enumValue(messengerKinds, form.value.messenger, 1), activeOnly: true }
+      params: { activeOnly: true }
     })
-    channels.value = data
-    if (!form.value.messageChannelId && data.length === 1) {
-      form.value.messageChannelId = data[0].id
-    }
+    allChannels.value = Array.isArray(data) ? data : []
   } catch {
-    channels.value = []
+    allChannels.value = []
   }
 }
 
@@ -275,7 +290,7 @@ async function submit() {
       : { text: form.value.text }
 
     const ok = await trySubmit(async () => {
-      await api.put(ApiPaths.baleMessage(editing.value), payload, {
+      await api.put(ApiPaths.message(editing.value), payload, {
         loaderMessage: 'در حال ذخیره…'
       })
     }, { successMessage: 'پیام ویرایش شد' })
@@ -290,12 +305,23 @@ async function submit() {
     return
   }
 
+  const channelIds = isChannelTarget.value
+    ? [...new Set((form.value.channelIds || []).map(Number).filter((n) => Number.isFinite(n) && n > 0))]
+    : []
+  const messengers = isChannelTarget.value
+    ? []
+    : [...(form.value.messengers || [])]
+
   const payload = {
-    messenger: enumValue(messengerKinds, form.value.messenger, 1),
+    messengers,
     targetType: Number(form.value.targetType),
-    messageChannelId: isChannelTarget.value ? Number(form.value.messageChannelId) : null,
-    personGroupId: isPersonGroupTarget.value ? Number(form.value.personGroupId) : null,
-    personId: isPersonTarget.value ? Number(form.value.personId) : null,
+    messageChannelIds: channelIds,
+    personGroupIds: isPersonGroupTarget.value
+      ? [...new Set((form.value.personGroupIds || []).map(Number).filter((n) => Number.isFinite(n) && n > 0))]
+      : [],
+    personIds: isPersonTarget.value
+      ? [...new Set((form.value.personIds || []).map(Number).filter((n) => Number.isFinite(n) && n > 0))]
+      : [],
     text: form.value.text?.trim() || null
   }
 
@@ -307,7 +333,7 @@ async function submit() {
 
   let batchSent = false
   const ok = await trySubmit(async () => {
-    const { data } = await api.post(ApiPaths.baleMessages, fd, {
+    const { data } = await api.post(ApiPaths.messages, fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
       loaderMessage: 'در حال ارسال…'
     })
@@ -315,7 +341,7 @@ async function submit() {
       batchSent = true
       const b = data.batch
       useToastStore().success(
-        `ارسال گروهی: ${b.sent} موفق، ${b.failed} ناموفق، ${b.awaitingContact} در انتظار اتصال`
+        `ارسال گروهی: ${b.sent} موفق، ${b.failed} ناموفق، ${b.awaitingContact || 0} در انتظار اتصال`
       )
     }
   })
@@ -348,7 +374,7 @@ async function removeRemote(id) {
     danger: true
   }))) return
   const ok = await trySubmit(async () => {
-    await api.delete(ApiPaths.baleMessage(id, 'remote'), {
+    await api.delete(ApiPaths.message(id, 'remote'), {
       loaderMessage: 'در حال حذف از گفتگو…'
     })
   }, { successMessage: 'پیام از گفتگو حذف شد' })
@@ -362,7 +388,7 @@ async function removeLocal(id) {
     confirmText: 'حذف از لیست'
   }))) return
   const ok = await trySubmit(async () => {
-    await api.delete(ApiPaths.baleMessage(id, 'local'), {
+    await api.delete(ApiPaths.message(id, 'local'), {
       loaderMessage: 'در حال حذف…'
     })
   }, { successMessage: 'پیام از لیست حذف شد' })
@@ -372,7 +398,7 @@ async function removeLocal(id) {
 
 async function syncContacts() {
   const ok = await trySubmit(async () => {
-    await api.post(ApiPaths.baleSyncContacts, null, {
+    await api.post(ApiPaths.messagesSyncContacts, null, {
       loaderMessage: 'در حال همگام‌سازی…'
     })
   }, { successMessage: 'همگام‌سازی مخاطبین انجام شد' })
@@ -380,12 +406,27 @@ async function syncContacts() {
   await reload()
 }
 
+async function registerWebhooks() {
+  const ok = await trySubmit(async () => {
+    await api.post(ApiPaths.messagesRegisterWebhooks, null, {
+      loaderMessage: 'در حال ثبت وب‌هوک…'
+    })
+  }, { successMessage: 'وب‌هوک پیام‌رسان ثبت شد' })
+  if (!ok) return
+  try {
+    const { data } = await api.get(ApiPaths.messagesConfig)
+    config.value = data
+  } catch {
+    /* keep previous */
+  }
+}
+
 onMounted(async () => {
   document.addEventListener('click', onDocumentClick)
   document.addEventListener('keydown', onDocumentKeydown)
   document.addEventListener('scroll', onDocumentScroll, true)
   try {
-    const { data } = await api.get(ApiPaths.baleConfig)
+    const { data } = await api.get(ApiPaths.messagesConfig)
     config.value = data
   } catch {
     config.value = { isConfigured: false, availableMessengers: [] }
@@ -399,8 +440,9 @@ onBeforeUnmount(() => {
   document.removeEventListener('scroll', onDocumentScroll, true)
 })
 
-watch(() => form.value.messenger, () => {
-  if (showForm.value && !isEditMode.value) loadChannels()
+watch(() => form.value.targetType, () => {
+  if (!showForm.value || isEditMode.value) return
+  clearErrors()
 })
 </script>
 
@@ -413,8 +455,29 @@ watch(() => form.value.messenger, () => {
       @create="openCompose"
     />
 
-    <div v-if="auth.hasPermission('messages.send')" class="page-actions">
+    <div v-if="auth.hasPermission('messages.send')" class="page-actions contact-sync-actions">
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        :disabled="!config.canRegisterWebhooks"
+        :title="config.canRegisterWebhooks ? undefined : 'Messaging:PublicBaseUrl باید HTTPS عمومی باشد'"
+        @click="registerWebhooks"
+      >
+        ثبت وب‌هوک
+      </button>
       <button type="button" class="btn btn-outline btn-sm" @click="syncContacts">همگام‌سازی مخاطبین</button>
+      <p class="field-hint contact-sync-hint">
+        مسیر اصلی: پس از تنظیم
+        <code>MESSAGING_PUBLIC_BASE_URL</code>
+        (HTTPS عمومی)، «ثبت وب‌هوک» را بزنید تا <code>/start</code> فوری دکمه اشتراک موبایل را بفرستد.
+        همگام‌سازی فقط پشتیبان است.
+        <template v-if="config.baleWebhookUrl">
+          <br />بله: <code dir="ltr">{{ config.baleWebhookUrl }}</code>
+        </template>
+        <template v-if="config.rubikaWebhookUrl">
+          <br />روبیکا: <code dir="ltr">{{ config.rubikaWebhookUrl }}</code>
+        </template>
+      </p>
     </div>
 
     <div v-if="!config.isConfigured" class="card form-hint-banner">
@@ -430,28 +493,58 @@ watch(() => form.value.messenger, () => {
             <label>نوع مقصد</label>
             <AppSelect v-model="form.targetType" :options="targetTypeOptions" />
           </div>
-          <div class="form-group">
-            <label>پیام‌رسان</label>
-            <AppSelect v-model="form.messenger" :options="messengerOptions" @update:model-value="loadChannels" />
-          </div>
-          <div v-if="isChannelTarget" class="form-group">
-            <label>کانال / گروه</label>
-            <AppSelect v-model="form.messageChannelId" :options="channelOptions" placeholder="انتخاب کانال" />
-            <p v-if="errors.messageChannelId" class="field-error">{{ errors.messageChannelId }}</p>
-            <p v-if="!channelOptions.length" class="field-hint">
-              کانالی ثبت نشده. از منوی «کانال‌های پیام» یک کانال اضافه کنید.
-            </p>
-          </div>
-          <div v-if="isPersonGroupTarget" class="form-group">
-            <label>گروه اشخاص</label>
-            <AppSelect v-model="form.personGroupId" :options="personGroupOptions" placeholder="انتخاب گروه" />
-            <p v-if="errors.personGroupId" class="field-error">{{ errors.personGroupId }}</p>
-          </div>
-          <div v-if="isPersonTarget" class="form-group">
-            <label>شخص</label>
-            <PersonSelect v-model="form.personId" :allow-empty="false" />
-            <p v-if="errors.personId" class="field-error">{{ errors.personId }}</p>
-          </div>
+          <template v-if="isChannelTarget">
+            <div class="form-group form-span-full">
+              <label>کانال / گروه</label>
+              <AppMultiSelect
+                v-model="form.channelIds"
+                :options="channelSelectOptions"
+                placeholder="انتخاب کانال یا گروه"
+                search-placeholder="جستجوی کانال…"
+                :invalid="!!errors.channelIds"
+              />
+              <p v-if="errors.channelIds" class="field-error">{{ errors.channelIds }}</p>
+              <p v-else-if="!channelSelectOptions.length" class="field-hint">
+                کانالی ثبت نشده. از منوی «کانال‌های پیام» اضافه کنید یا همگام‌سازی روبیکا را اجرا کنید.
+              </p>
+            </div>
+          </template>
+          <template v-else>
+            <div class="form-group">
+              <label>پیام‌رسان</label>
+              <AppMultiSelect
+                v-model="form.messengers"
+                :options="messengerOptions"
+                placeholder="انتخاب پیام‌رسان"
+                :searchable="false"
+                :invalid="!!errors.messengers"
+              />
+              <p v-if="errors.messengers" class="field-error">{{ errors.messengers }}</p>
+              <p v-if="!messengerOptions.length" class="field-hint">هیچ پیام‌رسانی پیکربندی نشده است.</p>
+            </div>
+            <div v-if="isPersonGroupTarget" class="form-group">
+              <label>گروه اشخاص</label>
+              <AppMultiSelect
+                v-model="form.personGroupIds"
+                :options="personGroupOptions"
+                placeholder="انتخاب گروه"
+                search-placeholder="جستجوی گروه…"
+                :invalid="!!errors.personGroupIds"
+              />
+              <p v-if="errors.personGroupIds" class="field-error">{{ errors.personGroupIds }}</p>
+            </div>
+            <div v-if="isPersonTarget" class="form-group form-span-full">
+              <label>اشخاص</label>
+              <PersonSelect
+                v-model="form.personIds"
+                multiple
+                :allow-empty="false"
+                placeholder="انتخاب اشخاص"
+                :invalid="!!errors.personIds"
+              />
+              <p v-if="errors.personIds" class="field-error">{{ errors.personIds }}</p>
+            </div>
+          </template>
           <div class="form-group form-span-full">
             <label>{{ attachmentFiles.length ? 'متن پیام (اختیاری)' : 'متن پیام' }}</label>
             <ClearableInput
@@ -547,13 +640,16 @@ watch(() => form.value.messenger, () => {
       @prev="goPrev"
       @next="goNext"
     >
-      <table class="mobile-table message-table">
+      <table class="mobile-table message-table" :class="{ 'meta-combined': combineMessageMeta }">
         <thead>
           <tr>
             <th class="col-fit">زمان</th>
-            <th class="col-fit">پیام‌رسان</th>
-            <th class="col-fit">نوع</th>
-            <th class="col-fit">وضعیت</th>
+            <th v-if="combineMessageMeta" class="col-fit">مشخصات</th>
+            <template v-else>
+              <th class="col-fit">پیام‌رسان</th>
+              <th class="col-fit">نوع</th>
+              <th class="col-fit">وضعیت</th>
+            </template>
             <th class="col-fit">مقصد</th>
             <th class="col-text">متن</th>
             <th v-if="auth.hasAnyPermission('messages.update', 'messages.delete', 'audit.view')" class="col-fit"></th>
@@ -562,30 +658,50 @@ watch(() => form.value.messenger, () => {
         <tbody>
           <tr v-for="item in items" :key="item.id">
             <td data-label="زمان" class="col-fit"><DateDisplay :value="item.sentAt || item.audit?.createdAt" show-time /></td>
-            <td data-label="پیام‌رسان" class="col-fit">{{ messengerLabel(item.messengerKind) }}</td>
-            <td data-label="نوع" class="col-fit">{{ messageTypeLabel(item.messageType) }}</td>
-            <td data-label="وضعیت" class="col-fit status-cell">
-              <span class="status-label">{{ baleMessageStatusLabel(item.status) }}</span>
-              <button
-                v-if="item.errorMessage"
-                type="button"
-                class="status-error-trigger"
-                aria-label="نمایش خطا"
-                :aria-expanded="openErrorId === item.id"
-                @click.stop="toggleError(item, $event)"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 8v5M12 16h.01" stroke-linecap="round" />
-                </svg>
-              </button>
+            <td
+              v-if="combineMessageMeta"
+              data-label="مشخصات"
+              class="col-fit message-meta-cell"
+            >
+              <MessengerMessageMetaCluster
+                :messenger-kind="item.messengerKind"
+                :message-type="item.messageType"
+                :status="item.status"
+                :error-message="item.errorMessage || ''"
+                :error-expanded="openErrorId === item.id"
+                @toggle-error="toggleError(item, $event)"
+              />
             </td>
+            <template v-else>
+              <td data-label="پیام‌رسان" class="col-fit">
+                <MessengerKindCell :kind="item.messengerKind" />
+              </td>
+              <td data-label="نوع" class="col-fit">
+                <MessengerMessageTypeCell :message-type="item.messageType" />
+              </td>
+              <td data-label="وضعیت" class="col-fit status-cell">
+                <MessengerMessageStatusCell :status="item.status" />
+                <button
+                  v-if="item.errorMessage"
+                  type="button"
+                  class="status-error-trigger"
+                  aria-label="نمایش خطا"
+                  :aria-expanded="openErrorId === item.id"
+                  @click.stop="toggleError(item, $event)"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 8v5M12 16h.01" stroke-linecap="round" />
+                  </svg>
+                </button>
+              </td>
+            </template>
             <td data-label="مقصد" class="col-fit">
               <PersonCell v-if="item.personSummary" :person="item.personSummary" />
               <template v-else-if="item.messageChannelName">{{ item.messageChannelName }}</template>
               <template v-else-if="item.personGroupName">گروه: {{ item.personGroupName }}</template>
               <template v-else>{{ item.chatId || '—' }}</template>
-              <p v-if="item.broadcastBatchId" class="field-hint">دسته ارسال</p>
+              <p v-if="item.broadcastBatchId" class="field-hint">ارسال به چند مقصد</p>
             </td>
             <td data-label="متن" class="message-text-cell">
               <span>{{ item.text || item.caption || item.linkLabel || '—' }}</span>
@@ -603,7 +719,7 @@ watch(() => form.value.messenger, () => {
                 </a>
               </template>
               <a v-else-if="item.photoPath" :href="documentUrl(item.photoPath)" target="_blank" rel="noopener">
-                {{ isBaleMessageType(item.messageType, 3) ? 'فایل' : 'تصویر' }}
+                {{ isMessengerMessageType(item.messageType, 3) ? 'فایل' : 'تصویر' }}
               </a>
             </td>
             <td
@@ -709,12 +825,32 @@ watch(() => form.value.messenger, () => {
   margin-bottom: 0.75rem;
 }
 
+.contact-sync-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+}
+
+.contact-sync-hint {
+  margin: 0;
+  flex: 1 1 14rem;
+  max-width: 36rem;
+  line-height: 1.55;
+}
+
 .status-cell {
   white-space: nowrap;
 }
 
-.status-label {
-  display: inline;
+.message-meta-cell {
+  vertical-align: middle;
+}
+
+@media (max-width: 767px) {
+  .message-table.meta-combined :deep(td[data-label='مشخصات'] > *) {
+    justify-content: flex-end;
+  }
 }
 
 .status-error-trigger {
