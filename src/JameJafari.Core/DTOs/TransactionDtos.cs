@@ -44,7 +44,10 @@ public record CreateIncomeTransactionRequest(
     [StringLength(500, ErrorMessage = "توضیحات حداکثر ۵۰۰ کاراکتر")]
     string? Description,
 
-    DateTime TransactionDate);
+    DateTime TransactionDate,
+
+    /// <summary>Optional subset for auto receipt on create (Settings preference). Null = all configured.</summary>
+    List<MessengerKind>? ReceiptMessengers = null);
 
 public record UpdateIncomeTransactionRequest(
     [Range(1, int.MaxValue, ErrorMessage = "شخص الزامی است")]

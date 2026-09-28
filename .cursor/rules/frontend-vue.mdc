@@ -92,6 +92,7 @@ Router: `meta: { permission: 'food.view' }`
 - Mobile datepicker mode (`stores/uiPrefs`): `sheet` (bottom wheels) | `modal` (calendar); Settings card only when `useIsMobile`; desktop always calendar modal
 - Currency display (`stores/uiPrefs`): `rial` | `toman`; Settings card «واحد پول»; preference in localStorage
 - Messenger / type / status label (`stores/uiPrefs`): `tableLabelMode` `icon` | `icon-text` | `text`; Settings «نمایش نمادین جداول»; used by `PrefIconLabelCell` family
+- Enabled messengers (`stores/uiPrefs`): `enabledMessengers` number[] (`1` بله / `2` روبیکا / `3` تلگرام); Settings «پیام‌رسان‌ها»; filters Message Center compose + income receipt (`receiptMessengers` / send-receipt body); toggle only when server `isConfigured`; webhook register + sync-contacts live in this Settings card (not Message Center)
 - `PersianDatePicker` mobile overlay (sheet or modal): `useOverlayBack` with `stateKey: 'appDatePicker'`
 - **App updates:** `vite-plugin-pwa` `registerType: 'autoUpdate'` + `initPwaUpdate()` — new SW activates and reloads automatically; poll every 30m + on visibility restore
 - **Exit on back (mobile):** `initPwaExitBack()` — on primary tabs, system back shows a bottom hint then leaves on second press within 2s; overlays/forms/nested routes still consume back first

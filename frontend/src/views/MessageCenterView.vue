@@ -63,6 +63,7 @@ const messengerOptions = computed(() =>
       label: m.label || messengerKindLabel(m.kind),
       icon: enumValue(messengerKinds, m.kind, 1)
     }))
+    .filter((o) => uiPrefs.isMessengerEnabled(o.value))
 )
 
 /** Channel destinations grouped by messenger (channel mode only). */
@@ -396,31 +397,6 @@ async function removeLocal(id) {
   await reload()
 }
 
-async function syncContacts() {
-  const ok = await trySubmit(async () => {
-    await api.post(ApiPaths.messagesSyncContacts, null, {
-      loaderMessage: 'در حال همگام‌سازی…'
-    })
-  }, { successMessage: 'همگام‌سازی مخاطبین انجام شد' })
-  if (!ok) return
-  await reload()
-}
-
-async function registerWebhooks() {
-  const ok = await trySubmit(async () => {
-    await api.post(ApiPaths.messagesRegisterWebhooks, null, {
-      loaderMessage: 'در حال ثبت وب‌هوک…'
-    })
-  }, { successMessage: 'وب‌هوک پیام‌رسان ثبت شد' })
-  if (!ok) return
-  try {
-    const { data } = await api.get(ApiPaths.messagesConfig)
-    config.value = data
-  } catch {
-    /* keep previous */
-  }
-}
-
 onMounted(async () => {
   document.addEventListener('click', onDocumentClick)
   document.addEventListener('keydown', onDocumentKeydown)
@@ -455,38 +431,11 @@ watch(() => form.value.targetType, () => {
       @create="openCompose"
     />
 
-    <div v-if="auth.hasPermission('messages.send')" class="page-actions contact-sync-actions">
-      <button
-        type="button"
-        class="btn btn-primary btn-sm"
-        :disabled="!config.canRegisterWebhooks"
-        :title="config.canRegisterWebhooks ? undefined : 'Messaging:PublicBaseUrl باید HTTPS عمومی باشد'"
-        @click="registerWebhooks"
-      >
-        ثبت وب‌هوک
-      </button>
-      <button type="button" class="btn btn-outline btn-sm" @click="syncContacts">همگام‌سازی مخاطبین</button>
-      <p class="field-hint contact-sync-hint">
-        مسیر اصلی: پس از تنظیم
-        <code>MESSAGING_PUBLIC_BASE_URL</code>
-        (HTTPS عمومی)، «ثبت وب‌هوک» را بزنید تا <code>/start</code> فوری دکمه اشتراک موبایل را بفرستد.
-        همگام‌سازی فقط پشتیبان است.
-        <template v-if="config.baleWebhookUrl">
-          <br />بله: <code dir="ltr">{{ config.baleWebhookUrl }}</code>
-        </template>
-        <template v-if="config.rubikaWebhookUrl">
-          <br />روبیکا: <code dir="ltr">{{ config.rubikaWebhookUrl }}</code>
-        </template>
-        <template v-if="config.telegramWebhookUrl">
-          <br />تلگرام: <code dir="ltr">{{ config.telegramWebhookUrl }}</code>
-        </template>
-      </p>
-    </div>
-
     <div v-if="!config.isConfigured" class="card form-hint-banner">
-      توکن بازو در سرور تنظیم نشده است. یکی از متغیرهای
-      <code>BALE_BOT_TOKEN</code>، <code>RUBIKA_BOT_TOKEN</code> یا <code>TELEGRAM_BOT_TOKEN</code>
-      را در محیط اجرا قرار دهید.
+      توکن بازو در سرور تنظیم نشده است. از منوی «تنظیمات» مراحل پیکربندی هر پیام‌رسان را ببینید.
+    </div>
+    <div v-else-if="!messengerOptions.length" class="card form-hint-banner">
+      هیچ پیام‌رسان فعالی انتخاب نشده است. از «تنظیمات → پیام‌رسان‌ها» فعال کنید.
     </div>
 
     <FormHost :show="showForm" @close="closeForm">
@@ -525,7 +474,9 @@ watch(() => form.value.targetType, () => {
                 :invalid="!!errors.messengers"
               />
               <p v-if="errors.messengers" class="field-error">{{ errors.messengers }}</p>
-              <p v-if="!messengerOptions.length" class="field-hint">هیچ پیام‌رسانی پیکربندی نشده است.</p>
+              <p v-if="!messengerOptions.length" class="field-hint">
+                هیچ پیام‌رسان فعالی نیست. از «تنظیمات → پیام‌رسان‌ها» پیکربندی یا فعال‌سازی کنید.
+              </p>
             </div>
             <div v-if="isPersonGroupTarget" class="form-group">
               <label>گروه اشخاص</label>
@@ -824,24 +775,6 @@ watch(() => form.value.targetType, () => {
 
 .attach-token-remove:hover {
   background: color-mix(in srgb, var(--primary) 28%, transparent);
-}
-
-.page-actions {
-  margin-bottom: 0.75rem;
-}
-
-.contact-sync-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.65rem 1rem;
-}
-
-.contact-sync-hint {
-  margin: 0;
-  flex: 1 1 14rem;
-  max-width: 36rem;
-  line-height: 1.55;
 }
 
 .status-cell {

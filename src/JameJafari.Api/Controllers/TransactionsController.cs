@@ -58,7 +58,8 @@ public class IncomeTransactionsController(
         var created = await service.CreateIncomeAsync(request, CurrentUserId, paths);
         if (created.CanSendReceipt)
         {
-            var receipt = await messengerMessages.TrySendIncomeReceiptAsync(created.Id, CurrentUserId);
+            var receipt = await messengerMessages.TrySendIncomeReceiptAsync(
+                created.Id, CurrentUserId, request.ReceiptMessengers);
             if (!receipt.Sent)
                 created.ReceiptWarning = receipt.Warning;
         }
@@ -115,14 +116,16 @@ public class IncomeTransactionsController(
 
     [HttpPost("{id:int}/send-receipt")]
     [RequirePermission(PermissionCodes.MessagesSend)]
-    public async Task<ActionResult<IncomeReceiptSendResult>> SendReceipt(int id)
+    public async Task<ActionResult<IncomeReceiptSendResult>> SendReceipt(
+        int id,
+        [FromBody] SendIncomeReceiptRequest? request)
     {
         if (!HasPermission(PermissionCodes.IncomeView)
             && !HasPermission(PermissionCodes.IncomeCreate)
             && !HasPermission(PermissionCodes.IncomeUpdate))
             return Forbid();
 
-        var result = await messengerMessages.TrySendIncomeReceiptAsync(id, CurrentUserId);
+        var result = await messengerMessages.TrySendIncomeReceiptAsync(id, CurrentUserId, request?.Messengers);
         if (result.Messages.Count > 0 || result.Message is not null)
         {
             var messages = result.Messages.Count > 0

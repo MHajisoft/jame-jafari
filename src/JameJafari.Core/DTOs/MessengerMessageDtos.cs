@@ -115,6 +115,8 @@ public class IncomeReceiptSendResult
     public IReadOnlyList<MessengerMessageResponse> Messages { get; init; } = [];
 }
 
+public record SendIncomeReceiptRequest(List<MessengerKind>? Messengers = null);
+
 public record UpdateMessengerMessageRequest(
     [StringLength(4096, ErrorMessage = "متن حداکثر ۴۰۹۶ کاراکتر")]
     string? Text,

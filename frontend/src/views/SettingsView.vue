@@ -1,17 +1,27 @@
 <script setup>
+import { computed, onMounted, ref } from 'vue'
+import api from '../api/client'
+import { ApiPaths } from '../api/paths'
+import { useAuthStore } from '../stores/auth'
 import { useThemeStore, THEME_OPTIONS } from '../stores/theme'
 import {
   useUiPrefsStore,
   CURRENCY_DISPLAY_OPTIONS,
   DATE_PICKER_MOBILE_MODES,
-  TABLE_LABEL_MODES
+  TABLE_LABEL_MODES,
+  ALL_MESSENGER_KINDS
 } from '../stores/uiPrefs'
+import { enumValue, messengerKinds, messengerKindLabel } from '../utils/format'
 import { useIsMobile } from '../composables/useMediaQuery'
 import { usePwaInstall } from '../composables/usePwaInstall'
+import { useFormValidation } from '../composables/useFormValidation'
+import MessengerKindIcon from '../components/MessengerKindIcon.vue'
 
 const theme = useThemeStore()
 const uiPrefs = useUiPrefsStore()
+const auth = useAuthStore()
 const isMobile = useIsMobile()
+const { trySubmit } = useFormValidation()
 const {
   standalone,
   ios,
@@ -23,9 +33,105 @@ const {
   promptInstall
 } = usePwaInstall()
 
+const canManageMessaging = computed(
+  () => auth.hasPermission('messages.view') || auth.hasPermission('messages.send')
+)
+const canSendMessages = computed(() => auth.hasPermission('messages.send'))
+
+const messagingConfig = ref({
+  isConfigured: false,
+  availableMessengers: [],
+  canRegisterWebhooks: false
+})
+
+/** Static setup steps when bot token is missing from appsettings / .env. */
+const MESSENGER_SETUP = {
+  1: {
+    env: 'BALE_BOT_TOKEN',
+    appsettings: 'Bale:BotToken',
+    extra: 'اختیاری: BALE_BOT_USERNAME و BALE_WEBHOOK_SECRET'
+  },
+  2: {
+    env: 'RUBIKA_BOT_TOKEN',
+    appsettings: 'Rubika:BotToken',
+    extra: 'اختیاری: RUBIKA_BOT_USERNAME و RUBIKA_WEBHOOK_SECRET'
+  },
+  3: {
+    env: 'TELEGRAM_BOT_TOKEN',
+    appsettings: 'Telegram:BotToken',
+    extra: 'اختیاری: TELEGRAM_BOT_USERNAME و TELEGRAM_WEBHOOK_SECRET'
+  }
+}
+
+const messengerRows = computed(() => {
+  const byKind = new Map(
+    (messagingConfig.value.availableMessengers || []).map((m) => [
+      enumValue(messengerKinds, m.kind, 0),
+      m
+    ])
+  )
+  return ALL_MESSENGER_KINDS.map((kind) => {
+    const info = byKind.get(kind)
+    const setup = MESSENGER_SETUP[kind]
+    return {
+      kind,
+      label: info?.label || messengerKindLabel(kind),
+      isConfigured: !!info?.isConfigured,
+      enabled: uiPrefs.isMessengerEnabled(kind),
+      setup
+    }
+  })
+})
+
+async function loadMessagingConfig() {
+  if (!canManageMessaging.value) return
+  try {
+    const { data } = await api.get(ApiPaths.messagesConfig, { skipGlobalLoader: true })
+    messagingConfig.value = data
+  } catch {
+    messagingConfig.value = {
+      isConfigured: false,
+      availableMessengers: [],
+      canRegisterWebhooks: false
+    }
+  }
+}
+
+function onMessengerToggle(row, event) {
+  if (!row.isConfigured) {
+    event.target.checked = false
+    return
+  }
+  uiPrefs.setMessengerEnabled(row.kind, event.target.checked)
+}
+
+async function syncContacts() {
+  const ok = await trySubmit(async () => {
+    await api.post(ApiPaths.messagesSyncContacts, null, {
+      loaderMessage: 'در حال همگام‌سازی…'
+    })
+  }, { successMessage: 'همگام‌سازی مخاطبین انجام شد' })
+  if (!ok) return
+  await loadMessagingConfig()
+}
+
+async function registerWebhooks() {
+  const ok = await trySubmit(async () => {
+    await api.post(ApiPaths.messagesRegisterWebhooks, null, {
+      loaderMessage: 'در حال ثبت وب‌هوک…'
+    })
+  }, { successMessage: 'وب‌هوک پیام‌رسان ثبت شد' })
+  if (!ok) return
+  await loadMessagingConfig()
+}
+
 async function installApp() {
   await promptInstall()
 }
+
+onMounted(() => {
+  loadMessagingConfig()
+})
 </script>
 
 <template>
@@ -121,6 +227,100 @@ async function installApp() {
           <strong>{{ opt.label }}</strong>
           <span class="text-muted">{{ opt.hint }}</span>
         </button>
+      </div>
+    </div>
+
+    <div v-if="canManageMessaging" class="card messengers-card">
+      <div class="theme-card-head">
+        <h3>پیام‌رسان‌ها</h3>
+        <p class="text-muted">
+          انتخاب کنید کدام پیام‌رسان در مرکز پیام و ارسال رسید درآمد استفاده شود.
+          فعال‌سازی فقط وقتی توکن در سرور تنظیم شده باشد ممکن است.
+        </p>
+      </div>
+
+      <ul class="messenger-pref-list" role="list">
+        <li v-for="row in messengerRows" :key="row.kind" class="messenger-pref-row">
+          <div class="messenger-pref-main">
+            <MessengerKindIcon :kind="row.kind" :size="22" :title="row.label" />
+            <div class="messenger-pref-text">
+              <strong>{{ row.label }}</strong>
+              <span v-if="row.isConfigured" class="messenger-pref-status ok">پیکربندی‌شده</span>
+              <span v-else class="messenger-pref-status warn">توکن تنظیم نشده</span>
+            </div>
+            <label class="messenger-pref-switch">
+              <input
+                type="checkbox"
+                :checked="row.enabled && row.isConfigured"
+                :disabled="!row.isConfigured"
+                :aria-label="`فعال‌سازی ${row.label}`"
+                @change="onMessengerToggle(row, $event)"
+              />
+              <span class="switch-ui" aria-hidden="true" />
+            </label>
+          </div>
+          <p v-if="!row.isConfigured" class="field-hint messenger-setup-hint">
+            توکن را در محیط اجرا بگذارید:
+            <code dir="ltr">{{ row.setup.env }}</code>
+            یا در
+            <code dir="ltr">appsettings.Development.local.json</code>
+            کلید
+            <code dir="ltr">{{ row.setup.appsettings }}</code>.
+            {{ row.setup.extra }}.
+            سپس API را دوباره راه‌اندازی کنید.
+          </p>
+        </li>
+      </ul>
+
+      <div v-if="canSendMessages" class="messenger-ops">
+        <div class="theme-card-head messenger-ops-head">
+          <h4>اتصال مخاطبین (وب‌هوک)</h4>
+          <p class="text-muted">
+            مسیر اصلی: پس از تنظیم
+            <code>MESSAGING_PUBLIC_BASE_URL</code>
+            (HTTPS عمومی)، «ثبت وب‌هوک» را بزنید تا
+            <code>/start</code>
+            فوری دکمه اشتراک موبایل را بفرستد. همگام‌سازی فقط پشتیبان است.
+          </p>
+        </div>
+        <p v-if="!messagingConfig.canRegisterWebhooks" class="field-hint messenger-setup-hint">
+          آدرس عمومی HTTPS تنظیم نشده است. در
+          <code>.env</code>
+          متغیر
+          <code>MESSAGING_PUBLIC_BASE_URL</code>
+          یا در appsettings کلید
+          <code dir="ltr">Messaging:PublicBaseUrl</code>
+          را بگذارید (مثلاً
+          <code dir="ltr">https://app.example.com</code>
+          بدون اسلش پایانی)، سپس API را راه‌اندازی کنید.
+        </p>
+        <div class="messenger-ops-actions">
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            :disabled="!messagingConfig.canRegisterWebhooks"
+            :title="messagingConfig.canRegisterWebhooks ? undefined : 'Messaging:PublicBaseUrl باید HTTPS عمومی باشد'"
+            @click="registerWebhooks"
+          >
+            ثبت وب‌هوک
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" @click="syncContacts">
+            همگام‌سازی مخاطبین
+          </button>
+        </div>
+        <p v-if="messagingConfig.baleWebhookUrl || messagingConfig.rubikaWebhookUrl || messagingConfig.telegramWebhookUrl" class="field-hint webhook-urls">
+          <template v-if="messagingConfig.baleWebhookUrl">
+            بله: <code dir="ltr">{{ messagingConfig.baleWebhookUrl }}</code>
+            <br />
+          </template>
+          <template v-if="messagingConfig.rubikaWebhookUrl">
+            روبیکا: <code dir="ltr">{{ messagingConfig.rubikaWebhookUrl }}</code>
+            <br />
+          </template>
+          <template v-if="messagingConfig.telegramWebhookUrl">
+            تلگرام: <code dir="ltr">{{ messagingConfig.telegramWebhookUrl }}</code>
+          </template>
+        </p>
       </div>
     </div>
 
@@ -322,6 +522,129 @@ async function installApp() {
   .theme-preview {
     height: 4.35rem;
   }
+}
+
+.table-label-card {
+  margin-top: 1rem;
+}
+.messengers-card {
+  margin-top: 1rem;
+}
+.messenger-pref-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.messenger-pref-row {
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+.messenger-pref-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.messenger-pref-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  text-align: start;
+}
+.messenger-pref-text strong {
+  font-size: 0.95rem;
+}
+.messenger-pref-status {
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+.messenger-pref-status.ok {
+  color: var(--success-soft-text, var(--primary));
+}
+.messenger-pref-status.warn {
+  color: color-mix(in srgb, var(--warning, #c9a227) 85%, var(--text));
+}
+.messenger-pref-switch {
+  position: relative;
+  display: inline-flex;
+  width: 2.75rem;
+  height: 1.55rem;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.messenger-pref-switch input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: inherit;
+}
+.messenger-pref-switch input:disabled {
+  cursor: not-allowed;
+}
+.switch-ui {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 18%, var(--surface));
+  border: 1px solid var(--border);
+  transition: background 0.15s, border-color 0.15s;
+}
+.switch-ui::after {
+  content: '';
+  position: absolute;
+  top: 0.18rem;
+  inset-inline-start: 0.18rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  transition: inset-inline-start 0.15s;
+}
+.messenger-pref-switch input:checked + .switch-ui {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.messenger-pref-switch input:checked + .switch-ui::after {
+  inset-inline-start: calc(100% - 1.28rem);
+}
+.messenger-pref-switch input:disabled + .switch-ui {
+  opacity: 0.55;
+}
+.messenger-pref-switch input:focus-visible + .switch-ui {
+  outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+  outline-offset: 2px;
+}
+.messenger-setup-hint {
+  margin: 0.55rem 0 0;
+  line-height: 1.55;
+}
+.messenger-ops {
+  margin-top: 1.15rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.messenger-ops-head h4 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+.messenger-ops-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+.webhook-urls {
+  margin: 0.65rem 0 0;
+  line-height: 1.55;
 }
 
 .datepicker-card {

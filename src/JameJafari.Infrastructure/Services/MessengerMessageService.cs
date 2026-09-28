@@ -560,7 +560,10 @@ public class MessengerMessageService(
             .ToList();
     }
 
-    public async Task<IncomeReceiptSendResult> TrySendIncomeReceiptAsync(int transactionId, int userId)
+    public async Task<IncomeReceiptSendResult> TrySendIncomeReceiptAsync(
+        int transactionId,
+        int userId,
+        IReadOnlyList<MessengerKind>? messengers = null)
     {
         var tx = await db.IncomeTransactions
             .Include(t => t.Person).ThenInclude(p => p.NamePrefix)
@@ -573,10 +576,14 @@ public class MessengerMessageService(
         if (string.IsNullOrWhiteSpace(tx.Person.Mobile))
             return new IncomeReceiptSendResult { Warning = "شماره موبایل شخص ثبت نشده است" };
 
-        var targets = await ResolveAllReceiptTargetsAsync(tx.Person);
+        if (messengers is { Count: 0 })
+            return new IncomeReceiptSendResult { Warning = "هیچ پیام‌رسانی در تنظیمات فعال نیست" };
+
+        var targets = await ResolveAllReceiptTargetsAsync(tx.Person, messengers);
         if (targets.Count == 0)
         {
-            var warning = !_options.IsConfigured && !_rubikaOptions.IsConfigured
+            var anyConfigured = _options.IsConfigured || _rubikaOptions.IsConfigured || _telegramOptions.IsConfigured;
+            var warning = !anyConfigured
                 ? "توکن پیام‌رسان تنظیم نشده است"
                 : contactResolver.BuildMissingContactMessage(tx.Person);
             return new IncomeReceiptSendResult { Warning = warning };
@@ -639,25 +646,30 @@ public class MessengerMessageService(
         };
     }
 
-    async Task<IReadOnlyList<(MessengerKind Messenger, string ChatId)>> ResolveAllReceiptTargetsAsync(Person person)
+    async Task<IReadOnlyList<(MessengerKind Messenger, string ChatId)>> ResolveAllReceiptTargetsAsync(
+        Person person,
+        IReadOnlyList<MessengerKind>? only = null)
     {
+        var allow = only is { Count: > 0 }
+            ? only.Distinct().ToHashSet()
+            : null;
         var targets = new List<(MessengerKind, string)>();
 
-        if (_options.IsConfigured)
+        if ((allow is null || allow.Contains(MessengerKind.Bale)) && _options.IsConfigured)
         {
             var baleChatId = await syncService.ResolveChatIdWithSyncAsync(person);
             if (baleChatId is not null)
                 targets.Add((MessengerKind.Bale, baleChatId.Value.ToString()));
         }
 
-        if (_rubikaOptions.IsConfigured)
+        if ((allow is null || allow.Contains(MessengerKind.Rubika)) && _rubikaOptions.IsConfigured)
         {
             var rubikaChatId = await rubikaSyncService.ResolveChatIdWithSyncAsync(person);
             if (rubikaChatId is not null)
                 targets.Add((MessengerKind.Rubika, rubikaChatId));
         }
 
-        if (_telegramOptions.IsConfigured)
+        if ((allow is null || allow.Contains(MessengerKind.Telegram)) && _telegramOptions.IsConfigured)
         {
             var telegramChatId = await telegramSyncService.ResolveChatIdWithSyncAsync(person);
             if (telegramChatId is not null)

@@ -9,8 +9,12 @@ import {
 /** @typedef {import('../utils/currency').CurrencyDisplayUnit} CurrencyDisplayUnit */
 /** @typedef {'icon' | 'text' | 'icon-text'} TableLabelMode */
 /** @typedef {TableLabelMode} MessengerLabelMode */
+/** @typedef {1 | 2 | 3} MessengerKindValue */
 
 export { CURRENCY_DISPLAY_OPTIONS }
+
+/** Bale / Rubika / Telegram — same numeric values as API `MessengerKind`. */
+export const ALL_MESSENGER_KINDS = /** @type {MessengerKindValue[]} */ ([1, 2, 3])
 
 /** Mobile date-picker presentation options (Settings → mobile only). */
 export const DATE_PICKER_MOBILE_MODES = [
@@ -51,8 +55,25 @@ const DATE_PICKER_STORAGE_KEY = 'ui.datePickerMobileMode'
 const CURRENCY_UNIT_STORAGE_KEY = 'ui.currencyDisplayUnit'
 const TABLE_LABEL_STORAGE_KEY = 'ui.tableLabelMode'
 const MESSENGER_LABEL_STORAGE_KEY = 'ui.messengerLabelMode'
+const ENABLED_MESSENGERS_STORAGE_KEY = 'ui.enabledMessengers'
 const DEFAULT_MODE = 'sheet'
 const DEFAULT_TABLE_LABEL_MODE = 'icon'
+
+function resolveEnabledMessengers(raw) {
+  let parsed = raw
+  if (typeof raw === 'string') {
+    try {
+      parsed = JSON.parse(raw)
+    } catch {
+      return [...ALL_MESSENGER_KINDS]
+    }
+  }
+  if (!Array.isArray(parsed)) return [...ALL_MESSENGER_KINDS]
+  const nums = parsed
+    .map(Number)
+    .filter((n) => ALL_MESSENGER_KINDS.includes(/** @type {MessengerKindValue} */ (n)))
+  return [...new Set(nums)].sort((a, b) => a - b)
+}
 
 function resolveMode(raw) {
   if (raw === 'sheet' || raw === 'modal') return raw
@@ -78,7 +99,9 @@ export const useUiPrefsStore = defineStore('uiPrefs', {
     /** @type {CurrencyDisplayUnit} */
     currencyDisplayUnit: resolveCurrencyUnit(localStorage.getItem(CURRENCY_UNIT_STORAGE_KEY)),
     /** @type {TableLabelMode} */
-    tableLabelMode: readStoredTableLabelMode()
+    tableLabelMode: readStoredTableLabelMode(),
+    /** @type {number[]} Messengers used on Message Center + income receipt (this device). */
+    enabledMessengers: resolveEnabledMessengers(localStorage.getItem(ENABLED_MESSENGERS_STORAGE_KEY))
   }),
   getters: {
     datePickerMobileModeMeta: (s) =>
@@ -95,7 +118,11 @@ export const useUiPrefsStore = defineStore('uiPrefs', {
     showTableIcon: (s) => s.tableLabelMode !== 'text',
     showTableText: (s) => s.tableLabelMode !== 'icon',
     showMessengerIcon: (s) => s.tableLabelMode !== 'text',
-    showMessengerText: (s) => s.tableLabelMode !== 'icon'
+    showMessengerText: (s) => s.tableLabelMode !== 'icon',
+    isMessengerEnabled: (s) => (kind) => {
+      const n = Number(kind)
+      return s.enabledMessengers.includes(n)
+    }
   },
   actions: {
     setDatePickerMobileMode(mode) {
@@ -118,6 +145,16 @@ export const useUiPrefsStore = defineStore('uiPrefs', {
     setMessengerLabelMode(mode) {
       this.setTableLabelMode(mode)
     },
+    setMessengerEnabled(kind, enabled) {
+      const n = Number(kind)
+      if (!ALL_MESSENGER_KINDS.includes(/** @type {MessengerKindValue} */ (n))) return
+      const set = new Set(this.enabledMessengers)
+      if (enabled) set.add(n)
+      else set.delete(n)
+      const next = [...set].sort((a, b) => a - b)
+      this.enabledMessengers = next
+      localStorage.setItem(ENABLED_MESSENGERS_STORAGE_KEY, JSON.stringify(next))
+    },
     init() {
       const dateMode = resolveMode(this.datePickerMobileMode)
       if (dateMode !== this.datePickerMobileMode) {
@@ -137,6 +174,10 @@ export const useUiPrefsStore = defineStore('uiPrefs', {
       }
       localStorage.setItem(TABLE_LABEL_STORAGE_KEY, tableMode)
       localStorage.removeItem(MESSENGER_LABEL_STORAGE_KEY)
+
+      const messengers = resolveEnabledMessengers(this.enabledMessengers)
+      this.enabledMessengers = messengers
+      localStorage.setItem(ENABLED_MESSENGERS_STORAGE_KEY, JSON.stringify(messengers))
     }
   }
 })

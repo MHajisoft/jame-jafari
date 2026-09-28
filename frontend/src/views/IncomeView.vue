@@ -145,7 +145,7 @@ function startEdit(item) {
 
 async function submit() {
   if (!validate(rules, form.value)) return
-  const data = JSON.stringify({
+  const payload = {
     personId: +form.value.personId,
     accountId: +form.value.accountId,
     amount: +form.value.amount,
@@ -154,7 +154,11 @@ async function submit() {
     trackingCode: form.value.trackingCode || null,
     description: form.value.description || null,
     transactionDate: new Date(form.value.transactionDate).toISOString()
-  })
+  }
+  if (!editing.value) {
+    payload.receiptMessengers = [...uiPrefs.enabledMessengers]
+  }
+  const data = JSON.stringify(payload)
   const fd = new FormData()
   fd.append('data', data)
   for (const file of pendingDocuments.value) {
@@ -197,11 +201,17 @@ async function sendReceipt(item) {
     toast.warning('شماره موبایل شخص ثبت نشده است')
     return
   }
-  if (!(await dialog.confirm({ message: 'ارسال رسید از طریق همه پیام‌رسان‌های متصل؟' }))) return
+  if (!uiPrefs.enabledMessengers.length) {
+    toast.warning('هیچ پیام‌رسانی در تنظیمات فعال نیست')
+    return
+  }
+  if (!(await dialog.confirm({ message: 'ارسال رسید از طریق پیام‌رسان‌های فعال در تنظیمات؟' }))) return
   try {
-    const { data } = await api.post(ApiPaths.incomeTransactionSendReceipt(item.id), null, {
-      loaderMessage: 'در حال ارسال…'
-    })
+    const { data } = await api.post(
+      ApiPaths.incomeTransactionSendReceipt(item.id),
+      { messengers: [...uiPrefs.enabledMessengers] },
+      { loaderMessage: 'در حال ارسال…' }
+    )
     if (data.sent && data.warning) toast.warning(data.warning)
     else if (data.warning) toast.warning(data.warning)
     else if (data.sent) toast.success('رسید ارسال شد')

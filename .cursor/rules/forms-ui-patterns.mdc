@@ -76,6 +76,7 @@ alwaysApply: false
 - `AppMultiSelect` — `v-model` array; selected items as removable tags; optional option `group` for section headers + search; optional option `icon` (messenger kind) via `MessengerKindIcon`
 - `MessengerKindIcon` / `MessengerKindCell` — real بله/روبیکا/تلگرام logos from `/icons/messengers/` (lightweight, PWA-precached)
 - `PersonSelect` — optional `multiple` (`v-model` array, tag chips); used in Message Center person compose
+- Messenger enablement for compose + income receipt: Settings «پیام‌رسان‌ها» (`uiPrefs.enabledMessengers`); webhook/sync UI lives there, not on Message Center
 - `PersianDatePicker` — `variant="bar"` in toolbars, `field` in forms
 - **Optional date fields:** initial value `''`; no `todayGregorian()` / `toInputDate(new Date())` prefill; clear when parent condition hides the field (e.g. person `deathDate` when not `isDead`)
 - **Required date fields:** pass `required` on `PersianDatePicker`; may default to today in `blankForm()` (income/cost `transactionDate`, food `cookDate`, report range)
