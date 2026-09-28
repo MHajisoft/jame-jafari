@@ -20,6 +20,8 @@ public class Person : AuditableEntity
     public string? RubikaChatId { get; set; }
     /// <summary>Telegram private chat id — user must have started the bot once.</summary>
     public long? TelegramChatId { get; set; }
+    /// <summary>WhatsApp wa_id (digits) — usually derived from mobile; refined by webhook.</summary>
+    public string? WhatsAppChatId { get; set; }
     public string? Address { get; set; }
     public int? NamePrefixId { get; set; }
     public GeneralType? NamePrefix { get; set; }

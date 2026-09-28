@@ -111,6 +111,7 @@ public class IncomeReceiptImageService(IOptions<BaleOptions> options)
         {
             MessengerKind.Rubika => "rubika",
             MessengerKind.Telegram => "telegram",
+            MessengerKind.WhatsApp => "whatsapp",
             _ => "bale"
         };
         var dir = Path.Combine(_uploadsRoot, folder);

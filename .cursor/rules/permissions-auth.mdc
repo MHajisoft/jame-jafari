@@ -27,7 +27,9 @@ Rubika contact linking: mobile on Person → webhook `POST /api/rubika/webhook` 
 
 Telegram contact linking: mobile on Person → webhook `POST /api/telegram/webhook` (header `X-Telegram-Bot-Api-Secret-Token` when configured) or same `sync-contacts` → `TelegramContactLink` + `Person.TelegramChatId`. Same `/start` + share-phone flow as Bale (`https://t.me/{bot}?start=person_{id}`). `TelegramBotState.LastUpdateId` dedupes updates.
 
-Messenger extensibility: `IMessengerSender` + `MessengerKind` (`Bale`, `Rubika`, `Telegram`); remote message ids stored as strings on `MessengerMessage` for all messengers; channels are per-messenger; HTTP surface `/api/messages` with multi-messenger compose (`Messengers[]`).
+WhatsApp Cloud API: `WHATSAPP_ACCESS_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID`; phone-first `wa_id` from Person.Mobile → `Person.WhatsAppChatId` / `WhatsAppContactLink`. Webhook `GET/POST /api/whatsapp/webhook` (verify token + optional app secret). No remote edit/delete. Meta may require templates outside the 24h customer-care window.
+
+Messenger extensibility: `IMessengerSender` + `MessengerKind` (`Bale`, `Rubika`, `Telegram`, `WhatsApp`); remote message ids stored as strings on `MessengerMessage` for all messengers; channels are per-messenger; HTTP surface `/api/messages` with multi-messenger compose (`Messengers[]`).
 
 `attachments` has no menu — `view` = list/preview, `add` = upload, `delete` = remove saved file
 

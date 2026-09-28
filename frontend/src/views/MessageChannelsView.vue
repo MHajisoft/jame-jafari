@@ -35,6 +35,23 @@ const { showForm, editing, form, openCreate, openEdit, closeForm } = useEntityFo
 )
 
 const isRubika = computed(() => enumValue(messengerKinds, form.value.messengerKind, 1) === 2)
+const isWhatsApp = computed(() => enumValue(messengerKinds, form.value.messengerKind, 1) === 4)
+
+const chatIdPlaceholder = computed(() => {
+  if (isRubika.value) return 'مثلاً g0AbCdEf…'
+  if (isWhatsApp.value) return 'مثلاً 0912… یا 98912…'
+  return 'مثلاً @channelname یا -1001234567890'
+})
+
+const chatIdHint = computed(() => {
+  if (isRubika.value) {
+    return 'معمولاً با «همگام‌سازی روبیکا» پر می‌شود؛ در صورت نیاز chat_id را دستی وارد کنید.'
+  }
+  if (isWhatsApp.value) {
+    return 'شماره موبایل مقصد واتساپ (Cloud API)؛ معمولاً همان موبایل شخص.'
+  }
+  return 'شناسه عددی یا نام کاربری کانال/گروه (بله / تلگرام)'
+})
 
 const {
   items,
@@ -195,16 +212,12 @@ onMounted(() => load().catch(() => {}))
           <ClearableInput
             v-model="form.externalChatId"
             dir="ltr"
-            :placeholder="isRubika ? 'مثلاً g0AbCdEf…' : 'مثلاً @channelname یا -1001234567890'"
+            :placeholder="chatIdPlaceholder"
             :invalid="!!errors.externalChatId"
             @input="clearFieldError('externalChatId')"
           />
           <div v-if="errors.externalChatId" class="field-error">{{ errors.externalChatId }}</div>
-          <p class="field-hint">
-            {{ isRubika
-              ? 'معمولاً با «همگام‌سازی روبیکا» پر می‌شود؛ در صورت نیاز chat_id را دستی وارد کنید.'
-              : 'شناسه عددی یا نام کاربری کانال/گروه (بله / تلگرام)' }}
-          </p>
+          <p class="field-hint">{{ chatIdHint }}</p>
         </div>
         <div class="form-group">
           <AppCheckbox v-model="form.isActive" label="فعال" />

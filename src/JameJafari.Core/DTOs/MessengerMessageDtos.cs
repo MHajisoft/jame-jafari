@@ -53,6 +53,7 @@ public class MessengerConfigResponse
     public string? BaleWebhookUrl { get; init; }
     public string? RubikaWebhookUrl { get; init; }
     public string? TelegramWebhookUrl { get; init; }
+    public string? WhatsAppWebhookUrl { get; init; }
     public bool CanRegisterWebhooks { get; init; }
 }
 
@@ -61,12 +62,15 @@ public class RegisterMessengerWebhooksResponse
     public bool BaleRegistered { get; init; }
     public bool RubikaRegistered { get; init; }
     public bool TelegramRegistered { get; init; }
+    public bool WhatsAppRegistered { get; init; }
     public string? BaleError { get; init; }
     public string? RubikaError { get; init; }
     public string? TelegramError { get; init; }
+    public string? WhatsAppError { get; init; }
     public string? BaleWebhookUrl { get; init; }
     public string? RubikaWebhookUrl { get; init; }
     public string? TelegramWebhookUrl { get; init; }
+    public string? WhatsAppWebhookUrl { get; init; }
 }
 
 public class SendMessengerMessageRequest

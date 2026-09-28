@@ -15,17 +15,20 @@ public class MessengerWebhookRegistrationService(
     IOptions<BaleOptions> baleOptions,
     IOptions<RubikaOptions> rubikaOptions,
     IOptions<TelegramOptions> telegramOptions,
+    IOptions<WhatsAppOptions> whatsAppOptions,
     IOptions<MessagingOptions> messagingOptions,
     ILogger<MessengerWebhookRegistrationService> logger)
 {
     public const string BaleWebhookPath = "/api/bale/webhook";
     public const string RubikaWebhookPath = "/api/rubika/webhook";
     public const string TelegramWebhookPath = "/api/telegram/webhook";
+    public const string WhatsAppWebhookPath = "/api/whatsapp/webhook";
 
     readonly MessagingOptions _messaging = messagingOptions.Value;
     readonly BaleOptions _bale = baleOptions.Value;
     readonly RubikaOptions _rubika = rubikaOptions.Value;
     readonly TelegramOptions _telegram = telegramOptions.Value;
+    readonly WhatsAppOptions _whatsApp = whatsAppOptions.Value;
 
     public string? NormalizePublicBaseUrl() =>
         _messaging.HasPublicBaseUrl ? _messaging.PublicBaseUrl!.Trim().TrimEnd('/') : null;
@@ -48,6 +51,12 @@ public class MessengerWebhookRegistrationService(
         return baseUrl is null ? null : $"{baseUrl}{TelegramWebhookPath}";
     }
 
+    public string? BuildWhatsAppWebhookUrl()
+    {
+        var baseUrl = NormalizePublicBaseUrl();
+        return baseUrl is null ? null : $"{baseUrl}{WhatsAppWebhookPath}";
+    }
+
     public async Task<RegisterMessengerWebhooksResponse> RegisterAsync(CancellationToken cancellationToken = default)
     {
         var baseUrl = NormalizePublicBaseUrl();
@@ -58,12 +67,15 @@ public class MessengerWebhookRegistrationService(
         var baleUrl = $"{baseUrl}{BaleWebhookPath}";
         var rubikaUrl = $"{baseUrl}{RubikaWebhookPath}";
         var telegramUrl = $"{baseUrl}{TelegramWebhookPath}";
+        var whatsAppUrl = $"{baseUrl}{WhatsAppWebhookPath}";
         var baleOk = false;
         var rubikaOk = false;
         var telegramOk = false;
+        var whatsAppOk = false;
         string? baleError = null;
         string? rubikaError = null;
         string? telegramError = null;
+        string? whatsAppError = null;
 
         if (_bale.IsConfigured)
         {
@@ -122,21 +134,39 @@ public class MessengerWebhookRegistrationService(
             telegramError = "توکن تلگرام تنظیم نشده است";
         }
 
-        if (!baleOk && !rubikaOk && !telegramOk)
+        if (_whatsApp.IsConfigured)
+        {
+            // Meta Cloud API webhook URL is configured in Meta Developer Console (not via setWebhook).
+            whatsAppOk = !string.IsNullOrWhiteSpace(_whatsApp.WebhookVerifyToken);
+            whatsAppError = whatsAppOk
+                ? null
+                : "WHATSAPP_WEBHOOK_VERIFY_TOKEN را تنظیم کنید و همین آدرس را در Meta Developer → WhatsApp → Configuration ثبت کنید.";
+            if (whatsAppOk)
+                logger.LogInformation("WhatsApp webhook URL ready (configure in Meta): {Url}", whatsAppUrl);
+        }
+        else
+        {
+            whatsAppError = "توکن واتساپ تنظیم نشده است";
+        }
+
+        if (!baleOk && !rubikaOk && !telegramOk && !whatsAppOk)
             throw new InvalidOperationException(
-                string.Join("؛ ", new[] { baleError, rubikaError, telegramError }.Where(s => !string.IsNullOrWhiteSpace(s))));
+                string.Join("؛ ", new[] { baleError, rubikaError, telegramError, whatsAppError }.Where(s => !string.IsNullOrWhiteSpace(s))));
 
         return new RegisterMessengerWebhooksResponse
         {
             BaleRegistered = baleOk,
             RubikaRegistered = rubikaOk,
             TelegramRegistered = telegramOk,
+            WhatsAppRegistered = whatsAppOk,
             BaleError = baleOk ? null : baleError,
             RubikaError = rubikaOk ? null : rubikaError,
             TelegramError = telegramOk ? null : telegramError,
+            WhatsAppError = whatsAppOk ? null : whatsAppError,
             BaleWebhookUrl = baleUrl,
             RubikaWebhookUrl = rubikaUrl,
-            TelegramWebhookUrl = telegramUrl
+            TelegramWebhookUrl = telegramUrl,
+            WhatsAppWebhookUrl = whatsAppUrl
         };
     }
 }

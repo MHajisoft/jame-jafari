@@ -774,6 +774,10 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.Property<int?>("UpdatedById")
                         .HasColumnType("int");
 
+                    b.Property<string>("WhatsAppChatId")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedById");
@@ -963,6 +967,42 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.HasIndex("PersonId");
 
                     b.ToTable("TelegramContactLinks");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.WhatsAppContactLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ChatId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTime>("LinkedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NormalizedPhone")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int?>("PersonId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatId");
+
+                    b.HasIndex("NormalizedPhone")
+                        .IsUnique();
+
+                    b.HasIndex("PersonId");
+
+                    b.ToTable("WhatsAppContactLinks");
                 });
 
             modelBuilder.Entity("JameJafari.Core.Entities.TransactionAttachment", b =>
@@ -1472,6 +1512,16 @@ namespace JameJafari.Infrastructure.Data.Migrations
                 });
 
             modelBuilder.Entity("JameJafari.Core.Entities.TelegramContactLink", b =>
+                {
+                    b.HasOne("JameJafari.Core.Entities.Person", "Person")
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.WhatsAppContactLink", b =>
                 {
                     b.HasOne("JameJafari.Core.Entities.Person", "Person")
                         .WithMany()

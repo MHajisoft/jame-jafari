@@ -69,6 +69,24 @@ builder.Services.Configure<TelegramOptions>(options =>
         ?? builder.Configuration["Telegram:WebhookSecret"];
     options.UploadsRootPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
 });
+builder.Services.Configure<WhatsAppOptions>(options =>
+{
+    builder.Configuration.GetSection(WhatsAppOptions.SectionName).Bind(options);
+    options.AccessToken = builder.Configuration["WHATSAPP_ACCESS_TOKEN"]
+        ?? builder.Configuration["WhatsApp:AccessToken"]
+        ?? "";
+    options.PhoneNumberId = builder.Configuration["WHATSAPP_PHONE_NUMBER_ID"]
+        ?? builder.Configuration["WhatsApp:PhoneNumberId"]
+        ?? "";
+    options.WebhookVerifyToken = builder.Configuration["WHATSAPP_WEBHOOK_VERIFY_TOKEN"]
+        ?? builder.Configuration["WhatsApp:WebhookVerifyToken"];
+    options.AppSecret = builder.Configuration["WHATSAPP_APP_SECRET"]
+        ?? builder.Configuration["WhatsApp:AppSecret"];
+    options.ApiVersion = builder.Configuration["WHATSAPP_API_VERSION"]
+        ?? builder.Configuration["WhatsApp:ApiVersion"]
+        ?? options.ApiVersion;
+    options.UploadsRootPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
+});
 builder.Services.AddScoped<ImageProcessingService>();
 builder.Services.AddScoped<FileStorageService>();
 

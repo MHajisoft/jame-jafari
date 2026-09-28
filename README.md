@@ -216,7 +216,7 @@ cd frontend && npm run build
 
 ## پیام‌رسانی (Message Center)
 
-ادغام با [API بازوی بله](https://docs.bale.ai)، [API بازوی روبیکا](https://rubika.ir/botapi) و [Telegram Bot API](https://core.telegram.org/bots/api) از طریق `IMessengerSender` / `MessengerKind` برای ارسال پیام متنی، تصویر/ویدیو، فایل و رسید درآمد.
+ادغام با [API بازوی بله](https://docs.bale.ai)، [API بازوی روبیکا](https://rubika.ir/botapi)، [Telegram Bot API](https://core.telegram.org/bots/api) و [WhatsApp Cloud API (Meta)](https://developers.facebook.com/docs/whatsapp/cloud-api) از طریق `IMessengerSender` / `MessengerKind` برای ارسال پیام متنی، تصویر/ویدیو، فایل و رسید درآمد.
 
 ### پیکربندی
 
@@ -232,11 +232,15 @@ cd frontend && npm run build
 | `TELEGRAM_BOT_TOKEN` | توکن بازوی تلگرام (از @BotFather) — **هرگز commit نکنید** |
 | `TELEGRAM_BOT_USERNAME` | نام کاربری بازوی تلگرام (بدون @) — لینک `https://t.me/{username}?start=person_{id}` |
 | `TELEGRAM_WEBHOOK_SECRET` | رمز `secret_token` وب‌هوک؛ هدر `X-Telegram-Bot-Api-Secret-Token` برای `POST /api/telegram/webhook` |
+| `WHATSAPP_ACCESS_TOKEN` | توکن Meta WhatsApp Cloud API — **هرگز commit نکنید** |
+| `WHATSAPP_PHONE_NUMBER_ID` | شناسه شماره کسب‌وکار در Meta |
+| `WHATSAPP_WEBHOOK_VERIFY_TOKEN` | توکن تأیید GET `/api/whatsapp/webhook` (باید با Meta Console یکی باشد) |
+| `WHATSAPP_APP_SECRET` | اختیاری؛ اعتبارسنجی `X-Hub-Signature-256` روی POST وب‌هوک |
 | `MESSAGING_PUBLIC_BASE_URL` | آدرس HTTPS عمومی API بدون اسلش پایانی (مثلاً `https://app.example.com`) — برای ثبت خودکار وب‌هوک |
 
 در Docker: مقادیر را در `.env` قرار دهید (نمونه در `.env.example`).
 
-**توسعه محلی (`dotnet run`):** توکن بله را در `appsettings.Development.local.json` با کلید `Bale:BotToken`، روبیکا با `Rubika:BotToken` و تلگرام با `Telegram:BotToken` بگذارید — نه داخل `Logging`. جایگزین: متغیرهای محیطی `BALE_BOT_TOKEN` / `RUBIKA_BOT_TOKEN` / `TELEGRAM_BOT_TOKEN`. برای وب‌هوک واقعی به دامنهٔ HTTPS عمومی نیاز است (`Messaging:PublicBaseUrl` یا `MESSAGING_PUBLIC_BASE_URL`)؛ سپس در **تنظیمات → پیام‌رسان‌ها** دکمه **ثبت وب‌هوک** را بزنید یا API را با `PublicBaseUrl` راه‌اندازی کنید (ثبت خودکار در startup).
+**توسعه محلی (`dotnet run`):** توکن بله را در `appsettings.Development.local.json` با کلید `Bale:BotToken`، روبیکا با `Rubika:BotToken`، تلگرام با `Telegram:BotToken` و واتساپ با `WhatsApp:AccessToken` + `WhatsApp:PhoneNumberId` بگذارید — نه داخل `Logging`. جایگزین: متغیرهای محیطی `BALE_BOT_TOKEN` / `RUBIKA_BOT_TOKEN` / `TELEGRAM_BOT_TOKEN` / `WHATSAPP_ACCESS_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID`. برای وب‌هوک واقعی به دامنهٔ HTTPS عمومی نیاز است (`Messaging:PublicBaseUrl` یا `MESSAGING_PUBLIC_BASE_URL`)؛ سپس در **تنظیمات → پیام‌رسان‌ها** دکمه **ثبت وب‌هوک** را بزنید یا API را با `PublicBaseUrl` راه‌اندازی کنید (ثبت خودکار در startup). برای واتساپ آدرس را در Meta Developer Console هم ثبت کنید.
 
 **کانال‌ها:** پس از راه‌اندازی، کانال‌های پیام (نام + شناسه گفتگو/کانال + پیام‌رسان) از منوی **کانال‌های پیام** مدیریت می‌شوند. برای بله و تلگرام: شناسه عددی یا `@username`؛ برای روبیکا: دکمه **همگام‌سازی روبیکا** (`POST /api/message-channels/sync-rubika`) — قبل از اجرا دیالوگ راهنما نشان داده می‌شود؛ بات را ادمین گروه/کانال کنید، پیامی که بات می‌بیند بفرستید، سپس همگام‌سازی؛ موارد جدید خودکار اضافه می‌شوند؛ اگر کانالی قبلاً حذف شده باشد با همان شناسه دوباره بازیابی می‌شود؛ ناخواسته‌ها را می‌توان غیرفعال/حذف کرد.
 
@@ -246,14 +250,16 @@ cd frontend && npm run build
 
 **وب‌هوک تلگرام:** همان پایهٔ عمومی → `setWebhook` روی `https://{دامنه}/api/telegram/webhook` (با `secret_token` در صورت تنظیم). بدنهٔ آپدیت سازگار با Bot API؛ `/start` و اشتراک تماس مثل بله.
 
+**وب‌هوک واتساپ:** همان پایهٔ عمومی → `GET/POST /api/whatsapp/webhook` را در Meta Developer → WhatsApp → Configuration ثبت کنید (`WHATSAPP_WEBHOOK_VERIFY_TOKEN`). ارسال مستقیم با شماره موبایل شخص (`wa_id`)؛ لینک از وب‌هوک ورودی هم پشتیبانی می‌شود. خارج از پنجرهٔ ۲۴ساعته ممکن است Meta به قالب (template) نیاز داشته باشد.
+
 ### اتصال مخاطب (موبایل‌محور)
 
-API بله/روبیکا/تلگرام ارسال مستقیم با شماره موبایل را پشتیبانی نمی‌کند؛ سامانه از **موبایل شخص** به‌عنوان شناسه کاربری استفاده می‌کند و `chat_id` را خودکار از طریق بازو به‌دست می‌آورد:
+API بله/روبیکا/تلگرام ارسال مستقیم با شماره موبایل را پشتیبانی نمی‌کند؛ سامانه از **موبایل شخص** به‌عنوان شناسه کاربری استفاده می‌کند و `chat_id` را خودکار از طریق بازو به‌دست می‌آورد. واتساپ Cloud API معمولاً با همان موبایل (به‌صورت `wa_id`) ارسال می‌کند:
 
 1. موبایل شخص در پرونده اشخاص ثبت شود.
-2. **مسیر اصلی (وب‌هوک):** شخص بازو را با `/start` باز کند (بله/تلگرام؛ اختیاری `person_{id}`) یا بازو را در روبیکا شروع کند (`StartedBot`) — بازو **بلافاصله** دکمه اشتراک شماره تماس را می‌فرستد.
-3. پس از اشتراک شماره، `Person.BaleChatId` / `Person.RubikaChatId` / `Person.TelegramChatId` و جداول `BaleContactLink` / `RubikaContactLink` / `TelegramContactLink` به‌روز می‌شوند — **قابل ویرایش دستی نیست**.
-4. **پشتیبان:** `POST /api/messages/sync-contacts` (دکمهٔ **تنظیمات → پیام‌رسان‌ها**) اگر وب‌هوک در دسترس نباشد (لوکال/بدون HTTPS عمومی).
+2. **مسیر اصلی (وب‌هوک):** شخص بازو را با `/start` باز کند (بله/تلگرام؛ اختیاری `person_{id}`) یا بازو را در روبیکا شروع کند (`StartedBot`) — بازو **بلافاصله** دکمه اشتراک شماره تماس را می‌فرستد. برای واتساپ کافی است موبایل معتبر باشد (و در صورت نیاز کاربر یک‌بار به شماره کسب‌وکار پیام بدهد).
+3. پس از اشتراک شماره، `Person.BaleChatId` / `Person.RubikaChatId` / `Person.TelegramChatId` / `Person.WhatsAppChatId` و جداول لینک مربوطه به‌روز می‌شوند — **قابل ویرایش دستی نیست**.
+4. **پشتیبان:** `POST /api/messages/sync-contacts` (دکمهٔ **تنظیمات → پیام‌رسان‌ها**) اگر وب‌هوک در دسترس نباشد (لوکال/بدون HTTPS عمومی؛ برای واتساپ no-op چون موبایل‌محور است).
 
 ### قابلیت‌ها
 

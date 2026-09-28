@@ -60,6 +60,11 @@ const MESSENGER_SETUP = {
     env: 'TELEGRAM_BOT_TOKEN',
     appsettings: 'Telegram:BotToken',
     extra: 'اختیاری: TELEGRAM_BOT_USERNAME و TELEGRAM_WEBHOOK_SECRET'
+  },
+  4: {
+    env: 'WHATSAPP_ACCESS_TOKEN + WHATSAPP_PHONE_NUMBER_ID',
+    appsettings: 'WhatsApp:AccessToken و WhatsApp:PhoneNumberId',
+    extra: 'اختیاری: WHATSAPP_WEBHOOK_VERIFY_TOKEN و WHATSAPP_APP_SECRET (Meta Cloud API)'
   }
 }
 
@@ -319,6 +324,13 @@ onMounted(() => {
           </template>
           <template v-if="messagingConfig.telegramWebhookUrl">
             تلگرام: <code dir="ltr">{{ messagingConfig.telegramWebhookUrl }}</code>
+            <br />
+          </template>
+          <template v-if="messagingConfig.whatsAppWebhookUrl">
+            واتساپ: <code dir="ltr">{{ messagingConfig.whatsAppWebhookUrl }}</code>
+            — این آدرس را در Meta Developer ثبت کنید؛ Verify Token همان
+            <code>WHATSAPP_WEBHOOK_VERIFY_TOKEN</code>
+            است.
           </template>
         </p>
       </div>

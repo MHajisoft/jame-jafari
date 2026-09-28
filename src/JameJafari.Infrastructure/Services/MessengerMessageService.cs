@@ -20,17 +20,21 @@ public class MessengerMessageService(
     RubikaContactSyncService rubikaSyncService,
     TelegramContactResolver telegramContactResolver,
     TelegramContactSyncService telegramSyncService,
+    WhatsAppContactResolver whatsAppContactResolver,
+    WhatsAppContactSyncService whatsAppSyncService,
     MessengerSenderResolver senderResolver,
     IncomeReceiptImageService receiptImages,
     MessengerWebhookRegistrationService webhookRegistration,
     IOptions<BaleOptions> options,
     IOptions<RubikaOptions> rubikaOptions,
-    IOptions<TelegramOptions> telegramOptions)
+    IOptions<TelegramOptions> telegramOptions,
+    IOptions<WhatsAppOptions> whatsAppOptions)
 {
     private static readonly TimeSpan MutateWindow = TimeSpan.FromHours(48);
     private readonly BaleOptions _options = options.Value;
     private readonly RubikaOptions _rubikaOptions = rubikaOptions.Value;
     private readonly TelegramOptions _telegramOptions = telegramOptions.Value;
+    private readonly WhatsAppOptions _whatsAppOptions = whatsAppOptions.Value;
 
     public async Task<MessengerConfigResponse> GetConfigAsync()
     {
@@ -69,6 +73,7 @@ public class MessengerMessageService(
             BaleWebhookUrl = webhookRegistration.BuildBaleWebhookUrl(),
             RubikaWebhookUrl = webhookRegistration.BuildRubikaWebhookUrl(),
             TelegramWebhookUrl = webhookRegistration.BuildTelegramWebhookUrl(),
+            WhatsAppWebhookUrl = webhookRegistration.BuildWhatsAppWebhookUrl(),
             CanRegisterWebhooks = canRegister
         };
     }
@@ -582,7 +587,8 @@ public class MessengerMessageService(
         var targets = await ResolveAllReceiptTargetsAsync(tx.Person, messengers);
         if (targets.Count == 0)
         {
-            var anyConfigured = _options.IsConfigured || _rubikaOptions.IsConfigured || _telegramOptions.IsConfigured;
+            var anyConfigured = _options.IsConfigured || _rubikaOptions.IsConfigured
+                || _telegramOptions.IsConfigured || _whatsAppOptions.IsConfigured;
             var warning = !anyConfigured
                 ? "توکن پیام‌رسان تنظیم نشده است"
                 : contactResolver.BuildMissingContactMessage(tx.Person);
@@ -676,6 +682,13 @@ public class MessengerMessageService(
                 targets.Add((MessengerKind.Telegram, telegramChatId.Value.ToString()));
         }
 
+        if ((allow is null || allow.Contains(MessengerKind.WhatsApp)) && _whatsAppOptions.IsConfigured)
+        {
+            var whatsAppChatId = await whatsAppSyncService.ResolveChatIdWithSyncAsync(person);
+            if (whatsAppChatId is not null)
+                targets.Add((MessengerKind.WhatsApp, whatsAppChatId));
+        }
+
         return targets;
     }
 
@@ -683,6 +696,7 @@ public class MessengerMessageService(
     {
         MessengerKind.Rubika => await rubikaContactResolver.ResolveChatIdAsync(person),
         MessengerKind.Telegram => (await telegramContactResolver.ResolveChatIdAsync(person))?.ToString(),
+        MessengerKind.WhatsApp => await whatsAppContactResolver.ResolveChatIdAsync(person),
         _ => (await contactResolver.ResolveChatIdAsync(person))?.ToString()
     };
 
@@ -691,6 +705,12 @@ public class MessengerMessageService(
         if (messenger == MessengerKind.Rubika)
         {
             await rubikaContactResolver.PersistLinkAsync(person, chatId);
+            return;
+        }
+
+        if (messenger == MessengerKind.WhatsApp)
+        {
+            await whatsAppContactResolver.PersistLinkAsync(person, chatId);
             return;
         }
 
@@ -707,6 +727,7 @@ public class MessengerMessageService(
     {
         MessengerKind.Rubika => rubikaContactResolver.BuildMissingContactMessage(person),
         MessengerKind.Telegram => telegramContactResolver.BuildMissingContactMessage(person),
+        MessengerKind.WhatsApp => whatsAppContactResolver.BuildMissingContactMessage(person),
         _ => contactResolver.BuildMissingContactMessage(person)
     };
 
@@ -714,6 +735,7 @@ public class MessengerMessageService(
     {
         MessengerKind.Rubika => rubikaContactResolver.BuildBotStartUrl(),
         MessengerKind.Telegram => personId is null ? null : telegramContactResolver.BuildBotStartUrl(personId.Value),
+        MessengerKind.WhatsApp => whatsAppContactResolver.BuildBotStartUrl(),
         _ => personId is null ? null : contactResolver.BuildBotStartUrl(personId.Value)
     };
 
@@ -776,6 +798,7 @@ public class MessengerMessageService(
         MessengerKind.Bale => "بله",
         MessengerKind.Rubika => "روبیکا",
         MessengerKind.Telegram => "تلگرام",
+        MessengerKind.WhatsApp => "واتساپ",
         _ => kind.ToString()
     };
 
@@ -825,6 +848,7 @@ public class MessengerMessageService(
             && row.SentAt is not null
             && DateTime.UtcNow - row.SentAt.Value <= MutateWindow
             && row.PersonGroupId is null
+            && row.MessengerKind != MessengerKind.WhatsApp
             && (row.MessageType == MessengerMessageType.Text || !string.IsNullOrWhiteSpace(row.Caption));
 
         return new MessengerMessageResponse

@@ -21,7 +21,8 @@ export default defineConfig({
         'icons/og-image.png',
         'icons/messengers/bale.svg',
         'icons/messengers/rubika.png',
-        'icons/messengers/telegram.svg'
+        'icons/messengers/telegram.svg',
+        'icons/messengers/whatsapp.svg'
       ],
       manifest: {
         id: '/',

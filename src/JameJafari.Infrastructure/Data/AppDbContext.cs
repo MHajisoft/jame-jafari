@@ -26,6 +26,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<RubikaBotState> RubikaBotStates => Set<RubikaBotState>();
     public DbSet<TelegramContactLink> TelegramContactLinks => Set<TelegramContactLink>();
     public DbSet<TelegramBotState> TelegramBotStates => Set<TelegramBotState>();
+    public DbSet<WhatsAppContactLink> WhatsAppContactLinks => Set<WhatsAppContactLink>();
     public DbSet<MessageChannel> MessageChannels => Set<MessageChannel>();
     public DbSet<PersonGroup> PersonGroups => Set<PersonGroup>();
     public DbSet<PersonGroupMember> PersonGroupMembers => Set<PersonGroupMember>();
@@ -74,6 +75,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.BaleChatId);
             e.Property(x => x.RubikaChatId).HasMaxLength(100);
             e.Property(x => x.TelegramChatId);
+            e.Property(x => x.WhatsAppChatId).HasMaxLength(32);
             e.Property(x => x.DeathDate).HasColumnType("date");
             e.HasOne(x => x.Father).WithMany(x => x.ChildrenAsFather).HasForeignKey(x => x.FatherId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Mother).WithMany(x => x.ChildrenAsMother).HasForeignKey(x => x.MotherId).OnDelete(DeleteBehavior.Restrict);
@@ -257,6 +259,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.HasKey(x => x.Id);
             e.Property(x => x.LastUpdateId);
+        });
+
+        modelBuilder.Entity<WhatsAppContactLink>(e =>
+        {
+            e.Property(x => x.NormalizedPhone).HasMaxLength(32);
+            e.Property(x => x.ChatId).HasMaxLength(32);
+            e.HasIndex(x => x.NormalizedPhone).IsUnique();
+            e.HasIndex(x => x.ChatId);
+            e.HasOne(x => x.Person).WithMany().HasForeignKey(x => x.PersonId).OnDelete(DeleteBehavior.SetNull);
         });
 
         ConfigureAuditRelations<User>(modelBuilder);

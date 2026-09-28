@@ -28,7 +28,8 @@ export const generalTypeCategories = [
 export const messengerKinds = [
   { value: 1, key: 'Bale', label: 'بله' },
   { value: 2, key: 'Rubika', label: 'روبیکا' },
-  { value: 3, key: 'Telegram', label: 'تلگرام' }
+  { value: 3, key: 'Telegram', label: 'تلگرام' },
+  { value: 4, key: 'WhatsApp', label: 'واتساپ' }
 ]
 
 export const messengerMessageTypes = [

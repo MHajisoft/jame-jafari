@@ -9,12 +9,12 @@ import {
 /** @typedef {import('../utils/currency').CurrencyDisplayUnit} CurrencyDisplayUnit */
 /** @typedef {'icon' | 'text' | 'icon-text'} TableLabelMode */
 /** @typedef {TableLabelMode} MessengerLabelMode */
-/** @typedef {1 | 2 | 3} MessengerKindValue */
+/** @typedef {1 | 2 | 3 | 4} MessengerKindValue */
 
 export { CURRENCY_DISPLAY_OPTIONS }
 
-/** Bale / Rubika / Telegram — same numeric values as API `MessengerKind`. */
-export const ALL_MESSENGER_KINDS = /** @type {MessengerKindValue[]} */ ([1, 2, 3])
+/** Bale / Rubika / Telegram / WhatsApp — same numeric values as API `MessengerKind`. */
+export const ALL_MESSENGER_KINDS = /** @type {MessengerKindValue[]} */ ([1, 2, 3, 4])
 
 /** Mobile date-picker presentation options (Settings → mobile only). */
 export const DATE_PICKER_MOBILE_MODES = [

@@ -21,6 +21,7 @@ public class PersonResponse : ResponseBase
     public long? BaleChatId { get; init; }
     public string? RubikaChatId { get; init; }
     public long? TelegramChatId { get; init; }
+    public string? WhatsAppChatId { get; init; }
     public string? Address { get; init; }
     public int? NamePrefixId { get; init; }
     public string? NamePrefixName { get; init; }

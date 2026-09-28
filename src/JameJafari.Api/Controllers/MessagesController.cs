@@ -18,6 +18,7 @@ public class MessagesController(
     BaleContactSyncService syncService,
     RubikaContactSyncService rubikaSyncService,
     TelegramContactSyncService telegramSyncService,
+    WhatsAppContactSyncService whatsAppSyncService,
     MessengerWebhookRegistrationService webhookRegistration,
     FileStorageService storage) : ApiControllerBase
 {
@@ -152,12 +153,14 @@ public class MessagesController(
             var baleLinked = await syncService.SyncFromUpdatesAsync(cancellationToken);
             var rubikaLinked = await rubikaSyncService.SyncFromUpdatesAsync(cancellationToken);
             var telegramLinked = await telegramSyncService.SyncFromUpdatesAsync(cancellationToken);
+            var whatsAppLinked = await whatsAppSyncService.SyncFromUpdatesAsync(cancellationToken);
             return Ok(new
             {
-                linked = baleLinked + rubikaLinked + telegramLinked,
+                linked = baleLinked + rubikaLinked + telegramLinked + whatsAppLinked,
                 baleLinked,
                 rubikaLinked,
-                telegramLinked
+                telegramLinked,
+                whatsAppLinked
             });
         }
         catch (InvalidOperationException ex)
@@ -192,6 +195,7 @@ public class MessagesController(
             {
                 Core.Enums.MessengerKind.Rubika => "rubika",
                 Core.Enums.MessengerKind.Telegram => "telegram",
+                Core.Enums.MessengerKind.WhatsApp => "whatsapp",
                 _ => "bale"
             };
         }

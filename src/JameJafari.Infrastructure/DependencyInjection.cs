@@ -3,6 +3,7 @@ using JameJafari.Infrastructure.Bale;
 using JameJafari.Infrastructure.Messaging;
 using JameJafari.Infrastructure.Rubika;
 using JameJafari.Infrastructure.Telegram;
+using JameJafari.Infrastructure.WhatsApp;
 using JameJafari.Infrastructure.Caching;
 using JameJafari.Infrastructure.Data;
 using JameJafari.Infrastructure.Security;
@@ -47,9 +48,11 @@ public static class DependencyInjection
         services.AddHttpClient<BaleBotClient>();
         services.AddHttpClient<RubikaBotClient>();
         services.AddHttpClient<TelegramBotClient>();
+        services.AddHttpClient<WhatsAppCloudClient>();
         services.AddScoped<IMessengerSender, BaleMessengerSender>();
         services.AddScoped<IMessengerSender, RubikaMessengerSender>();
         services.AddScoped<IMessengerSender, TelegramMessengerSender>();
+        services.AddScoped<IMessengerSender, WhatsAppMessengerSender>();
         services.AddScoped<MessengerSenderResolver>();
         services.AddScoped<BaleContactResolver>();
         services.AddScoped<BaleContactSyncService>();
@@ -57,6 +60,8 @@ public static class DependencyInjection
         services.AddScoped<RubikaContactSyncService>();
         services.AddScoped<TelegramContactResolver>();
         services.AddScoped<TelegramContactSyncService>();
+        services.AddScoped<WhatsAppContactResolver>();
+        services.AddScoped<WhatsAppContactSyncService>();
         services.AddScoped<MessengerWebhookRegistrationService>();
         services.AddScoped<IncomeReceiptImageService>();
         services.AddScoped<MessengerMessageService>();

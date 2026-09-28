@@ -17,6 +17,7 @@ public static partial class MessengerChatTargetHelper
     public static string Normalize(MessengerKind messenger, string? raw) => messenger switch
     {
         MessengerKind.Rubika => NormalizeRubika(raw),
+        MessengerKind.WhatsApp => NormalizeWhatsApp(raw),
         _ => Normalize(raw)
     };
 
@@ -48,6 +49,14 @@ public static partial class MessengerChatTargetHelper
         if (!RubikaChatIdPattern().IsMatch(s))
             throw new InvalidOperationException("شناسه گفتگوی روبیکا نامعتبر است");
         return s;
+    }
+
+    public static string NormalizeWhatsApp(string? raw)
+    {
+        var waId = PhoneNormalizeHelper.ToWhatsAppId(raw);
+        if (waId is null || waId.Length < 10)
+            throw new InvalidOperationException("شماره موبایل واتساپ نامعتبر است (مثلاً ۰۹۱۲… یا ۹۸۹۱۲…)");
+        return waId;
     }
 
     public static bool TryParseNumericChatId(string? chatId, out long value)

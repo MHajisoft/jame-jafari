@@ -45,4 +45,14 @@ public static class PhoneNormalizeHelper
 
         return $"+98{raw}";
     }
+
+    /// <summary>WhatsApp Cloud API <c>wa_id</c> / <c>to</c>: digits only, no leading +.</summary>
+    public static string? ToWhatsAppId(string? value)
+    {
+        var normalized = Normalize(value);
+        if (normalized is null)
+            return null;
+
+        return normalized.TrimStart('+');
+    }
 }
