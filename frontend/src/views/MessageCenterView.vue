@@ -477,11 +477,16 @@ watch(() => form.value.targetType, () => {
         <template v-if="config.rubikaWebhookUrl">
           <br />روبیکا: <code dir="ltr">{{ config.rubikaWebhookUrl }}</code>
         </template>
+        <template v-if="config.telegramWebhookUrl">
+          <br />تلگرام: <code dir="ltr">{{ config.telegramWebhookUrl }}</code>
+        </template>
       </p>
     </div>
 
     <div v-if="!config.isConfigured" class="card form-hint-banner">
-      توکن بازو در سرور تنظیم نشده است. متغیر <code>BALE_BOT_TOKEN</code> را در محیط اجرا قرار دهید.
+      توکن بازو در سرور تنظیم نشده است. یکی از متغیرهای
+      <code>BALE_BOT_TOKEN</code>، <code>RUBIKA_BOT_TOKEN</code> یا <code>TELEGRAM_BOT_TOKEN</code>
+      را در محیط اجرا قرار دهید.
     </div>
 
     <FormHost :show="showForm" @close="closeForm">

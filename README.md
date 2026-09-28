@@ -30,7 +30,7 @@ jame-jafari-source/
 ### Backend
 
 1. Connection string را در `src/JameJafari.Api/appsettings.json` تنظیم کنید.
-2. (اختیاری) برای پیام‌رسان بله/روبیکا در توسعه محلی: `Bale:BotToken` / `Rubika:BotToken` را در `appsettings.Development.local.json` بگذارید — یا متغیرهای محیطی `BALE_BOT_TOKEN` / `RUBIKA_BOT_TOKEN`.
+2. (اختیاری) برای پیام‌رسان بله/روبیکا/تلگرام در توسعه محلی: `Bale:BotToken` / `Rubika:BotToken` / `Telegram:BotToken` را در `appsettings.Development.local.json` بگذارید — یا متغیرهای محیطی `BALE_BOT_TOKEN` / `RUBIKA_BOT_TOKEN` / `TELEGRAM_BOT_TOKEN`.
 3. اجرا:
 
 ```bash
@@ -216,7 +216,7 @@ cd frontend && npm run build
 
 ## پیام‌رسانی (Message Center)
 
-ادغام با [API بازوی بله](https://docs.bale.ai) و [API بازوی روبیکا](https://rubika.ir/botapi) از طریق `IMessengerSender` / `MessengerKind` برای ارسال پیام متنی، تصویر/ویدیو، فایل و رسید درآمد.
+ادغام با [API بازوی بله](https://docs.bale.ai)، [API بازوی روبیکا](https://rubika.ir/botapi) و [Telegram Bot API](https://core.telegram.org/bots/api) از طریق `IMessengerSender` / `MessengerKind` برای ارسال پیام متنی، تصویر/ویدیو، فایل و رسید درآمد.
 
 ### پیکربندی
 
@@ -229,35 +229,40 @@ cd frontend && npm run build
 | `RUBIKA_BOT_TOKEN` | توکن بازوی روبیکا (از @BotFather در روبیکا) — **هرگز commit نکنید** |
 | `RUBIKA_BOT_USERNAME` | نام کاربری بازوی روبیکا (بدون @) — لینک `https://rubika.ir/{username}` |
 | `RUBIKA_WEBHOOK_SECRET` | رمز هدر `X-Rubika-Webhook-Secret` برای `POST /api/rubika/webhook` |
+| `TELEGRAM_BOT_TOKEN` | توکن بازوی تلگرام (از @BotFather) — **هرگز commit نکنید** |
+| `TELEGRAM_BOT_USERNAME` | نام کاربری بازوی تلگرام (بدون @) — لینک `https://t.me/{username}?start=person_{id}` |
+| `TELEGRAM_WEBHOOK_SECRET` | رمز `secret_token` وب‌هوک؛ هدر `X-Telegram-Bot-Api-Secret-Token` برای `POST /api/telegram/webhook` |
 | `MESSAGING_PUBLIC_BASE_URL` | آدرس HTTPS عمومی API بدون اسلش پایانی (مثلاً `https://app.example.com`) — برای ثبت خودکار وب‌هوک |
 
 در Docker: مقادیر را در `.env` قرار دهید (نمونه در `.env.example`).
 
-**توسعه محلی (`dotnet run`):** توکن بله را در `appsettings.Development.local.json` با کلید `Bale:BotToken` و توکن روبیکا را با `Rubika:BotToken` بگذارید — نه داخل `Logging`. جایگزین: متغیرهای محیطی `BALE_BOT_TOKEN` / `RUBIKA_BOT_TOKEN`. برای وب‌هوک واقعی به دامنهٔ HTTPS عمومی نیاز است (`Messaging:PublicBaseUrl` یا `MESSAGING_PUBLIC_BASE_URL`)؛ سپس در مرکز پیام **ثبت وب‌هوک** یا راه‌اندازی API (ثبت خودکار در startup).
+**توسعه محلی (`dotnet run`):** توکن بله را در `appsettings.Development.local.json` با کلید `Bale:BotToken`، روبیکا با `Rubika:BotToken` و تلگرام با `Telegram:BotToken` بگذارید — نه داخل `Logging`. جایگزین: متغیرهای محیطی `BALE_BOT_TOKEN` / `RUBIKA_BOT_TOKEN` / `TELEGRAM_BOT_TOKEN`. برای وب‌هوک واقعی به دامنهٔ HTTPS عمومی نیاز است (`Messaging:PublicBaseUrl` یا `MESSAGING_PUBLIC_BASE_URL`)؛ سپس در مرکز پیام **ثبت وب‌هوک** یا راه‌اندازی API (ثبت خودکار در startup).
 
-**کانال‌ها:** پس از راه‌اندازی، کانال‌های پیام (نام + شناسه گفتگو/کانال + پیام‌رسان) از منوی **کانال‌های پیام** مدیریت می‌شوند. برای بله: شناسه عددی یا `@username`؛ برای روبیکا: دکمه **همگام‌سازی روبیکا** (`POST /api/message-channels/sync-rubika`) — قبل از اجرا دیالوگ راهنما نشان داده می‌شود؛ بات را ادمین گروه/کانال کنید، پیامی که بات می‌بیند بفرستید، سپس همگام‌سازی؛ موارد جدید خودکار اضافه می‌شوند؛ اگر کانالی قبلاً حذف شده باشد با همان شناسه دوباره بازیابی می‌شود؛ ناخواسته‌ها را می‌توان غیرفعال/حذف کرد.
+**کانال‌ها:** پس از راه‌اندازی، کانال‌های پیام (نام + شناسه گفتگو/کانال + پیام‌رسان) از منوی **کانال‌های پیام** مدیریت می‌شوند. برای بله و تلگرام: شناسه عددی یا `@username`؛ برای روبیکا: دکمه **همگام‌سازی روبیکا** (`POST /api/message-channels/sync-rubika`) — قبل از اجرا دیالوگ راهنما نشان داده می‌شود؛ بات را ادمین گروه/کانال کنید، پیامی که بات می‌بیند بفرستید، سپس همگام‌سازی؛ موارد جدید خودکار اضافه می‌شوند؛ اگر کانالی قبلاً حذف شده باشد با همان شناسه دوباره بازیابی می‌شود؛ ناخواسته‌ها را می‌توان غیرفعال/حذف کرد.
 
 **وب‌هوک بله:** با `MESSAGING_PUBLIC_BASE_URL`، API متد `setWebhook` را به `https://{دامنه}/api/bale/webhook` صدا می‌زند (`POST /api/messages/register-webhooks` یا startup). بدنهٔ هر آپدیت یک شی `Update` است. بدون آدرس عمومی، «همگام‌سازی مخاطبین» پشتیبان است (`getUpdates`).
 
 **وب‌هوک روبیکا:** همان پایهٔ عمومی → `updateBotEndpoints` با `type: ReceiveUpdate` روی `https://{دامنه}/api/rubika/webhook`. بدنه `{ "update": { ... } }` (`StartedBot` / `NewMessage` + اشتراک موبایل).
 
+**وب‌هوک تلگرام:** همان پایهٔ عمومی → `setWebhook` روی `https://{دامنه}/api/telegram/webhook` (با `secret_token` در صورت تنظیم). بدنهٔ آپدیت سازگار با Bot API؛ `/start` و اشتراک تماس مثل بله.
+
 ### اتصال مخاطب (موبایل‌محور)
 
-API بله/روبیکا ارسال مستقیم با شماره موبایل را پشتیبانی نمی‌کند؛ سامانه از **موبایل شخص** به‌عنوان شناسه کاربری استفاده می‌کند و `chat_id` را خودکار از طریق بازو به‌دست می‌آورد:
+API بله/روبیکا/تلگرام ارسال مستقیم با شماره موبایل را پشتیبانی نمی‌کند؛ سامانه از **موبایل شخص** به‌عنوان شناسه کاربری استفاده می‌کند و `chat_id` را خودکار از طریق بازو به‌دست می‌آورد:
 
 1. موبایل شخص در پرونده اشخاص ثبت شود.
-2. **مسیر اصلی (وب‌هوک):** شخص بازو را با `/start` باز کند (بله؛ اختیاری `person_{id}`) یا بازو را در روبیکا شروع کند (`StartedBot`) — بازو **بلافاصله** دکمه اشتراک شماره تماس را می‌فرستد.
-3. پس از اشتراک شماره، `Person.BaleChatId` / `Person.RubikaChatId` و جداول `BaleContactLink` / `RubikaContactLink` به‌روز می‌شوند — **قابل ویرایش دستی نیست**.
+2. **مسیر اصلی (وب‌هوک):** شخص بازو را با `/start` باز کند (بله/تلگرام؛ اختیاری `person_{id}`) یا بازو را در روبیکا شروع کند (`StartedBot`) — بازو **بلافاصله** دکمه اشتراک شماره تماس را می‌فرستد.
+3. پس از اشتراک شماره، `Person.BaleChatId` / `Person.RubikaChatId` / `Person.TelegramChatId` و جداول `BaleContactLink` / `RubikaContactLink` / `TelegramContactLink` به‌روز می‌شوند — **قابل ویرایش دستی نیست**.
 4. **پشتیبان:** `POST /api/messages/sync-contacts` (دکمه مرکز پیام) اگر وب‌هوک در دسترس نباشد (لوکال/بدون HTTPS عمومی).
 
 ### قابلیت‌ها
 
-- **مرکز پیام** (`/message-center`): مقصد **کانال/گروه** با یک چندانتخابی گروه‌بندی‌شده (بله/روبیکا → کانال‌ها، با جستجو و لوگوی واقعی پیام‌رسان؛ چند کانال مجاز)، یا **گروه اشخاص** / **اشخاص** با چندانتخابی (چند گروه یا چند شخص؛ اعضای تکراری بین گروه‌ها یک‌بار ارسال می‌شوند) و انتخاب جداگانهٔ پیام‌رسان‌ها؛ متن + پیوست اختیاری؛ ارسال چندمقصد = یک ردیف لاگ به ازای هر کانال/شخص×پیام‌رسان؛ در بله ۲–۱۰ فایل هم‌نوع با `sendMediaGroup`؛ در روبیکا فایل‌ها پشت‌سرهم با `requestSendFile` → `sendFile` ارسال می‌شوند؛ ویرایش/حذف روی کانال (شناسه پیام در دیتابیس به‌صورت رشته برای سازگاری با روبیکا)؛ پیوست‌های آپلودشده در `uploads/bale/` یا `uploads/rubika/`؛ در حالت فقط‌آیکون، پیام‌رسان+نوع+وضعیت در یک خوشهٔ «مشخصات» (`MessengerMessageMetaCluster`)؛ در حالت متن/آیکون+متن ستون‌های جدا؛ لوگوی `/icons/messengers/` (PWA precache)
+- **مرکز پیام** (`/message-center`): مقصد **کانال/گروه** با یک چندانتخابی گروه‌بندی‌شده (بله/روبیکا/تلگرام → کانال‌ها، با جستجو و لوگوی واقعی پیام‌رسان؛ چند کانال مجاز)، یا **گروه اشخاص** / **اشخاص** با چندانتخابی (چند گروه یا چند شخص؛ اعضای تکراری بین گروه‌ها یک‌بار ارسال می‌شوند) و انتخاب جداگانهٔ پیام‌رسان‌ها؛ متن + پیوست اختیاری؛ ارسال چندمقصد = یک ردیف لاگ به ازای هر کانال/شخص×پیام‌رسان؛ در بله و تلگرام ۲–۱۰ فایل هم‌نوع با `sendMediaGroup`؛ در روبیکا فایل‌ها پشت‌سرهم با `requestSendFile` → `sendFile` ارسال می‌شوند؛ ویرایش/حذف روی کانال (شناسه پیام در دیتابیس به‌صورت رشته برای سازگاری با روبیکا)؛ پیوست‌های آپلودشده در `uploads/bale/` یا `uploads/rubika/` یا `uploads/telegram/`؛ در حالت فقط‌آیکون، پیام‌رسان+نوع+وضعیت در یک خوشهٔ «مشخصات» (`MessengerMessageMetaCluster`)؛ در حالت متن/آیکون+متن ستون‌های جدا؛ لوگوی `/icons/messengers/` (PWA precache)
 - **کانال‌های پیام** (`/message-channels`): CRUD کانال با نام نمایشی و `ExternalChatId` — لیست صفحه‌بندی‌شده
 - **گروه‌های اشخاص** (`/person-groups`): CRUD گروه با لیست اعضا — ارسال گروهی = یک پیام خصوصی به هر عضو
-- **رسید درآمد**: برای هر پیام‌رسان پیکربندی‌شده که شخص در آن لینک شده باشد (بله و/یا روبیکا) رسید تصویری جداگانه ارسال می‌شود؛ تصویر در پوشهٔ همان پیام‌رسان ذخیره می‌شود. اگر بخشی ناموفق باشد، هشدار ترکیبی برمی‌گردد و درآمد همچنان ثبت می‌شود.
+- **رسید درآمد**: برای هر پیام‌رسان پیکربندی‌شده که شخص در آن لینک شده باشد (بله و/یا روبیکا و/یا تلگرام) رسید تصویری جداگانه ارسال می‌شود؛ تصویر در پوشهٔ همان پیام‌رسان ذخیره می‌شود. اگر بخشی ناموفق باشد، هشدار ترکیبی برمی‌گردد و درآمد همچنان ثبت می‌شود.
 - **همگام‌سازی مخاطبین**: `POST /api/messages/sync-contacts` — پشتیبان؛ مسیر اصلی ثبت وب‌هوک است (`POST /api/messages/register-webhooks` + `MESSAGING_PUBLIC_BASE_URL`)
-- **ثبت وب‌هوک**: `POST /api/messages/register-webhooks` — بله `setWebhook` و روبیکا `updateBotEndpoints`/`ReceiveUpdate`؛ در startup هم اگر `PublicBaseUrl` باشد یک‌بار اجرا می‌شود
+- **ثبت وب‌هوک**: `POST /api/messages/register-webhooks` — بله `setWebhook`، روبیکا `updateBotEndpoints`/`ReceiveUpdate`، تلگرام `setWebhook`؛ در startup هم اگر `PublicBaseUrl` باشد یک‌بار اجرا می‌شود
 - **API پیام‌ها**: `GET/POST /api/messages`، ویرایش/حذف `/api/messages/{id}`، پیکربندی `GET /api/messages/config`
 
 ارسال به گروه اشخاص: ویرایش دسته‌ای پشتیبانی نمی‌شود؛ هر عضو یک ردیف جدا در لاگ دارد.

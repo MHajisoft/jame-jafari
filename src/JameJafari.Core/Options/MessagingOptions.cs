@@ -7,7 +7,7 @@ public class MessagingOptions
 
     /// <summary>
     /// Public HTTPS origin of this API (no trailing slash), e.g. https://app.example.com.
-    /// Required to register Bale/Rubika webhooks.
+    /// Required to register Bale/Rubika/Telegram webhooks.
     /// </summary>
     public string? PublicBaseUrl { get; set; }
 

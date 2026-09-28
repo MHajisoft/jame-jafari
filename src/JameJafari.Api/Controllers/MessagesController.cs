@@ -17,6 +17,7 @@ public class MessagesController(
     MessengerMessageService service,
     BaleContactSyncService syncService,
     RubikaContactSyncService rubikaSyncService,
+    TelegramContactSyncService telegramSyncService,
     MessengerWebhookRegistrationService webhookRegistration,
     FileStorageService storage) : ApiControllerBase
 {
@@ -61,11 +62,8 @@ public class MessagesController(
         if (!isChannel && messengers.Count == 0)
             return BadRequest(new { message = "انتخاب حداقل یک پیام‌رسان الزامی است" });
 
-        // Folder is organizational; both senders resolve under the shared uploads root.
-        var uploadFolder = messengers.Contains(Core.Enums.MessengerKind.Rubika)
-                           && !messengers.Contains(Core.Enums.MessengerKind.Bale)
-            ? "rubika"
-            : "bale";
+        // Folder is organizational; senders resolve under the shared uploads root.
+        var uploadFolder = ResolveUploadFolder(messengers, isChannel);
         var attachmentPaths = new List<string>();
         try
         {
@@ -153,7 +151,14 @@ public class MessagesController(
         {
             var baleLinked = await syncService.SyncFromUpdatesAsync(cancellationToken);
             var rubikaLinked = await rubikaSyncService.SyncFromUpdatesAsync(cancellationToken);
-            return Ok(new { linked = baleLinked + rubikaLinked, baleLinked, rubikaLinked });
+            var telegramLinked = await telegramSyncService.SyncFromUpdatesAsync(cancellationToken);
+            return Ok(new
+            {
+                linked = baleLinked + rubikaLinked + telegramLinked,
+                baleLinked,
+                rubikaLinked,
+                telegramLinked
+            });
         }
         catch (InvalidOperationException ex)
         {
@@ -173,5 +178,24 @@ public class MessagesController(
         {
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    static string ResolveUploadFolder(IReadOnlyList<Core.Enums.MessengerKind> messengers, bool isChannel)
+    {
+        if (isChannel || messengers.Count == 0)
+            return "bale";
+
+        var distinct = messengers.Distinct().ToList();
+        if (distinct.Count == 1)
+        {
+            return distinct[0] switch
+            {
+                Core.Enums.MessengerKind.Rubika => "rubika",
+                Core.Enums.MessengerKind.Telegram => "telegram",
+                _ => "bale"
+            };
+        }
+
+        return "bale";
     }
 }

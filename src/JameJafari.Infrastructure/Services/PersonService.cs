@@ -9,7 +9,7 @@ using ZiggyCreatures.Caching.Fusion;
 
 namespace JameJafari.Infrastructure.Services;
 
-public class PersonService(AppDbContext db, IFusionCache cache, BaleContactSyncService baleSync, RubikaContactSyncService rubikaSync)
+public class PersonService(AppDbContext db, IFusionCache cache, BaleContactSyncService baleSync, RubikaContactSyncService rubikaSync, TelegramContactSyncService telegramSync)
 {
     public async Task<PagedResult<PersonResponse>> GetPagedAsync(string? search, Gender? gender, int page, int pageSize)
     {
@@ -70,6 +70,7 @@ public class PersonService(AppDbContext db, IFusionCache cache, BaleContactSyncS
         {
             await baleSync.ReconcilePersonMobileAsync(entity, previousMobile: null);
             await rubikaSync.ReconcilePersonMobileAsync(entity, previousMobile: null);
+            await telegramSync.ReconcilePersonMobileAsync(entity, previousMobile: null);
         }
         await LookupCache.InvalidatePersonsAsync(cache);
         return (await GetByIdAsync(entity.Id))!;
@@ -97,6 +98,7 @@ public class PersonService(AppDbContext db, IFusionCache cache, BaleContactSyncS
         await db.SaveChangesAsync();
         await baleSync.ReconcilePersonMobileAsync(entity, previousMobile);
         await rubikaSync.ReconcilePersonMobileAsync(entity, previousMobile);
+        await telegramSync.ReconcilePersonMobileAsync(entity, previousMobile);
         await LookupCache.InvalidatePersonsAsync(cache);
         return await GetByIdAsync(id);
     }
@@ -164,6 +166,7 @@ public class PersonService(AppDbContext db, IFusionCache cache, BaleContactSyncS
             Mobile = p.Mobile,
             BaleChatId = p.BaleChatId,
             RubikaChatId = p.RubikaChatId,
+            TelegramChatId = p.TelegramChatId,
             Address = p.Address,
             NamePrefixId = p.NamePrefixId,
             NamePrefixName = p.NamePrefix != null ? p.NamePrefix.Name : null,
@@ -194,6 +197,7 @@ public class PersonService(AppDbContext db, IFusionCache cache, BaleContactSyncS
         Mobile = row.Mobile,
         BaleChatId = row.BaleChatId,
         RubikaChatId = row.RubikaChatId,
+        TelegramChatId = row.TelegramChatId,
         Address = row.Address,
         NamePrefixId = row.NamePrefixId,
         NamePrefixName = row.NamePrefixName,
@@ -258,6 +262,7 @@ public class PersonService(AppDbContext db, IFusionCache cache, BaleContactSyncS
         public string? Mobile { get; init; }
         public long? BaleChatId { get; init; }
         public string? RubikaChatId { get; init; }
+        public long? TelegramChatId { get; init; }
         public string? Address { get; init; }
         public int? NamePrefixId { get; init; }
         public string? NamePrefixName { get; init; }

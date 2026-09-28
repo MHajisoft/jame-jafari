@@ -15,7 +15,7 @@ Standard actions: `view`, `create`, `update`, `delete` (+ `users.changepassword`
 
 `messages` — menu **مرکز پیام** (پیکربندی): `view` = list log, `send` = compose + income receipt + sync-contacts, `update` = edit on channel (within 48h; not person-group broadcasts), `delete` = remote (`scope=remote`) or local (`scope=local`)
 
-`messagechannels` — menu **کانال‌های پیام** (پیکربندی): CRUD named channels (`MessengerKind` + `ExternalChatId` string — Bale: numeric/`@username`; Rubika: opaque chat_id)
+`messagechannels` — menu **کانال‌های پیام** (پیکربندی): CRUD named channels (`MessengerKind` + `ExternalChatId` string — Bale/Telegram: numeric/`@username`; Rubika: opaque chat_id)
 
 `persongroups` — menu **گروه‌های اشخاص** (اطلاعات پایه): CRUD named person groups for broadcast compose
 
@@ -23,7 +23,9 @@ Bale contact linking: mobile on Person → webhook `POST /api/bale/webhook` or `
 
 Rubika contact linking: mobile on Person → webhook `POST /api/rubika/webhook` (`{ update }`) or same `sync-contacts` → `RubikaContactLink` + `Person.RubikaChatId`. Contact request via ChatKeypad `AskMyPhoneNumber`. `RubikaBotState.LastOffsetId` stores `next_offset_id`; first poll stores offset without linking backlog.
 
-Messenger extensibility: `IMessengerSender` + `MessengerKind` (`Bale`, `Rubika`); remote message ids stored as strings on `MessengerMessage` for both messengers; channels are per-messenger; HTTP surface `/api/messages` with multi-messenger compose (`Messengers[]`).
+Telegram contact linking: mobile on Person → webhook `POST /api/telegram/webhook` (header `X-Telegram-Bot-Api-Secret-Token` when configured) or same `sync-contacts` → `TelegramContactLink` + `Person.TelegramChatId`. Same `/start` + share-phone flow as Bale (`https://t.me/{bot}?start=person_{id}`). `TelegramBotState.LastUpdateId` dedupes updates.
+
+Messenger extensibility: `IMessengerSender` + `MessengerKind` (`Bale`, `Rubika`, `Telegram`); remote message ids stored as strings on `MessengerMessage` for all messengers; channels are per-messenger; HTTP surface `/api/messages` with multi-messenger compose (`Messengers[]`).
 
 `attachments` has no menu — `view` = list/preview, `add` = upload, `delete` = remove saved file
 

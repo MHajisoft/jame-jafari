@@ -57,6 +57,18 @@ builder.Services.Configure<RubikaOptions>(options =>
         ?? builder.Configuration["Rubika:WebhookSecret"];
     options.UploadsRootPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
 });
+builder.Services.Configure<TelegramOptions>(options =>
+{
+    builder.Configuration.GetSection(TelegramOptions.SectionName).Bind(options);
+    options.BotToken = builder.Configuration["TELEGRAM_BOT_TOKEN"]
+        ?? builder.Configuration["Telegram:BotToken"]
+        ?? "";
+    options.BotUsername = builder.Configuration["TELEGRAM_BOT_USERNAME"]
+        ?? builder.Configuration["Telegram:BotUsername"];
+    options.WebhookSecret = builder.Configuration["TELEGRAM_WEBHOOK_SECRET"]
+        ?? builder.Configuration["Telegram:WebhookSecret"];
+    options.UploadsRootPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
+});
 builder.Services.AddScoped<ImageProcessingService>();
 builder.Services.AddScoped<FileStorageService>();
 
@@ -128,9 +140,10 @@ static async Task TryRegisterMessengerWebhooksAsync(IServiceProvider services)
             .GetRequiredService<JameJafari.Infrastructure.Services.MessengerWebhookRegistrationService>()
             .RegisterAsync();
         logger.LogInformation(
-            "Startup webhook registration: bale={Bale} rubika={Rubika}",
+            "Startup webhook registration: bale={Bale} rubika={Rubika} telegram={Telegram}",
             result.BaleRegistered,
-            result.RubikaRegistered);
+            result.RubikaRegistered,
+            result.TelegramRegistered);
     }
     catch (Exception ex)
     {

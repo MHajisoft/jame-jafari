@@ -16,6 +16,7 @@ const label = computed(() => props.title || messengerKindLabel(props.kind) || ''
 const src = computed(() => {
   if (resolved.value === 1) return '/icons/messengers/bale.svg'
   if (resolved.value === 2) return '/icons/messengers/rubika.png'
+  if (resolved.value === 3) return '/icons/messengers/telegram.svg'
   return ''
 })
 </script>

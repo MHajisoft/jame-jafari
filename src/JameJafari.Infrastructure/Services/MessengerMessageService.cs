@@ -18,15 +18,19 @@ public class MessengerMessageService(
     BaleContactSyncService syncService,
     RubikaContactResolver rubikaContactResolver,
     RubikaContactSyncService rubikaSyncService,
+    TelegramContactResolver telegramContactResolver,
+    TelegramContactSyncService telegramSyncService,
     MessengerSenderResolver senderResolver,
     IncomeReceiptImageService receiptImages,
     MessengerWebhookRegistrationService webhookRegistration,
     IOptions<BaleOptions> options,
-    IOptions<RubikaOptions> rubikaOptions)
+    IOptions<RubikaOptions> rubikaOptions,
+    IOptions<TelegramOptions> telegramOptions)
 {
     private static readonly TimeSpan MutateWindow = TimeSpan.FromHours(48);
     private readonly BaleOptions _options = options.Value;
     private readonly RubikaOptions _rubikaOptions = rubikaOptions.Value;
+    private readonly TelegramOptions _telegramOptions = telegramOptions.Value;
 
     public async Task<MessengerConfigResponse> GetConfigAsync()
     {
@@ -64,6 +68,7 @@ public class MessengerMessageService(
             PublicBaseUrl = publicBase,
             BaleWebhookUrl = webhookRegistration.BuildBaleWebhookUrl(),
             RubikaWebhookUrl = webhookRegistration.BuildRubikaWebhookUrl(),
+            TelegramWebhookUrl = webhookRegistration.BuildTelegramWebhookUrl(),
             CanRegisterWebhooks = canRegister
         };
     }
@@ -652,12 +657,20 @@ public class MessengerMessageService(
                 targets.Add((MessengerKind.Rubika, rubikaChatId));
         }
 
+        if (_telegramOptions.IsConfigured)
+        {
+            var telegramChatId = await telegramSyncService.ResolveChatIdWithSyncAsync(person);
+            if (telegramChatId is not null)
+                targets.Add((MessengerKind.Telegram, telegramChatId.Value.ToString()));
+        }
+
         return targets;
     }
 
     async Task<string?> ResolvePersonChatIdAsync(MessengerKind messenger, Person person) => messenger switch
     {
         MessengerKind.Rubika => await rubikaContactResolver.ResolveChatIdAsync(person),
+        MessengerKind.Telegram => (await telegramContactResolver.ResolveChatIdAsync(person))?.ToString(),
         _ => (await contactResolver.ResolveChatIdAsync(person))?.ToString()
     };
 
@@ -669,19 +682,26 @@ public class MessengerMessageService(
             return;
         }
 
-        if (MessengerChatTargetHelper.TryParseNumericChatId(chatId, out var numericChatId))
+        if (!MessengerChatTargetHelper.TryParseNumericChatId(chatId, out var numericChatId))
+            return;
+
+        if (messenger == MessengerKind.Telegram)
+            await telegramContactResolver.PersistLinkAsync(person, numericChatId);
+        else
             await contactResolver.PersistLinkAsync(person, numericChatId);
     }
 
     string MissingContactMessage(MessengerKind messenger, Person person) => messenger switch
     {
         MessengerKind.Rubika => rubikaContactResolver.BuildMissingContactMessage(person),
+        MessengerKind.Telegram => telegramContactResolver.BuildMissingContactMessage(person),
         _ => contactResolver.BuildMissingContactMessage(person)
     };
 
     string? BotStartUrl(MessengerKind messenger, int? personId) => messenger switch
     {
         MessengerKind.Rubika => rubikaContactResolver.BuildBotStartUrl(),
+        MessengerKind.Telegram => personId is null ? null : telegramContactResolver.BuildBotStartUrl(personId.Value),
         _ => personId is null ? null : contactResolver.BuildBotStartUrl(personId.Value)
     };
 
@@ -743,6 +763,7 @@ public class MessengerMessageService(
     {
         MessengerKind.Bale => "بله",
         MessengerKind.Rubika => "روبیکا",
+        MessengerKind.Telegram => "تلگرام",
         _ => kind.ToString()
     };
 

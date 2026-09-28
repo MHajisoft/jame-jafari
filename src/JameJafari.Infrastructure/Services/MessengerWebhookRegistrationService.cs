@@ -2,6 +2,7 @@ using JameJafari.Core.DTOs;
 using JameJafari.Core.Options;
 using JameJafari.Infrastructure.Bale;
 using JameJafari.Infrastructure.Rubika;
+using JameJafari.Infrastructure.Telegram;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -10,17 +11,21 @@ namespace JameJafari.Infrastructure.Services;
 public class MessengerWebhookRegistrationService(
     BaleBotClient bale,
     RubikaBotClient rubika,
+    TelegramBotClient telegram,
     IOptions<BaleOptions> baleOptions,
     IOptions<RubikaOptions> rubikaOptions,
+    IOptions<TelegramOptions> telegramOptions,
     IOptions<MessagingOptions> messagingOptions,
     ILogger<MessengerWebhookRegistrationService> logger)
 {
     public const string BaleWebhookPath = "/api/bale/webhook";
     public const string RubikaWebhookPath = "/api/rubika/webhook";
+    public const string TelegramWebhookPath = "/api/telegram/webhook";
 
     readonly MessagingOptions _messaging = messagingOptions.Value;
     readonly BaleOptions _bale = baleOptions.Value;
     readonly RubikaOptions _rubika = rubikaOptions.Value;
+    readonly TelegramOptions _telegram = telegramOptions.Value;
 
     public string? NormalizePublicBaseUrl() =>
         _messaging.HasPublicBaseUrl ? _messaging.PublicBaseUrl!.Trim().TrimEnd('/') : null;
@@ -37,6 +42,12 @@ public class MessengerWebhookRegistrationService(
         return baseUrl is null ? null : $"{baseUrl}{RubikaWebhookPath}";
     }
 
+    public string? BuildTelegramWebhookUrl()
+    {
+        var baseUrl = NormalizePublicBaseUrl();
+        return baseUrl is null ? null : $"{baseUrl}{TelegramWebhookPath}";
+    }
+
     public async Task<RegisterMessengerWebhooksResponse> RegisterAsync(CancellationToken cancellationToken = default)
     {
         var baseUrl = NormalizePublicBaseUrl();
@@ -46,10 +57,13 @@ public class MessengerWebhookRegistrationService(
 
         var baleUrl = $"{baseUrl}{BaleWebhookPath}";
         var rubikaUrl = $"{baseUrl}{RubikaWebhookPath}";
+        var telegramUrl = $"{baseUrl}{TelegramWebhookPath}";
         var baleOk = false;
         var rubikaOk = false;
+        var telegramOk = false;
         string? baleError = null;
         string? rubikaError = null;
+        string? telegramError = null;
 
         if (_bale.IsConfigured)
         {
@@ -89,18 +103,40 @@ public class MessengerWebhookRegistrationService(
             rubikaError = "توکن روبیکا تنظیم نشده است";
         }
 
-        if (!baleOk && !rubikaOk)
+        if (_telegram.IsConfigured)
+        {
+            try
+            {
+                await telegram.SetWebhookAsync(telegramUrl, cancellationToken);
+                telegramOk = true;
+                logger.LogInformation("Telegram webhook registered at {Url}", telegramUrl);
+            }
+            catch (Exception ex)
+            {
+                telegramError = ex.Message;
+                logger.LogWarning(ex, "Telegram webhook registration failed");
+            }
+        }
+        else
+        {
+            telegramError = "توکن تلگرام تنظیم نشده است";
+        }
+
+        if (!baleOk && !rubikaOk && !telegramOk)
             throw new InvalidOperationException(
-                string.Join("؛ ", new[] { baleError, rubikaError }.Where(s => !string.IsNullOrWhiteSpace(s))));
+                string.Join("؛ ", new[] { baleError, rubikaError, telegramError }.Where(s => !string.IsNullOrWhiteSpace(s))));
 
         return new RegisterMessengerWebhooksResponse
         {
             BaleRegistered = baleOk,
             RubikaRegistered = rubikaOk,
+            TelegramRegistered = telegramOk,
             BaleError = baleOk ? null : baleError,
             RubikaError = rubikaOk ? null : rubikaError,
+            TelegramError = telegramOk ? null : telegramError,
             BaleWebhookUrl = baleUrl,
-            RubikaWebhookUrl = rubikaUrl
+            RubikaWebhookUrl = rubikaUrl,
+            TelegramWebhookUrl = telegramUrl
         };
     }
 }

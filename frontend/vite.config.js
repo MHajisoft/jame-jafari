@@ -20,7 +20,8 @@ export default defineConfig({
         'icons/logo-512.png',
         'icons/og-image.png',
         'icons/messengers/bale.svg',
-        'icons/messengers/rubika.png'
+        'icons/messengers/rubika.png',
+        'icons/messengers/telegram.svg'
       ],
       manifest: {
         id: '/',

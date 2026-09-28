@@ -765,6 +765,9 @@ namespace JameJafari.Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<long?>("TelegramChatId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -910,6 +913,56 @@ namespace JameJafari.Infrastructure.Data.Migrations
                     b.HasIndex("PersonId");
 
                     b.ToTable("RubikaContactLinks");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.TelegramBotState", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("LastUpdateId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TelegramBotStates");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.TelegramContactLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("ChatId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("LinkedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NormalizedPhone")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int?>("PersonId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatId");
+
+                    b.HasIndex("NormalizedPhone")
+                        .IsUnique();
+
+                    b.HasIndex("PersonId");
+
+                    b.ToTable("TelegramContactLinks");
                 });
 
             modelBuilder.Entity("JameJafari.Core.Entities.TransactionAttachment", b =>
@@ -1409,6 +1462,16 @@ namespace JameJafari.Infrastructure.Data.Migrations
                 });
 
             modelBuilder.Entity("JameJafari.Core.Entities.RubikaContactLink", b =>
+                {
+                    b.HasOne("JameJafari.Core.Entities.Person", "Person")
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("JameJafari.Core.Entities.TelegramContactLink", b =>
                 {
                     b.HasOne("JameJafari.Core.Entities.Person", "Person")
                         .WithMany()

@@ -107,7 +107,12 @@ public class IncomeReceiptImageService(IOptions<BaleOptions> options)
         if (data is null || data.Size < 1000)
             throw new InvalidOperationException("تولید تصویر رسید ناموفق بود");
 
-        var folder = messenger == MessengerKind.Rubika ? "rubika" : "bale";
+        var folder = messenger switch
+        {
+            MessengerKind.Rubika => "rubika",
+            MessengerKind.Telegram => "telegram",
+            _ => "bale"
+        };
         var dir = Path.Combine(_uploadsRoot, folder);
         Directory.CreateDirectory(dir);
         var fileName = $"{Guid.NewGuid():N}.png";
