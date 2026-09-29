@@ -154,7 +154,7 @@ docker build -t jamejafari-web ./frontend
 ### گزارشات
 - انتهای سایدبار؛ در موبایل قبل از تب «بیشتر»: خلاصه KPI + تب‌های جزئیات (حساب‌ها، نوع هزینه، اشخاص، غذا)
 - فیلتر بازه تاریخ شمسی؛ نیاز به `reports.view`
-- **گزارش سالگرد وفات** (`/reports/death-anniversaries`): درگذشتگان با `DeathDate` — تطابق سالگرد شمسی با **امروز / هفته جاری (شنبه–جمعه) / ماه جاری / فصل جاری**؛ نیاز به **`deathanniversaries.view`** (جدا از `reports.view`)
+- **گزارش سالگرد وفات** (`/reports/death-anniversaries`): درگذشتگان با `DeathDate` — تطابق سالگرد شمسی با **امروز / هفته جاری (شنبه–جمعه) / ماه جاری / فصل جاری**؛ نیاز به **`deathanniversaries.view`** (جدا از `reports.view`). با **`messages.send`** می‌توان به کانال‌های پیام ارسال کرد: **متن** یا **متن و تصویر** (کارت تسلیت با نام + سالگرد) — `POST /api/reports/death-anniversaries/notify`
 
 ### PWA و UI
 - **نصب اندروید (حالت تمام‌صفحه):** Chrome فقط روی **HTTPS** (یا localhost) PWA واقعی می‌سازد؛ `http://IP:8080` فقط میانبر Chrome است (نوار آدرس می‌ماند). برای production: دامنه + SSL (مثلاً Caddy / nginx + Let's Encrypt).

@@ -3,10 +3,16 @@ import { computed, onMounted, ref, watch } from 'vue'
 import api from '../api/client'
 import { ApiPaths } from '../api/paths'
 import { todayGregorian, toPersianDigits, PERSIAN_MONTHS } from '../utils/jalali'
-import { formatDate } from '../utils/format'
+import { enumValue, formatDate, messengerKinds } from '../utils/format'
+import { useAuthStore } from '../stores/auth'
+import { useUiPrefsStore } from '../stores/uiPrefs'
+import { useDialogStore } from '../stores/dialog'
+import { useToastStore } from '../stores/toast'
+import { useFormValidation } from '../composables/useFormValidation'
 import EntityAvatar from '../components/EntityAvatar.vue'
 import NickBadge from '../components/NickBadge.vue'
 import PersonLifeStatus from '../components/PersonLifeStatus.vue'
+import AppMultiSelect from '../components/AppMultiSelect.vue'
 
 const SCOPES = [
   { id: 'Day', label: 'امروز', hint: 'سالگرد وفات در همین روز شمسی' },
@@ -15,14 +21,49 @@ const SCOPES = [
   { id: 'Season', label: 'فصل جاری', hint: 'وفات در همین فصل شمسی (بهار، تابستان، …)' }
 ]
 
+const NOTIFY_KINDS = [
+  { id: 1, label: 'متن', hint: 'پیام متنی برای هر نفر' },
+  { id: 2, label: 'متن و تصویر', hint: 'کارت تسلیت با نام و سالگرد' }
+]
+
+const auth = useAuthStore()
+const uiPrefs = useUiPrefsStore()
+const dialog = useDialogStore()
+const toast = useToastStore()
+const { trySubmit } = useFormValidation()
+
 const scope = ref('Day')
 const loading = ref(false)
 const error = ref('')
 const report = ref(null)
+const allChannels = ref([])
+const channelIds = ref([])
+const notifyKind = ref(2)
+const sending = ref(false)
+
+const canNotify = computed(
+  () => auth.hasPermission('messages.send') && auth.hasPermission('deathanniversaries.view')
+)
 
 const activeScope = computed(() => SCOPES.find((s) => s.id === scope.value) || SCOPES[0])
 
 const itemCount = computed(() => report.value?.items?.length ?? 0)
+
+const channelOptions = computed(() =>
+  allChannels.value
+    .filter((c) => uiPrefs.isMessengerEnabled(enumValue(messengerKinds, c.messengerKind, 0)))
+    .map((c) => ({
+      value: c.id,
+      label: c.name,
+      group: messengerKindLabelSafe(c.messengerKind),
+      icon: enumValue(messengerKinds, c.messengerKind, 1)
+    }))
+)
+
+function messengerKindLabelSafe(kind) {
+  const n = enumValue(messengerKinds, kind, 0)
+  return messengerKinds.find((m) => m.value === n)?.label || 'پیام‌رسان'
+}
 
 function formatJalaliDeath(item) {
   const month = PERSIAN_MONTHS[item.jalaliDeathMonth - 1] || ''
@@ -32,6 +73,22 @@ function formatJalaliDeath(item) {
 function yearsLabel(years) {
   if (years <= 0) return 'سال جاری'
   return `${toPersianDigits(years)} سال`
+}
+
+async function loadChannels() {
+  if (!canNotify.value) {
+    allChannels.value = []
+    return
+  }
+  try {
+    const { data } = await api.get(ApiPaths.lookups.messageChannels, {
+      params: { activeOnly: true },
+      skipGlobalLoader: true
+    })
+    allChannels.value = Array.isArray(data) ? data : []
+  } catch {
+    allChannels.value = []
+  }
 }
 
 async function load() {
@@ -53,9 +110,53 @@ async function load() {
   }
 }
 
+async function sendNotify() {
+  if (!canNotify.value) return
+  if (!itemCount.value) {
+    toast.warning('در این بازه کسی ثبت نشده است')
+    return
+  }
+  if (!channelIds.value.length) {
+    toast.warning('حداقل یک کانال را انتخاب کنید')
+    return
+  }
+
+  const kindLabel = NOTIFY_KINDS.find((k) => k.id === notifyKind.value)?.label || ''
+  if (!(await dialog.confirm({
+    message: `ارسال ${kindLabel} سالگرد برای ${toPersianDigits(itemCount.value)} نفر به ${toPersianDigits(channelIds.value.length)} کانال؟`,
+    confirmText: 'ارسال'
+  }))) return
+
+  sending.value = true
+  const ok = await trySubmit(async () => {
+    const { data } = await api.post(
+      ApiPaths.reports.deathAnniversariesNotify,
+      {
+        scope: scope.value,
+        referenceDate: new Date(todayGregorian()).toISOString(),
+        messageChannelIds: [...channelIds.value],
+        kind: notifyKind.value
+      },
+      { loaderMessage: 'در حال ارسال…' }
+    )
+    if (data.failed > 0) {
+      toast.warning(
+        `ارسال: ${toPersianDigits(data.sent)} موفق، ${toPersianDigits(data.failed)} ناموفق` +
+          (data.warning ? ` — ${data.warning}` : '')
+      )
+    } else {
+      toast.success(`ارسال شد: ${toPersianDigits(data.sent)} پیام`)
+    }
+  })
+  sending.value = false
+  if (!ok) return
+}
+
 watch(scope, load)
 
-onMounted(load)
+onMounted(async () => {
+  await Promise.all([load(), loadChannels()])
+})
 </script>
 
 <template>
@@ -90,6 +191,55 @@ onMounted(load)
       <p class="filter-note text-muted">
         {{ activeScope.hint }}
       </p>
+    </section>
+
+    <section v-if="canNotify" class="card death-notify-card" aria-label="ارسال به کانال‌ها">
+      <div class="theme-card-head">
+        <h3>ارسال به کانال‌های پیام</h3>
+        <p class="text-muted">
+          برای هر نفر در بازهٔ انتخاب‌شده، پیام به کانال‌های انتخابی فرستاده می‌شود (سالگرد چندم).
+        </p>
+      </div>
+
+      <div class="notify-kind-grid" role="listbox" aria-label="نوع پیام">
+        <button
+          v-for="opt in NOTIFY_KINDS"
+          :key="opt.id"
+          type="button"
+          class="notify-kind-option"
+          role="option"
+          :aria-selected="notifyKind === opt.id"
+          :class="{ active: notifyKind === opt.id }"
+          @click="notifyKind = opt.id"
+        >
+          <strong>{{ opt.label }}</strong>
+          <span class="text-muted">{{ opt.hint }}</span>
+        </button>
+      </div>
+
+      <div class="form-group notify-channels">
+        <label>کانال / گروه</label>
+        <AppMultiSelect
+          v-model="channelIds"
+          :options="channelOptions"
+          placeholder="انتخاب کانال یا گروه"
+          search-placeholder="جستجوی کانال…"
+        />
+        <p v-if="!channelOptions.length" class="field-hint">
+          کانال فعالی نیست یا پیام‌رسان آن در تنظیمات خاموش است.
+        </p>
+      </div>
+
+      <div class="notify-actions">
+        <button
+          type="button"
+          class="btn"
+          :disabled="sending || !itemCount || !channelIds.length"
+          @click="sendNotify"
+        >
+          ارسال سالگرد
+        </button>
+      </div>
     </section>
 
     <p v-if="error" class="form-error death-report-error">{{ error }}</p>
@@ -242,6 +392,62 @@ onMounted(load)
   line-height: 1.45;
 }
 
+.death-notify-card {
+  padding: 1rem;
+}
+
+.theme-card-head {
+  margin-bottom: 0.85rem;
+}
+.theme-card-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.theme-card-head p {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.notify-kind-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.notify-kind-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: start;
+  padding: 0.85rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  min-height: 44px;
+}
+.notify-kind-option.active {
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent),
+    var(--shadow);
+}
+.notify-kind-option.active strong {
+  color: var(--primary);
+}
+
+.notify-channels {
+  margin-bottom: 0.85rem;
+}
+
+.notify-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
 .death-report-error {
   margin: 0;
 }
@@ -347,6 +553,9 @@ onMounted(load)
   }
   .death-report-table td:first-child::before {
     display: none;
+  }
+  .notify-kind-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

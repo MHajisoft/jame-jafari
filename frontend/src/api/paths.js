@@ -25,7 +25,8 @@ export const ApiPaths = {
     summary: '/reports/summary',
     personIncome: '/reports/person-income',
     foodCosts: '/reports/food-costs',
-    deathAnniversaries: '/reports/death-anniversaries'
+    deathAnniversaries: '/reports/death-anniversaries',
+    deathAnniversariesNotify: '/reports/death-anniversaries/notify'
   },
   lookups: {
     accounts: '/lookups/accounts',

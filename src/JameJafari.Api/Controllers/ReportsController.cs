@@ -10,7 +10,7 @@ namespace JameJafari.Api.Controllers;
 
 [Authorize]
 [Route("api/reports")]
-public class ReportsController(ReportService service) : ApiControllerBase
+public class ReportsController(ReportService service, DeathAnniversaryNotifyService deathAnniversaryNotify) : ApiControllerBase
 {
     [HttpGet("account-balances")]
     [RequirePermission(PermissionCodes.ReportsView)]
@@ -47,4 +47,23 @@ public class ReportsController(ReportService service) : ApiControllerBase
         [FromQuery] DeathAnniversaryScope scope = DeathAnniversaryScope.Day,
         [FromQuery] DateTime? referenceDate = null)
         => Ok(await service.GetDeathAnniversaryReportAsync(scope, referenceDate));
+
+    [HttpPost("death-anniversaries/notify")]
+    [RequirePermission(PermissionCodes.DeathAnniversariesView)]
+    public async Task<ActionResult<DeathAnniversaryNotifyResult>> NotifyDeathAnniversaries(
+        [FromBody] SendDeathAnniversaryNotifyRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!HasPermission(PermissionCodes.MessagesSend))
+            return Forbid();
+
+        try
+        {
+            return Ok(await deathAnniversaryNotify.NotifyAsync(request, CurrentUserId, cancellationToken));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

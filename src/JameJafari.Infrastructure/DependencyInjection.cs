@@ -64,6 +64,8 @@ public static class DependencyInjection
         services.AddScoped<WhatsAppContactSyncService>();
         services.AddScoped<MessengerWebhookRegistrationService>();
         services.AddScoped<IncomeReceiptImageService>();
+        services.AddScoped<DeathAnniversaryCondolenceImageService>();
+        services.AddScoped<DeathAnniversaryNotifyService>();
         services.AddScoped<MessengerMessageService>();
         services.AddScoped<MessageChannelService>();
         services.AddScoped<PersonGroupService>();

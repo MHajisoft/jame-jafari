@@ -13,7 +13,9 @@ Modules: `accounts`, `income`, `cost`, `users`, `persons`, `persongroups`, `cost
 
 Standard actions: `view`, `create`, `update`, `delete` (+ `users.changepassword`, `attachments.add`)
 
-`messages` — menu **مرکز پیام** (پیکربندی): `view` = list log, `send` = compose + income receipt + sync-contacts / register-webhooks (UI under **تنظیمات → پیام‌رسان‌ها**), `update` = edit on channel (within 48h; not person-group broadcasts), `delete` = remote (`scope=remote`) or local (`scope=local`)
+`messages` — menu **مرکز پیام** (پیکربندی): `view` = list log, `send` = compose + income receipt + death-anniversary channel notify + sync-contacts / register-webhooks (UI under **تنظیمات → پیام‌رسان‌ها**), `update` = edit on channel (within 48h; not person-group broadcasts), `delete` = remote (`scope=remote`) or local (`scope=local`)
+
+`deathanniversaries` — menu **سالگرد وفات**: `view` = report; with `messages.send`, `POST /api/reports/death-anniversaries/notify` sends Text or Photo (condolence card) per person to selected message channels
 
 Which messengers appear in Message Center compose and income receipt: device preference in Settings (`uiPrefs.enabledMessengers` / localStorage). Toggle is enabled only when that bot token is configured on the server (`GET /api/messages/config` → `isConfigured`); otherwise Settings shows setup steps for the env/appsettings keys.
 

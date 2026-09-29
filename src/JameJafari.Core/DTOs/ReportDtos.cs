@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations;
+using JameJafari.Core.Enums;
+
 namespace JameJafari.Core.DTOs;
 
 public record AccountBalanceReportResponse(int AccountId, string AccountName, decimal TotalIncome, decimal TotalCost, decimal Balance);
@@ -39,4 +42,20 @@ public class DeathAnniversaryReportResponse
     public int JalaliReferenceSeason { get; init; }
     public string ScopeLabelFa { get; init; } = "";
     public IReadOnlyList<DeathAnniversaryPersonResponse> Items { get; init; } = [];
+}
+
+public record SendDeathAnniversaryNotifyRequest(
+    DeathAnniversaryScope Scope,
+    DateTime? ReferenceDate,
+    [Required(ErrorMessage = "انتخاب حداقل یک کانال الزامی است")]
+    List<int> MessageChannelIds,
+    DeathAnniversaryNotifyKind Kind);
+
+public class DeathAnniversaryNotifyResult
+{
+    public Guid BatchId { get; init; }
+    public int Total { get; init; }
+    public int Sent { get; init; }
+    public int Failed { get; init; }
+    public string? Warning { get; init; }
 }
