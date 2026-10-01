@@ -30,6 +30,8 @@ public interface IMessengerSender
 {
     MessengerKind Kind { get; }
     bool IsConfigured { get; }
+    /// <summary>Probe API reachability; failures (timeout/filter) must not throw.</summary>
+    Task<MessengerHealthResult> CheckHealthAsync(CancellationToken cancellationToken = default);
     Task<MessengerSendResult> SendAsync(MessengerSendRequest request, CancellationToken cancellationToken = default);
     Task EditAsync(MessengerEditRequest request, CancellationToken cancellationToken = default);
     Task DeleteAsync(MessengerDeleteRequest request, CancellationToken cancellationToken = default);

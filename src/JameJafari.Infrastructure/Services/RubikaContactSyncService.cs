@@ -1,9 +1,11 @@
 using System.Text.Json;
 using JameJafari.Core.DTOs;
 using JameJafari.Core.Entities;
+using JameJafari.Core.Enums;
 using JameJafari.Core.Helpers;
 using JameJafari.Core.Options;
 using JameJafari.Infrastructure.Data;
+using JameJafari.Infrastructure.Messaging;
 using JameJafari.Infrastructure.Rubika;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -15,6 +17,7 @@ public class RubikaContactSyncService(
     AppDbContext db,
     RubikaBotClient rubika,
     RubikaContactResolver resolver,
+    MessengerSenderResolver senderResolver,
     IOptions<RubikaOptions> options,
     ILogger<RubikaContactSyncService> logger)
 {
@@ -60,10 +63,32 @@ public class RubikaContactSyncService(
         return 0;
     }
 
-    public async Task<int> SyncFromUpdatesAsync(CancellationToken cancellationToken = default)
+    public async Task<(int Linked, string? Error)> SyncFromUpdatesAsync(CancellationToken cancellationToken = default)
     {
-        var result = await ConsumeUpdatesAsync(cancellationToken);
-        return result.LinkedContacts;
+        if (!_options.IsConfigured)
+            return (0, "توکن روبیکا تنظیم نشده است");
+
+        var health = await senderResolver.Get(MessengerKind.Rubika).CheckHealthAsync(cancellationToken);
+        if (!health.IsAvailable)
+        {
+            logger.LogWarning("Rubika contact sync skipped: {Error}", health.ErrorMessage);
+            return (0, health.ErrorMessage);
+        }
+
+        try
+        {
+            var result = await ConsumeUpdatesAsync(cancellationToken);
+            return (result.LinkedContacts, null);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Rubika contact sync failed");
+            return (0, ex.Message);
+        }
     }
 
     /// <summary>
@@ -76,6 +101,10 @@ public class RubikaContactSyncService(
     {
         if (!_options.IsConfigured)
             throw new InvalidOperationException("توکن بازوی روبیکا تنظیم نشده است");
+
+        var health = await senderResolver.Get(MessengerKind.Rubika).CheckHealthAsync(cancellationToken);
+        if (!health.IsAvailable)
+            throw new InvalidOperationException(health.ErrorMessage ?? "دسترسی به روبیکا برقرار نیست");
 
         var known = await LoadKnownGroupChatsAsync(cancellationToken);
         var map = known.ToDictionary(c => c.ChatId, StringComparer.Ordinal);

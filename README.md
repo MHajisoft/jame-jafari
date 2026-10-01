@@ -218,6 +218,8 @@ cd frontend && npm run build
 
 ادغام با [API بازوی بله](https://docs.bale.ai)، [API بازوی روبیکا](https://rubika.ir/botapi)، [Telegram Bot API](https://core.telegram.org/bots/api) و [WhatsApp Cloud API (Meta)](https://developers.facebook.com/docs/whatsapp/cloud-api) از طریق `IMessengerSender` / `MessengerKind` برای ارسال پیام متنی، تصویر/ویدیو، فایل و رسید درآمد.
 
+**سلامت / دسترسی شبکه:** قبل از ارسال، ویرایش/حذف از راه دور، همگام‌سازی مخاطبین، ثبت وب‌هوک و همگام‌سازی کانال روبیکا، هر پیام‌رسان با `CheckHealthAsync` (مثلاً `getMe` / Ping کوتاه حدود ۵ ثانیه) بررسی می‌شود. اگر در دسترس نباشد (فیلتر ISP، قطع شبکه و مشابه)، وضعیت `Failed` یا خطای همان پیام‌رسان ثبت می‌شود و بقیهٔ پیام‌رسان‌ها ادامه پیدا می‌کنند — کل عملیات به‌خاطر یک کانال فیلترشده متوقف نمی‌شود.
+
 ### پیکربندی
 
 | متغیر | توضیح |
@@ -268,8 +270,8 @@ API بله/روبیکا/تلگرام ارسال مستقیم با شماره م�
 - **کانال‌های پیام** (`/message-channels`): CRUD کانال با نام نمایشی و `ExternalChatId` — لیست صفحه‌بندی‌شده
 - **گروه‌های اشخاص** (`/person-groups`): CRUD گروه با لیست اعضا — ارسال گروهی = یک پیام خصوصی به هر عضو
 - **رسید درآمد**: فقط به پیام‌رسان‌های فعال در تنظیمات (و پیکربندی‌شده و لینک‌شده) ارسال می‌شود؛ `receiptMessengers` در ایجاد درآمد و `messengers` در `POST .../send-receipt`؛ تصویر در پوشهٔ همان پیام‌رسان ذخیره می‌شود. اگر بخشی ناموفق باشد، هشدار ترکیبی برمی‌گردد و درآمد همچنان ثبت می‌شود.
-- **همگام‌سازی مخاطبین**: `POST /api/messages/sync-contacts` — پشتیبان؛ مسیر اصلی ثبت وب‌هوک است (`POST /api/messages/register-webhooks` + `MESSAGING_PUBLIC_BASE_URL`)؛ UI در تنظیمات
-- **ثبت وب‌هوک**: `POST /api/messages/register-webhooks` — بله `setWebhook`، روبیکا `updateBotEndpoints`/`ReceiveUpdate`، تلگرام `setWebhook`؛ در startup هم اگر `PublicBaseUrl` باشد یک‌بار اجرا می‌شود؛ UI در تنظیمات
+- **همگام‌سازی مخاطبین**: `POST /api/messages/sync-contacts` — پشتیبان؛ برای هر پیام‌رسان ابتدا health check؛ در صورت فیلتر/قطع، `*Error` برمی‌گردد و بقیه ادامه می‌یابند؛ مسیر اصلی ثبت وب‌هوک است (`POST /api/messages/register-webhooks` + `MESSAGING_PUBLIC_BASE_URL`)؛ UI در تنظیمات
+- **ثبت وب‌هوک**: `POST /api/messages/register-webhooks` — قبل از ثبت هر کانال health check؛ بله `setWebhook`، روبیکا `updateBotEndpoints`/`ReceiveUpdate`، تلگرام `setWebhook`؛ در startup هم اگر `PublicBaseUrl` باشد یک‌بار اجرا می‌شود؛ UI در تنظیمات
 - **API پیام‌ها**: `GET/POST /api/messages`، ویرایش/حذف `/api/messages/{id}`، پیکربندی `GET /api/messages/config`
 
 ارسال به گروه اشخاص: ویرایش دسته‌ای پشتیبانی نمی‌شود؛ هر عضو یک ردیف جدا در لاگ دارد.

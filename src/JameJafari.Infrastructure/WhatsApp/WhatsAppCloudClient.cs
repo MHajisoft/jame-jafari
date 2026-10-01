@@ -19,6 +19,21 @@ public class WhatsAppCloudClient(HttpClient http, IOptions<WhatsAppOptions> opti
 
     readonly WhatsAppOptions _options = options.Value;
 
+    /// <summary>GET phone-number node — lightweight reachability probe.</summary>
+    public async Task PingAsync(CancellationToken cancellationToken = default)
+    {
+        EnsureConfigured();
+        using var request = new HttpRequestMessage(HttpMethod.Get, PhoneNumberUrl());
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.AccessToken);
+        using var response = await http.SendAsync(request, cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning("WhatsApp ping failed: {Status} {Body}", (int)response.StatusCode, json);
+            throw new InvalidOperationException(ParseError(json) ?? "دسترسی به واتساپ برقرار نیست");
+        }
+    }
+
     public async Task<WhatsAppSendResult> SendTextAsync(string toWaId, string text, CancellationToken cancellationToken = default)
     {
         EnsureConfigured();
@@ -179,6 +194,9 @@ public class WhatsAppCloudClient(HttpClient http, IOptions<WhatsAppOptions> opti
         var waId = parsed?.Contacts?.FirstOrDefault()?.WaId;
         return new WhatsAppSendResult { MessageId = messageId, WaId = waId };
     }
+
+    string PhoneNumberUrl() =>
+        $"{_options.ApiBaseUrl.TrimEnd('/')}/{_options.ApiVersion.Trim('/')}/{_options.PhoneNumberId}";
 
     string MessagesUrl() =>
         $"{_options.ApiBaseUrl.TrimEnd('/')}/{_options.ApiVersion.Trim('/')}/{_options.PhoneNumberId}/messages";

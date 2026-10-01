@@ -35,6 +35,7 @@ public class MessengerMessageService(
     private readonly RubikaOptions _rubikaOptions = rubikaOptions.Value;
     private readonly TelegramOptions _telegramOptions = telegramOptions.Value;
     private readonly WhatsAppOptions _whatsAppOptions = whatsAppOptions.Value;
+    private readonly Dictionary<MessengerKind, MessengerHealthResult> _healthByMessenger = new();
 
     public async Task<MessengerConfigResponse> GetConfigAsync()
     {
@@ -416,6 +417,16 @@ public class MessengerMessageService(
 
     async Task<bool> TryDispatchAsync(MessengerMessage entity, int userId)
     {
+        var health = await GetHealthAsync(entity.MessengerKind);
+        if (!health.IsAvailable)
+        {
+            entity.Status = MessengerMessageStatus.Failed;
+            entity.ErrorMessage = health.ErrorMessage;
+            entity.UpdatedById = userId;
+            await db.SaveChangesAsync();
+            return false;
+        }
+
         try
         {
             var sender = senderResolver.Get(entity.MessengerKind);
@@ -453,6 +464,23 @@ public class MessengerMessageService(
         return entity.Status == MessengerMessageStatus.Sent;
     }
 
+    async Task<MessengerHealthResult> GetHealthAsync(MessengerKind kind, CancellationToken cancellationToken = default)
+    {
+        if (_healthByMessenger.TryGetValue(kind, out var cached))
+            return cached;
+
+        var result = await senderResolver.Get(kind).CheckHealthAsync(cancellationToken);
+        _healthByMessenger[kind] = result;
+        return result;
+    }
+
+    async Task EnsureMessengerAvailableAsync(MessengerKind kind, CancellationToken cancellationToken = default)
+    {
+        var health = await GetHealthAsync(kind, cancellationToken);
+        if (!health.IsAvailable)
+            throw new InvalidOperationException(health.ErrorMessage ?? "پیام‌رسان در دسترس نیست");
+    }
+
     public async Task<MessengerMessageResponse?> UpdateAsync(int id, UpdateMessengerMessageRequest request, int userId)
     {
         var entity = await db.MessengerMessages.FirstOrDefaultAsync(m => m.Id == id);
@@ -461,6 +489,7 @@ public class MessengerMessageService(
             throw new InvalidOperationException("ویرایش پیام‌های ارسال گروهی پشتیبانی نمی‌شود");
 
         EnsureCanMutateRemote(entity);
+        await EnsureMessengerAvailableAsync(entity.MessengerKind);
         var sender = senderResolver.Get(entity.MessengerKind);
 
         string? newText = null;
@@ -520,6 +549,7 @@ public class MessengerMessageService(
             return;
 
         EnsureCanMutateRemote(entity);
+        await EnsureMessengerAvailableAsync(entity.MessengerKind);
         var sender = senderResolver.Get(entity.MessengerKind);
         var messageIds = entity.RemoteMessageIds.Count > 0
             ? entity.RemoteMessageIds

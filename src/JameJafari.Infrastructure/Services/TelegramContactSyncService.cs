@@ -1,8 +1,10 @@
 using JameJafari.Core.Entities;
+using JameJafari.Core.Enums;
 using JameJafari.Core.Helpers;
 using JameJafari.Core.Options;
 using JameJafari.Infrastructure.Telegram;
 using JameJafari.Infrastructure.Data;
+using JameJafari.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,6 +15,7 @@ public class TelegramContactSyncService(
     AppDbContext db,
     TelegramBotClient bot,
     TelegramContactResolver resolver,
+    MessengerSenderResolver senderResolver,
     IOptions<TelegramOptions> options,
     ILogger<TelegramContactSyncService> logger)
 {
@@ -60,18 +63,40 @@ public class TelegramContactSyncService(
         return linked;
     }
 
-    public async Task<int> SyncFromUpdatesAsync(CancellationToken cancellationToken = default)
+    public async Task<(int Linked, string? Error)> SyncFromUpdatesAsync(CancellationToken cancellationToken = default)
     {
-        var state = await GetOrCreateStateAsync(cancellationToken);
+        if (!_options.IsConfigured)
+            return (0, "توکن تلگرام تنظیم نشده است");
 
-        // Cold start: process pending updates (incl. /start + contact) instead of discarding via offset=-1.
-        int? offset = state.LastUpdateId > 0 ? state.LastUpdateId + 1 : null;
-        var updates = await bot.GetUpdatesAsync(offset: offset, limit: 100, cancellationToken: cancellationToken);
-        var linked = 0;
-        foreach (var update in updates)
-            linked += await ProcessWebhookUpdateAsync(update, cancellationToken);
+        var health = await senderResolver.Get(MessengerKind.Telegram).CheckHealthAsync(cancellationToken);
+        if (!health.IsAvailable)
+        {
+            logger.LogWarning("Telegram contact sync skipped: {Error}", health.ErrorMessage);
+            return (0, health.ErrorMessage);
+        }
 
-        return linked;
+        try
+        {
+            var state = await GetOrCreateStateAsync(cancellationToken);
+
+            // Cold start: process pending updates (incl. /start + contact) instead of discarding via offset=-1.
+            int? offset = state.LastUpdateId > 0 ? state.LastUpdateId + 1 : null;
+            var updates = await bot.GetUpdatesAsync(offset: offset, limit: 100, cancellationToken: cancellationToken);
+            var linked = 0;
+            foreach (var update in updates)
+                linked += await ProcessWebhookUpdateAsync(update, cancellationToken);
+
+            return (linked, null);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Telegram contact sync failed");
+            return (0, ex.Message);
+        }
     }
 
     public async Task<long?> ResolveChatIdWithSyncAsync(Person person, CancellationToken cancellationToken = default)

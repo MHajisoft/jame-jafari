@@ -1,6 +1,8 @@
 using JameJafari.Core.DTOs;
+using JameJafari.Core.Enums;
 using JameJafari.Core.Options;
 using JameJafari.Infrastructure.Bale;
+using JameJafari.Infrastructure.Messaging;
 using JameJafari.Infrastructure.Rubika;
 using JameJafari.Infrastructure.Telegram;
 using Microsoft.Extensions.Logging;
@@ -12,6 +14,7 @@ public class MessengerWebhookRegistrationService(
     BaleBotClient bale,
     RubikaBotClient rubika,
     TelegramBotClient telegram,
+    MessengerSenderResolver senderResolver,
     IOptions<BaleOptions> baleOptions,
     IOptions<RubikaOptions> rubikaOptions,
     IOptions<TelegramOptions> telegramOptions,
@@ -81,9 +84,17 @@ public class MessengerWebhookRegistrationService(
         {
             try
             {
-                await bale.SetWebhookAsync(baleUrl, cancellationToken);
-                baleOk = true;
-                logger.LogInformation("Bale webhook registered at {Url}", baleUrl);
+                var health = await senderResolver.Get(MessengerKind.Bale).CheckHealthAsync(cancellationToken);
+                if (!health.IsAvailable)
+                {
+                    baleError = health.ErrorMessage;
+                }
+                else
+                {
+                    await bale.SetWebhookAsync(baleUrl, cancellationToken);
+                    baleOk = true;
+                    logger.LogInformation("Bale webhook registered at {Url}", baleUrl);
+                }
             }
             catch (Exception ex)
             {
@@ -100,9 +111,17 @@ public class MessengerWebhookRegistrationService(
         {
             try
             {
-                await rubika.UpdateReceiveUpdateEndpointAsync(rubikaUrl, cancellationToken);
-                rubikaOk = true;
-                logger.LogInformation("Rubika ReceiveUpdate endpoint registered at {Url}", rubikaUrl);
+                var health = await senderResolver.Get(MessengerKind.Rubika).CheckHealthAsync(cancellationToken);
+                if (!health.IsAvailable)
+                {
+                    rubikaError = health.ErrorMessage;
+                }
+                else
+                {
+                    await rubika.UpdateReceiveUpdateEndpointAsync(rubikaUrl, cancellationToken);
+                    rubikaOk = true;
+                    logger.LogInformation("Rubika ReceiveUpdate endpoint registered at {Url}", rubikaUrl);
+                }
             }
             catch (Exception ex)
             {
@@ -119,9 +138,17 @@ public class MessengerWebhookRegistrationService(
         {
             try
             {
-                await telegram.SetWebhookAsync(telegramUrl, cancellationToken);
-                telegramOk = true;
-                logger.LogInformation("Telegram webhook registered at {Url}", telegramUrl);
+                var health = await senderResolver.Get(MessengerKind.Telegram).CheckHealthAsync(cancellationToken);
+                if (!health.IsAvailable)
+                {
+                    telegramError = health.ErrorMessage;
+                }
+                else
+                {
+                    await telegram.SetWebhookAsync(telegramUrl, cancellationToken);
+                    telegramOk = true;
+                    logger.LogInformation("Telegram webhook registered at {Url}", telegramUrl);
+                }
             }
             catch (Exception ex)
             {
@@ -137,12 +164,29 @@ public class MessengerWebhookRegistrationService(
         if (_whatsApp.IsConfigured)
         {
             // Meta Cloud API webhook URL is configured in Meta Developer Console (not via setWebhook).
-            whatsAppOk = !string.IsNullOrWhiteSpace(_whatsApp.WebhookVerifyToken);
-            whatsAppError = whatsAppOk
-                ? null
-                : "WHATSAPP_WEBHOOK_VERIFY_TOKEN را تنظیم کنید و همین آدرس را در Meta Developer → WhatsApp → Configuration ثبت کنید.";
-            if (whatsAppOk)
-                logger.LogInformation("WhatsApp webhook URL ready (configure in Meta): {Url}", whatsAppUrl);
+            // Still probe Graph so ISP/filter issues surface like other messengers.
+            try
+            {
+                var health = await senderResolver.Get(MessengerKind.WhatsApp).CheckHealthAsync(cancellationToken);
+                if (!health.IsAvailable)
+                {
+                    whatsAppError = health.ErrorMessage;
+                }
+                else
+                {
+                    whatsAppOk = !string.IsNullOrWhiteSpace(_whatsApp.WebhookVerifyToken);
+                    whatsAppError = whatsAppOk
+                        ? null
+                        : "WHATSAPP_WEBHOOK_VERIFY_TOKEN را تنظیم کنید و همین آدرس را در Meta Developer → WhatsApp → Configuration ثبت کنید.";
+                    if (whatsAppOk)
+                        logger.LogInformation("WhatsApp webhook URL ready (configure in Meta): {Url}", whatsAppUrl);
+                }
+            }
+            catch (Exception ex)
+            {
+                whatsAppError = ex.Message;
+                logger.LogWarning(ex, "WhatsApp webhook health check failed");
+            }
         }
         else
         {

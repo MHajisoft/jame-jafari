@@ -15,6 +15,7 @@ import { enumValue, messengerKinds, messengerKindLabel } from '../utils/format'
 import { useIsMobile } from '../composables/useMediaQuery'
 import { usePwaInstall } from '../composables/usePwaInstall'
 import { useFormValidation } from '../composables/useFormValidation'
+import { useToastStore } from '../stores/toast'
 import MessengerKindIcon from '../components/MessengerKindIcon.vue'
 
 const theme = useThemeStore()
@@ -111,22 +112,56 @@ function onMessengerToggle(row, event) {
 }
 
 async function syncContacts() {
+  let result = null
   const ok = await trySubmit(async () => {
-    await api.post(ApiPaths.messagesSyncContacts, null, {
+    const { data } = await api.post(ApiPaths.messagesSyncContacts, null, {
       loaderMessage: 'در حال همگام‌سازی…'
     })
-  }, { successMessage: 'همگام‌سازی مخاطبین انجام شد' })
+    result = data
+  })
   if (!ok) return
+  const errors = [
+    result?.baleError,
+    result?.rubikaError,
+    result?.telegramError,
+    result?.whatsAppError
+  ].filter(Boolean)
+  if (errors.length) {
+    useToastStore().warning(
+      errors.length === 1
+        ? errors[0]
+        : `برخی پیام‌رسان‌ها در دسترس نبودند: ${errors.slice(0, 3).join('؛ ')}${errors.length > 3 ? '…' : ''}`
+    )
+  } else {
+    useToastStore().success('همگام‌سازی مخاطبین انجام شد')
+  }
   await loadMessagingConfig()
 }
 
 async function registerWebhooks() {
+  let result = null
   const ok = await trySubmit(async () => {
-    await api.post(ApiPaths.messagesRegisterWebhooks, null, {
+    const { data } = await api.post(ApiPaths.messagesRegisterWebhooks, null, {
       loaderMessage: 'در حال ثبت وب‌هوک…'
     })
-  }, { successMessage: 'وب‌هوک پیام‌رسان ثبت شد' })
+    result = data
+  })
   if (!ok) return
+  const errors = [
+    result?.baleError,
+    result?.rubikaError,
+    result?.telegramError,
+    result?.whatsAppError
+  ].filter(Boolean)
+  if (errors.length) {
+    useToastStore().warning(
+      errors.length === 1
+        ? errors[0]
+        : `برخی پیام‌رسان‌ها ثبت نشدند: ${errors.slice(0, 3).join('؛ ')}${errors.length > 3 ? '…' : ''}`
+    )
+  } else {
+    useToastStore().success('وب‌هوک پیام‌رسان ثبت شد')
+  }
   await loadMessagingConfig()
 }
 

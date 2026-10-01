@@ -73,6 +73,20 @@ public class RegisterMessengerWebhooksResponse
     public string? WhatsAppWebhookUrl { get; init; }
 }
 
+/// <summary>Per-messenger sync-contacts result; unavailable messengers set Error and are skipped.</summary>
+public class SyncMessengerContactsResponse
+{
+    public int Linked { get; init; }
+    public int BaleLinked { get; init; }
+    public int RubikaLinked { get; init; }
+    public int TelegramLinked { get; init; }
+    public int WhatsAppLinked { get; init; }
+    public string? BaleError { get; init; }
+    public string? RubikaError { get; init; }
+    public string? TelegramError { get; init; }
+    public string? WhatsAppError { get; init; }
+}
+
 public class SendMessengerMessageRequest
 {
     /// <summary>One or more messengers (person / person-group targets). Ignored for channel (taken from each channel).</summary>

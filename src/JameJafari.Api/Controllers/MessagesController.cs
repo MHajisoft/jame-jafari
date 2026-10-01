@@ -146,27 +146,25 @@ public class MessagesController(
 
     [HttpPost("sync-contacts")]
     [RequirePermission(PermissionCodes.MessagesSend)]
-    public async Task<ActionResult<object>> SyncContacts(CancellationToken cancellationToken)
+    public async Task<ActionResult<SyncMessengerContactsResponse>> SyncContacts(CancellationToken cancellationToken)
     {
-        try
+        var (baleLinked, baleError) = await syncService.SyncFromUpdatesAsync(cancellationToken);
+        var (rubikaLinked, rubikaError) = await rubikaSyncService.SyncFromUpdatesAsync(cancellationToken);
+        var (telegramLinked, telegramError) = await telegramSyncService.SyncFromUpdatesAsync(cancellationToken);
+        var (whatsAppLinked, whatsAppError) = await whatsAppSyncService.SyncFromUpdatesAsync(cancellationToken);
+
+        return Ok(new SyncMessengerContactsResponse
         {
-            var baleLinked = await syncService.SyncFromUpdatesAsync(cancellationToken);
-            var rubikaLinked = await rubikaSyncService.SyncFromUpdatesAsync(cancellationToken);
-            var telegramLinked = await telegramSyncService.SyncFromUpdatesAsync(cancellationToken);
-            var whatsAppLinked = await whatsAppSyncService.SyncFromUpdatesAsync(cancellationToken);
-            return Ok(new
-            {
-                linked = baleLinked + rubikaLinked + telegramLinked + whatsAppLinked,
-                baleLinked,
-                rubikaLinked,
-                telegramLinked,
-                whatsAppLinked
-            });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+            Linked = baleLinked + rubikaLinked + telegramLinked + whatsAppLinked,
+            BaleLinked = baleLinked,
+            RubikaLinked = rubikaLinked,
+            TelegramLinked = telegramLinked,
+            WhatsAppLinked = whatsAppLinked,
+            BaleError = baleError,
+            RubikaError = rubikaError,
+            TelegramError = telegramError,
+            WhatsAppError = whatsAppError
+        });
     }
 
     [HttpPost("register-webhooks")]

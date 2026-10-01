@@ -31,7 +31,7 @@ Telegram contact linking: mobile on Person → webhook `POST /api/telegram/webho
 
 WhatsApp Cloud API: `WHATSAPP_ACCESS_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID`; phone-first `wa_id` from Person.Mobile → `Person.WhatsAppChatId` / `WhatsAppContactLink`. Webhook `GET/POST /api/whatsapp/webhook` (verify token + optional app secret). No remote edit/delete. Meta may require templates outside the 24h customer-care window.
 
-Messenger extensibility: `IMessengerSender` + `MessengerKind` (`Bale`, `Rubika`, `Telegram`, `WhatsApp`); remote message ids stored as strings on `MessengerMessage` for all messengers; channels are per-messenger; HTTP surface `/api/messages` with multi-messenger compose (`Messengers[]`).
+Messenger extensibility: `IMessengerSender` + `MessengerKind` (`Bale`, `Rubika`, `Telegram`, `WhatsApp`); remote message ids stored as strings on `MessengerMessage` for all messengers; channels are per-messenger; HTTP surface `/api/messages` with multi-messenger compose (`Messengers[]`). Outbound paths (send / edit / delete / sync-contacts / register-webhooks / Rubika discover) call `CheckHealthAsync` first; unavailable → status/error for that messenger and continue.
 
 `attachments` has no menu — `view` = list/preview, `add` = upload, `delete` = remove saved file
 

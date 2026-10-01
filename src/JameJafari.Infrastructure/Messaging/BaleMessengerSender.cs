@@ -13,6 +13,16 @@ public class BaleMessengerSender(BaleBotClient bale, IOptions<BaleOptions> optio
 
     public bool IsConfigured => _options.IsConfigured;
 
+    public Task<MessengerHealthResult> CheckHealthAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsConfigured)
+            return Task.FromResult(MessengerHealthResult.Unavailable("بله پیکربندی نشده است"));
+        return MessengerHealthResult.ProbeAsync(
+            "دسترسی به بله برقرار نیست (احتمال قطع شبکه)",
+            ct => bale.GetMeAsync(ct),
+            cancellationToken);
+    }
+
     public Task<MessengerSendResult> SendAsync(MessengerSendRequest request, CancellationToken cancellationToken = default) =>
         request.MessageType switch
         {

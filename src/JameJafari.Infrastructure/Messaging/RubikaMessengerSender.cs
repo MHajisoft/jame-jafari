@@ -14,6 +14,16 @@ public class RubikaMessengerSender(RubikaBotClient rubika, IOptions<RubikaOption
 
     public bool IsConfigured => _options.IsConfigured;
 
+    public Task<MessengerHealthResult> CheckHealthAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsConfigured)
+            return Task.FromResult(MessengerHealthResult.Unavailable("روبیکا پیکربندی نشده است"));
+        return MessengerHealthResult.ProbeAsync(
+            "دسترسی به روبیکا برقرار نیست (احتمال قطع شبکه)",
+            ct => rubika.GetMeAsync(ct),
+            cancellationToken);
+    }
+
     public Task<MessengerSendResult> SendAsync(MessengerSendRequest request, CancellationToken cancellationToken = default) =>
         request.MessageType switch
         {

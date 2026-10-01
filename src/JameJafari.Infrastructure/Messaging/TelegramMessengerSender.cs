@@ -13,6 +13,16 @@ public class TelegramMessengerSender(TelegramBotClient bot, IOptions<TelegramOpt
 
     public bool IsConfigured => _options.IsConfigured;
 
+    public Task<MessengerHealthResult> CheckHealthAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsConfigured)
+            return Task.FromResult(MessengerHealthResult.Unavailable("تلگرام پیکربندی نشده است"));
+        return MessengerHealthResult.ProbeAsync(
+            "دسترسی به تلگرام برقرار نیست (احتمال فیلتر یا قطع شبکه)",
+            ct => bot.GetMeAsync(ct),
+            cancellationToken);
+    }
+
     public Task<MessengerSendResult> SendAsync(MessengerSendRequest request, CancellationToken cancellationToken = default) =>
         request.MessageType switch
         {

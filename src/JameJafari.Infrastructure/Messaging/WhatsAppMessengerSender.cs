@@ -13,6 +13,16 @@ public class WhatsAppMessengerSender(WhatsAppCloudClient bot, IOptions<WhatsAppO
 
     public bool IsConfigured => _options.IsConfigured;
 
+    public Task<MessengerHealthResult> CheckHealthAsync(CancellationToken cancellationToken = default)
+    {
+        if (!IsConfigured)
+            return Task.FromResult(MessengerHealthResult.Unavailable("واتساپ پیکربندی نشده است"));
+        return MessengerHealthResult.ProbeAsync(
+            "دسترسی به واتساپ برقرار نیست (احتمال فیلتر یا قطع شبکه)",
+            ct => bot.PingAsync(ct),
+            cancellationToken);
+    }
+
     public Task<MessengerSendResult> SendAsync(MessengerSendRequest request, CancellationToken cancellationToken = default) =>
         request.MessageType switch
         {

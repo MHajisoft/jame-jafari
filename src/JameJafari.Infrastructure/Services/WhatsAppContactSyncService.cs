@@ -41,8 +41,8 @@ public class WhatsAppContactSyncService(
     }
 
     /// <summary>No getUpdates poller on Cloud API — phone-first resolve is enough.</summary>
-    public Task<int> SyncFromUpdatesAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult(0);
+    public Task<(int Linked, string? Error)> SyncFromUpdatesAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult((0, (string?)null));
 
     public Task<string?> ResolveChatIdWithSyncAsync(Person person, CancellationToken cancellationToken = default)
         => resolver.ResolveChatIdAsync(person, cancellationToken);
