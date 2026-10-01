@@ -428,7 +428,10 @@ watch(() => form.value.targetType, () => {
       :title="pageTitle"
       :show-create="auth.hasPermission('messages.send') && (!showForm || isMobile)"
       create-label="پیام جدید"
+      :show-refresh="!showForm || isMobile"
+      :refresh-loading="loading"
       @create="openCompose"
+      @refresh="reload"
     />
 
     <div v-if="!config.isConfigured" class="card form-hint-banner">
@@ -595,6 +598,7 @@ watch(() => form.value.targetType, () => {
       :has-next="hasNext"
       @prev="goPrev"
       @next="goNext"
+      @refresh="reload"
     >
       <table class="mobile-table message-table" :class="{ 'meta-combined': combineMessageMeta }">
         <thead>

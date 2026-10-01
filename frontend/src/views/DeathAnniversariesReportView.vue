@@ -13,6 +13,7 @@ import EntityAvatar from '../components/EntityAvatar.vue'
 import NickBadge from '../components/NickBadge.vue'
 import PersonLifeStatus from '../components/PersonLifeStatus.vue'
 import AppMultiSelect from '../components/AppMultiSelect.vue'
+import RefreshButton from '../components/RefreshButton.vue'
 
 const SCOPES = [
   { id: 'Day', label: 'امروز', hint: 'سالگرد وفات در همین روز شمسی' },
@@ -172,7 +173,10 @@ onMounted(async () => {
     </header>
 
     <section class="card death-report-filters" aria-label="فیلتر بازه">
-      <p class="filter-intro">بازه مرجع: <strong>{{ report?.scopeLabelFa || '…' }}</strong></p>
+      <div class="death-filter-head">
+        <p class="filter-intro">بازه مرجع: <strong>{{ report?.scopeLabelFa || '…' }}</strong></p>
+        <RefreshButton :loading="loading" @click="load" />
+      </div>
       <div class="scope-tabs" role="tablist" aria-label="نوع بازه">
         <button
           v-for="opt in SCOPES"
@@ -335,8 +339,16 @@ onMounted(async () => {
   padding: 1rem;
 }
 
+.death-filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
 .filter-intro {
-  margin: 0 0 0.85rem;
+  margin: 0;
   font-size: 0.95rem;
 }
 

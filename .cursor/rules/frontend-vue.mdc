@@ -97,5 +97,6 @@ Router: `meta: { permission: 'food.view' }`
 - **App updates:** `vite-plugin-pwa` `registerType: 'autoUpdate'` + `initPwaUpdate()` — new SW activates and reloads automatically; poll every 30m + on visibility restore
 - **Exit on back (mobile):** `initPwaExitBack()` — on primary tabs, system back shows a bottom hint then leaves on second press within 2s; overlays/forms/nested routes still consume back first
 - **List pagination:** `PagedListPanel` + `usePagedList` on all CRUD list views — footer visible when `totalCount > 0` (shows range and page even on a single page); desktop: page scroll + sticky thead/footer; mobile: inline bar after list (no fixed overlap with FAB)
+- **List refresh:** every list/report page exposes **به‌روزرسانی** (`RefreshButton` / `PageHeader` `showRefresh`) so users can re-fetch without a full browser reload; wire to `reload` / `load`
 - Install prompt: `usePwaInstall` / `PwaInstallBanner`
 - `AppSelect` / `AppMultiSelect` / `PersonSelect` mobile sheets: `useOverlayBack` (`appSelect` / `appMultiSelect` / `appPersonSelect`)

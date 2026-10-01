@@ -12,6 +12,7 @@ import AppCheckbox from '../components/AppCheckbox.vue'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import RowActions from '../components/RowActions.vue'
+import RefreshButton from '../components/RefreshButton.vue'
 
 const auth = useAuthStore()
 const dialog = useDialogStore()
@@ -22,6 +23,7 @@ const { error, errors, validate, trySubmit, clearErrors, clearFieldError } = use
 
 const items = ref([])
 const units = ref([])
+const loading = ref(false)
 const unitOptions = computed(() => {
   const active = units.value.filter((u) => u.isActive)
   const selectedId = form.value.unitId
@@ -55,12 +57,17 @@ function rules() {
 }
 
 async function load() {
-  const [c, u] = await Promise.all([
-    lookups.getCostTypes({ activeOnly: false, force: true, admin: true }),
-    lookups.getGeneralTypes('Unit', { includeInactive: true, admin: true })
-  ])
-  items.value = c
-  units.value = u
+  loading.value = true
+  try {
+    const [c, u] = await Promise.all([
+      lookups.getCostTypes({ activeOnly: false, force: true, admin: true }),
+      lookups.getGeneralTypes('Unit', { includeInactive: true, admin: true })
+    ])
+    items.value = c
+    units.value = u
+  } finally {
+    loading.value = false
+  }
 }
 
 async function submit() {
@@ -130,14 +137,17 @@ onMounted(load)
   <div>
     <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
       <h1 class="page-title">{{ showForm && !isMobile ? (editing ? 'ویرایش' : 'نوع هزینه جدید') : 'انواع هزینه' }}</h1>
-      <button
-        v-if="canCreate && (!showForm || isMobile)"
-        class="btn btn-fab-mobile"
-        @click="openCreate"
-      >
-        <span aria-hidden="true">+</span>
-        <span class="btn-fab-label">نوع جدید</span>
-      </button>
+      <div v-if="!showForm || isMobile" class="page-toolbar">
+        <RefreshButton :loading="loading" @click="load" />
+        <button
+          v-if="canCreate"
+          class="btn btn-fab-mobile"
+          @click="openCreate"
+        >
+          <span aria-hidden="true">+</span>
+          <span class="btn-fab-label">نوع جدید</span>
+        </button>
+      </div>
     </div>
 
     <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش' : 'نوع هزینه جدید') : ''" @close="closeForm">

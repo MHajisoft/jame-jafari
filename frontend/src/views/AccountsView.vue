@@ -85,7 +85,10 @@ onMounted(() => load().catch(() => {}))
       :form-mode="showForm && !isMobile"
       :show-create="auth.hasPermission('accounts.create') && (!showForm || isMobile)"
       create-label="حساب جدید"
+      :show-refresh="!showForm || isMobile"
+      :refresh-loading="loading"
       @create="openCreate"
+      @refresh="load"
     />
 
     <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش حساب' : 'حساب جدید') : ''" @close="closeForm">

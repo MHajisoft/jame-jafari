@@ -183,7 +183,10 @@ onMounted(() => load().catch(() => {}))
       :form-mode="showForm && !isMobile"
       :show-create="auth.hasPermission('messagechannels.create') && (!showForm || isMobile)"
       create-label="کانال جدید"
+      :show-refresh="!showForm || isMobile"
+      :refresh-loading="loading"
       @create="openCreate"
+      @refresh="reload"
     />
 
     <div
@@ -243,6 +246,7 @@ onMounted(() => load().catch(() => {}))
       :has-next="hasNext"
       @prev="goPrev"
       @next="goNext"
+      @refresh="reload"
     >
       <table class="mobile-table">
         <thead>

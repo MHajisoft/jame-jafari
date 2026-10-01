@@ -13,6 +13,7 @@ import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import PagedListPanel from '../components/PagedListPanel.vue'
 import RowActions from '../components/RowActions.vue'
+import RefreshButton from '../components/RefreshButton.vue'
 
 const CATEGORIES = [
   { key: 'Unit', label: 'واحدها', singular: 'واحد' },
@@ -171,14 +172,17 @@ onMounted(() => resetPage({ category: category.value }))
         </template>
         <template v-else>انواع عمومی</template>
       </h1>
-      <button
-        v-if="canCreate && (!showForm || isMobile)"
-        class="btn btn-fab-mobile"
-        @click="openCreate"
-      >
-        <span aria-hidden="true">+</span>
-        <span class="btn-fab-label">{{ currentMeta.singular }} جدید</span>
-      </button>
+      <div v-if="!showForm || isMobile" class="page-toolbar">
+        <RefreshButton :loading="loading" @click="reloadGeneralTypes" />
+        <button
+          v-if="canCreate"
+          class="btn btn-fab-mobile"
+          @click="openCreate"
+        >
+          <span aria-hidden="true">+</span>
+          <span class="btn-fab-label">{{ currentMeta.singular }} جدید</span>
+        </button>
+      </div>
     </div>
 
     <div v-show="!showForm" class="page-tabs-wrap">
@@ -244,6 +248,7 @@ onMounted(() => resetPage({ category: category.value }))
         :has-next="hasNext"
         @prev="goPrev"
         @next="goNext"
+        @refresh="reloadGeneralTypes"
       >
         <table class="mobile-table">
           <thead>

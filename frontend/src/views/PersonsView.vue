@@ -21,6 +21,7 @@ import AvatarPicker from '../components/AvatarPicker.vue'
 import { usePagedList } from '../composables/usePagedList'
 import PagedListPanel from '../components/PagedListPanel.vue'
 import PersianDatePicker from '../components/PersianDatePicker.vue'
+import RefreshButton from '../components/RefreshButton.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -174,14 +175,17 @@ onMounted(load)
   <div>
     <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
       <h1 class="page-title">{{ showForm && !isMobile ? (editing ? 'ویرایش شخص' : 'شخص جدید') : 'اشخاص' }}</h1>
-      <button
-        v-if="auth.hasPermission('persons.create') && (!showForm || isMobile)"
-        class="btn btn-fab-mobile"
-        @click="openCreate"
-      >
-        <span aria-hidden="true">+</span>
-        <span class="btn-fab-label">شخص جدید</span>
-      </button>
+      <div v-if="!showForm || isMobile" class="page-toolbar">
+        <RefreshButton :loading="loading" @click="reloadPersons" />
+        <button
+          v-if="auth.hasPermission('persons.create')"
+          class="btn btn-fab-mobile"
+          @click="openCreate"
+        >
+          <span aria-hidden="true">+</span>
+          <span class="btn-fab-label">شخص جدید</span>
+        </button>
+      </div>
     </div>
 
     <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش شخص' : 'شخص جدید') : ''" @close="closeForm">
@@ -302,6 +306,7 @@ onMounted(load)
         :has-next="hasNext"
         @prev="goPrev"
         @next="goNext"
+        @refresh="reloadPersons"
       >
         <table class="mobile-table">
           <thead>

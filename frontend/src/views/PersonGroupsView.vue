@@ -137,7 +137,10 @@ onMounted(() => load().catch(() => {}))
       :form-mode="showForm && !isMobile"
       :show-create="auth.hasPermission('persongroups.create') && (!showForm || isMobile)"
       create-label="گروه جدید"
+      :show-refresh="!showForm || isMobile"
+      :refresh-loading="loading"
       @create="openCreate"
+      @refresh="reload"
     />
 
     <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش گروه' : 'گروه جدید') : ''" @close="closeForm">
@@ -190,6 +193,7 @@ onMounted(() => load().catch(() => {}))
       :has-next="hasNext"
       @prev="goPrev"
       @next="goNext"
+      @refresh="reload"
     >
       <table class="mobile-table">
         <thead>

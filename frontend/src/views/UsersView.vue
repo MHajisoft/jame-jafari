@@ -18,6 +18,7 @@ import EntityAvatar from '../components/EntityAvatar.vue'
 import AvatarPicker from '../components/AvatarPicker.vue'
 import { usePagedList } from '../composables/usePagedList'
 import PagedListPanel from '../components/PagedListPanel.vue'
+import RefreshButton from '../components/RefreshButton.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -212,14 +213,17 @@ onMounted(load)
   <div>
     <div class="page-header" :class="{ 'form-mode': showForm && !isMobile }">
       <h1 class="page-title">{{ showForm && !isMobile ? (editing ? 'ویرایش کاربر' : 'کاربر جدید') : 'مدیریت کاربران' }}</h1>
-      <button
-        v-if="auth.hasPermission('users.create') && (!showForm || isMobile)"
-        class="btn btn-fab-mobile"
-        @click="openCreate"
-      >
-        <span aria-hidden="true">+</span>
-        <span class="btn-fab-label">کاربر جدید</span>
-      </button>
+      <div v-if="!showForm || isMobile" class="page-toolbar">
+        <RefreshButton :loading="loading" @click="reloadUsers" />
+        <button
+          v-if="auth.hasPermission('users.create')"
+          class="btn btn-fab-mobile"
+          @click="openCreate"
+        >
+          <span aria-hidden="true">+</span>
+          <span class="btn-fab-label">کاربر جدید</span>
+        </button>
+      </div>
     </div>
 
     <FormHost :show="showForm" :title="isMobile ? (editing ? 'ویرایش کاربر' : 'کاربر جدید') : ''" @close="closeForm">
@@ -338,6 +342,7 @@ onMounted(load)
         :has-next="hasNext"
         @prev="goPrev"
         @next="goNext"
+        @refresh="reloadUsers"
       >
         <table class="mobile-table">
         <thead>

@@ -18,6 +18,7 @@ import AppSelect from '../components/AppSelect.vue'
 import ClearableInput from '../components/ClearableInput.vue'
 import FormHost from '../components/FormHost.vue'
 import RowActions from '../components/RowActions.vue'
+import RefreshButton from '../components/RefreshButton.vue'
 
 const auth = useAuthStore()
 const uiPrefs = useUiPrefsStore()
@@ -210,6 +211,7 @@ onMounted(load)
           required
           @change="load"
         />
+        <RefreshButton :loading="loading" @click="load" />
         <button
           v-if="auth.hasPermission('food.create') && formLookupsReady"
           type="button"

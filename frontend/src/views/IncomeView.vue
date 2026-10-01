@@ -245,7 +245,10 @@ onMounted(() => load().catch(() => {}))
       :form-mode="showForm && !isMobile"
       :show-create="auth.hasPermission('income.create') && formLookupsReady && (!showForm || isMobile)"
       create-label="ثبت درآمد"
+      :show-refresh="!showForm || isMobile"
+      :refresh-loading="loading"
       @create="openCreate"
+      @refresh="reloadTransactions"
     />
 
     <p
@@ -368,6 +371,7 @@ onMounted(() => load().catch(() => {}))
       :has-next="hasNext"
       @prev="goPrev"
       @next="goNext"
+      @refresh="reloadTransactions"
     >
       <table class="mobile-table" :key="currencyUnit">
           <thead>
